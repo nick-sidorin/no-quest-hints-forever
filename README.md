@@ -152,6 +152,26 @@ Before calling this version fully compatible, verify the following in the actual
 
 If some visual hints remain even with their relevant CVars at `0`, please report the specific hint and location rather than assuming all quest hints use the same API.
 
+
+## Automated builds and publishing
+
+The repository includes a GitHub Actions workflow at [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
+- **Push to `main` or run `Build and release` manually** (Actions → Build and release → Run workflow): install Lua 5.1, run `tests/test_runtime.lua`, verify the `.toc` version, package only the `.toc` and `.lua` files into an installable `NoQuestHintsForever-vX.Y.Z.zip`, and make it available as a workflow artifact.
+- **Push a version tag** (for example, `v1.1.0`): run the same validation, require the tag to match `## Version:` in the TOC, and publish the ZIP as a GitHub prerelease. Releases remain prereleases until the addon is verified in the released Forever client.
+- **CurseForge upload on a tag** is opt-in. Configure the repository variable `CF_PROJECT_ID` (numeric ID from the CurseForge Authors project page) and repository secret `CF_API_TOKEN` (author upload token), then future `v*` tags also upload via the [official CurseForge Upload API](https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api). The workflow uses the game version name `1.60.1` and the release type `alpha` by default. Optional repository variables `CF_GAME_VERSION_NAME` and `CF_RELEASE_TYPE` override those values.
+
+GitHub Actions configuration: repository **Settings → Secrets and variables → Actions**. Store the API token in **Secrets**, not in a file, commit, issue, or chat. The upload needs the project to exist and the author token to have publishing rights.
+
+To publish a new version, update the `.toc` version and `CHANGELOG.md`, commit to `main`, and create/push a matching tag:
+
+```sh
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+Only create a tag for a version that is ready to upload; `main` pushes and manual workflow runs **never** publish to CurseForge. If you want to change the CurseForge release type from `alpha` to `release`, set `CF_RELEASE_TYPE` to `release` after verifying the addon in game. The upload uses `gameVersionNames` as documented by CurseForge; if the service rejects that mapping for Forever, inspect the workflow logs and adjust the game-version metadata before retrying.
+
 ## Issues and contributions
 
 Bug reports and suggestions are welcome: [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
