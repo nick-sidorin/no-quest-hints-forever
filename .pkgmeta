@@ -1,0 +1,18 @@
+# CurseForge's own GitHub source packager.
+# Keep the runtime addon flat in the release ZIP:
+# NoQuestHintsForever/NoQuestHintsForever.toc
+# NoQuestHintsForever/NoQuestHintsForever.lua
+package-as: NoQuestHintsForever
+enable-nolib-creation: no
+
+ignore:
+  - tests
+  - README.md
+  - CHANGELOG.md
+
+move-folders:
+  NoQuestHintsForever/NoQuestHintsForever: NoQuestHintsForever
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
