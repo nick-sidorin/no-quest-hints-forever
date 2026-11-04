@@ -36,12 +36,16 @@ jobs:
             echo '::error::Invalid or missing addon version in TOC'
             exit 1
           fi
-          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match TOC version v$version"
-            exit 1
+          release_version="$version"
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v${version}(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match TOC version v$version"
+              exit 1
+            fi
+            release_version="${GITHUB_REF_NAME#v}"
           fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "filename=NoQuestHintsForever-v$version.zip" >> "$GITHUB_OUTPUT"
+          echo "version=$release_version" >> "$GITHUB_OUTPUT"
+          echo "filename=NoQuestHintsForever-v$release_version.zip" >> "$GITHUB_OUTPUT"
 
       - name: Package installable addon
         shell: bash
