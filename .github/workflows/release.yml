@@ -1,0 +1,151 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      filename: ${{ steps.version.outputs.filename }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.1
+
+      - name: Run tests
+        run: lua5.1 tests/test_runtime.lua
+
+      - name: Validate addon version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^## Version: *//p' NoQuestHintsForever/NoQuestHintsForever.toc | head -n 1 | tr -d '\r')"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo '::error::Invalid or missing addon version in TOC'
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match TOC version v$version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "filename=NoQuestHintsForever-v$version.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Package installable addon
+        shell: bash
+        env:
+          FILENAME: ${{ steps.version.outputs.filename }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -q -X "dist/$FILENAME" \
+            NoQuestHintsForever/NoQuestHintsForever.toc \
+            NoQuestHintsForever/NoQuestHintsForever.lua
+          python3 - "$FILENAME" <<'PY'
+          import sys
+          import zipfile
+
+          filename = 'dist/' + sys.argv[1]
+          expected = {
+              'NoQuestHintsForever/NoQuestHintsForever.toc',
+              'NoQuestHintsForever/NoQuestHintsForever.lua',
+          }
+          with zipfile.ZipFile(filename) as archive:
+              actual = set(archive.namelist())
+              if actual != expected or archive.testzip() is not None:
+                  raise SystemExit(f'Invalid release ZIP contents: {actual}')
+          print(f'Validated {filename}')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: addon-${{ steps.version.outputs.version }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: addon-${{ needs.build.outputs.version }}
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          prerelease: true  # Until the Forever client compatibility is verified.
+
+  curseforge:
+    if: startsWith(github.ref, 'refs/tags/v') && vars.CF_PROJECT_ID != ''
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: addon-${{ needs.build.outputs.version }}
+          path: dist
+      - name: Upload to CurseForge
+        shell: bash
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_PROJECT_ID: ${{ vars.CF_PROJECT_ID }}
+          CF_GAME_VERSION_NAME: ${{ vars.CF_GAME_VERSION_NAME || '1.60.1' }}
+          CF_RELEASE_TYPE: ${{ vars.CF_RELEASE_TYPE || 'alpha' }}
+          VERSION: ${{ needs.build.outputs.version }}
+          FILENAME: ${{ needs.build.outputs.filename }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CF_API_TOKEN" ]]; then
+            echo '::error::Missing GitHub Actions secret CF_API_TOKEN'
+            exit 1
+          fi
+          if [[ ! "$CF_PROJECT_ID" =~ ^[0-9]+$ ]]; then
+            echo '::error::CF_PROJECT_ID must be the numeric CurseForge project ID'
+            exit 1
+          fi
+          if [[ "$CF_RELEASE_TYPE" != alpha && "$CF_RELEASE_TYPE" != beta && "$CF_RELEASE_TYPE" != release ]]; then
+            echo '::error::CF_RELEASE_TYPE must be alpha, beta, or release'
+            exit 1
+          fi
+
+          changelog="$(awk -v needle="## [$VERSION]" '
+            index($0, needle) == 1 { found = 1 }
+            found && /^## \[/ && index($0, needle) != 1 { exit }
+            found { print }
+          ' CHANGELOG.md)"
+          if [[ -z "$changelog" ]]; then
+            changelog="See GitHub release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+          fi
+          metadata="$(jq -cn \
+            --arg name "No Quest Hints - Forever v$VERSION" \
+            --arg changes "$changelog" \
+            --arg version "$CF_GAME_VERSION_NAME" \
+            --arg release "$CF_RELEASE_TYPE" \
+            '{displayName:$name, changelog:$changes, changelogType:"markdown", gameVersionNames:[$version], releaseType:$release}')"
+          response="$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "X-Api-Token: $CF_API_TOKEN" \
+            --form-string "metadata=$metadata" \
+            --form "file=@dist/$FILENAME;type=application/zip" \
+            "https://wow.curseforge.com/api/projects/$CF_PROJECT_ID/upload-file")"
+          echo "$response" | jq -e '.id' > /dev/null
+          echo 'CurseForge upload accepted; file ID:'
+          echo "$response" | jq -r '.id'
