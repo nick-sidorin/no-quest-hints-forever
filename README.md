@@ -177,14 +177,14 @@ CurseForge's [automatic packaging guide](https://support.curseforge.com/support/
 
 The CurseForge token is only used by the webhook; **no GitHub Actions CurseForge secret or `CF_PROJECT_ID` variable is required**.
 
-To publish a verified version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag:
+To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For example, **once version 1.1.0 is verified:**
 
 ```sh
 git tag v1.1.0
 git push origin v1.1.0
 ```
 
-CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. **Do not push a plain release tag before the Forever client has been tested.** The packaged ZIP and game's version metadata still need to be checked on CurseForge after its first packaging attempt.
+CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. For our **unverified** first build, use `v1.1.0-alpha.1` rather than `v1.1.0` to avoid labeling it a stable CurseForge release. The packaged ZIP and game's version metadata still need to be checked on CurseForge after its first packaging attempt.
 
 ## Issues and contributions
 
