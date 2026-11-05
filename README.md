@@ -2,31 +2,22 @@
 
 **Read the quest. Explore the world. Find your own way.**
 
-Remember when finding a quest objective meant reading its description, studying the map, and exploring the world instead of following a marker?
+Remember when finding a quest objective meant reading the description, looking at your map, and exploring instead of following a marker?
 
-**No Quest Hints — Forever** is a small addon built specifically for **World of Warcraft: Forever**. It is for players who want to navigate Azeroth through quest text, landmarks, and curiosity — not glowing objective areas and arrows.
+**No Quest Hints — Forever** is a lightweight addon built specifically for **World of Warcraft: Forever**. It lets you choose how much of Blizzard's quest guidance you want to keep, without removing the quest journal or changing quest data.
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Compatibility status:** Tested in the released WoW Forever client: map/minimap quest hints can be suppressed, and `on → /reload → off` was verified with version 1.1.1. Some CVars are unavailable on Forever; switching between characters still needs live testing.
+> **Compatibility status:** Quest map/minimap hint suppression and the 1.1.1 `on → /reload → off` fix have been tested in the released Forever client. The **1.2.0 interface and tracker hiding are a new test build**, not yet verified in the game. Some CVars are not available in Forever. Cross-character switching still requires a live test.
 
-## What it does
+## Features
 
-When enabled, the addon **attempts** to suppress Blizzard's native quest guidance:
+Two **independent, per-character** options:
 
-- **World map:** quest objective points and highlighted quest areas.
-- **Minimap:** highlighted quest objective areas.
-- **Navigation:** in-game guidance toward quest objectives.
+- **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
+- **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 
-It deliberately leaves these alone:
-
-- The geographical world map.
-- Quest journal and quest descriptions.
-- Exclamation marks above quest-giving NPCs.
-- The regular on-screen quest tracker.
-- Quest voiceover addons.
-
-It does not modify map frames, add custom map overlays, or attempt to hide quest markers created by other addons.
+The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons.
 
 **Remove the directions, not the adventure.**
 
@@ -34,12 +25,7 @@ It does not modify map frames, add custom map overlays, or attempt to hide quest
 
 ### Installation
 
-1. Download the addon ZIP and extract it.
-2. Copy the **`NoQuestHintsForever`** directory into your Forever client's `Interface/AddOns/` folder.
-3. Start or restart Forever and enable the addon in the game's addon list if necessary.
-4. Type `/nqh on` on the character you want to play without quest hints.
-
-For the released Forever client, the folder structure is:
+Download the installable ZIP (from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions) for unreleased test builds or from [GitHub Releases](https://github.com/nick-sidorin/no-quest-hints-forever/releases) for published versions). Copy the `NoQuestHintsForever/` folder into your Forever client's `Interface/AddOns/` directory:
 
 ```text
 World of Warcraft/
@@ -49,154 +35,128 @@ World of Warcraft/
             └── NoQuestHintsForever/
                 ├── NoQuestHintsForever.toc
                 ├── NoQuestHintsForever.lua
+                ├── Options.lua
                 └── LICENSE
 ```
 
-If you have a custom WoW installation, locate the **Forever** game directory rather than assuming the default Windows location.
+Restart the game or use `/reload` if you're updating an existing installation. Ensure you do not have an extra nested addon folder.
 
-### Commands
+### Open settings
 
-| Command | Effect |
+- Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
+- Or visit **Esc → Options → AddOns → No Quest Hints - Forever** and click **Open addon settings**.
+
+The settings window contains two checkboxes:
+
+| Checkbox | Behavior | Default for new characters |
+| --- | --- | --- |
+| Hide quest map hints | Hide the supported built-in map/minimap markers and navigation | Off |
+| Hide objective tracker | Hide the on-screen right-side task list | Off |
+
+The second option is independent of the first: you can keep the task list while hiding markers, or hide both.
+
+### Slash commands
+
+| Command | What it does |
 | --- | --- |
-| `/nqh on` | Enable quest-hint suppression for the current character. |
-| `/nqh off` | Disable suppression and attempt to restore the settings the addon changed. |
-| `/nqh status` | Show the character's ON/OFF setting and the current values of the targeted CVars. |
+| `/nqh` | Open or close the addon settings window. |
+| `/nqh on` | Turn **on** hiding quest **map hints only**. |
+| `/nqh off` | Turn **off** hiding quest **map hints only** and restore their saved CVar values. |
+| `/nqh status` | Display both option states and the values of targeted CVars. |
 
-**New characters start OFF.** The addon never automatically turns itself on for a newly created character.
+The existing `on`/`off` commands stay backward-compatible with version 1.1.1. They do **not** toggle the objective tracker. Use the new checkbox for that.
 
-## Your settings belong to your character
+## Per-character settings and persistence
 
-You may want to wander without hints on your main character while keeping the default questing UI on an alt. The addon is designed for exactly that.
+- Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. The new `hideTracker` value defaults to **false**.
+- CVar baselines are saved before the addon modifies them. A separate `NoQuestHintsForeverAccount` SavedVariable tracks original values for CVars treated as shared across characters.
+- While map hint suppression is enabled, relevant `CVAR_UPDATE` events trigger re-enforcement. When disabled, the addon restores the saved baselines and stops enforcing.
+- The tracker option is cosmetic: the addon changes the Blizzard `ObjectiveTrackerFrame` alpha to zero, and disables its mouse input when allowed. It retains that frame's previous alpha/mouse values in memory for restoration when unchecked.
+- Blizzard can update the tracker itself. The addon watches its `Show` and `SetAlpha` methods, then **defers** its own update rather than mutating Blizzard frames inside a secure hook. There is no continuous `OnUpdate` loop.
+- If the tracker frame is not loaded, the addon waits until it appears instead of raising an error.
 
-- The ON/OFF preference is stored **per character** using `SavedVariablesPerCharacter`, initialized when `ADDON_LOADED` fires after saved data becomes available.
-- It persists through normal logouts and `/reload`.
-- The addon tracks the values it changed so `/nqh off` can attempt to restore them, rather than blindly forcing every hint ON.
-- Some WoW CVars can be shared between characters. The addon keeps a separate account-level snapshot for the shared settings it manages and attempts to restore outstanding changes when logging into a character with suppression OFF.
-- While ON, it listens for `CVAR_UPDATE` and reapplies the hiding settings if the game turns a targeted CVar back on.
-- While OFF, it does **not** continuously enforce or manage the game's settings. It may perform a one-time restoration of changes previously made by the addon.
+The goal is to leave the normal game behavior alone whenever each option is disabled. Another addon that also edits the same frame or CVars may conflict.
 
-**Note:** WoW saves addon variables on normal logout or reload. A crash or forced termination may prevent the latest preference change from being saved.
+WoW normally saves SavedVariables on logout and `/reload`; forced exits or crashes can lose the most recent change.
 
 ## Technical details
 
-### Target client
+### Target client and dependencies
 
-- **Game:** World of Warcraft: Forever, **not** Retail or Classic Era.
-- **TOC Interface:** `16001` in the current manifest. This identifies the expected build, **not** proof that any particular API or CVar works.
-- **Runtime:** Blizzard's Lua addon environment; no third-party libraries or dependencies.
+- **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
+- **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
+- **Dependencies:** None. Uses Blizzard UI templates and Lua.
+- **Blizzard Settings integration:** `Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory`, if present.
+- **Stand-alone window:** native `BasicFrameTemplateWithInset`, `UICheckButtonTemplate`, and `UIPanelButtonTemplate`.
+- **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
 
-### Targeted CVars
+### Map and navigation CVars
 
-The current implementation attempts to set the following CVars to `0`:
-
-| CVar | Intended behavior |
+| CVar | Intended effect |
 | --- | --- |
-| `questPOI` | Suppress quest points of interest on the world map. |
-| `showQuestObjectivesOnMap` | Suppress quest objective information on the world map. |
-| `questPOILocalStory` | Suppress some local-story quest markers on the world map. |
-| `minimapShowQuestBlobs` | Suppress highlighted quest areas on the minimap. |
-| `showInGameNavigation` | Suppress Blizzard's in-game navigation hints. |
+| `questPOI` | Quest points of interest on the world map |
+| `showQuestObjectivesOnMap` | Quest objectives on the world map |
+| `questPOILocalStory` | Local-story quest map markers |
+| `minimapShowQuestBlobs` | Quest objective areas on the minimap |
+| `showInGameNavigation` | Native in-game navigation guidance |
 
-These names are based on documented Blizzard CVars. **World-map/minimap suppression and the reload/off fix have been verified in an initial 1.1.1 game test.** Some interface elements may be controlled by other mechanisms. The addon checks whether it can read a CVar and safely ignores unavailable APIs rather than assuming full support.
+The addon attempts to set available CVars to `0`. In the initially tested Forever client, `showQuestObjectivesOnMap` and `minimapShowQuestBlobs` reported **unavailable**. The other three could be read and set. A `0` in `/nqh status` does not, by itself, prove a visual feature is suppressed.
 
-`/nqh status` shows `unavailable` when a value cannot be read. A reported value of `0` confirms the stored CVar value, **not necessarily that every visual marker disappeared**.
-
-### Persistence and CVar lifecycle
-
-The addon declares two SavedVariables in its `.toc`:
-
-| Variable | Scope | Purpose |
-| --- | --- | --- |
-| `NoQuestHintsForeverChar` | `SavedVariablesPerCharacter` | The current character's `enabled` flag and original character-scoped CVar values. |
-| `NoQuestHintsForeverAccount` | `SavedVariables` | Original values for CVars treated as shared across characters. |
-
-The current implementation uses `C_CVar.GetCVar` and `C_CVar.SetCVar`, with legacy global function fallbacks when the namespace is unavailable. It consults `C_CVar.GetCVarInfo` when present and uses a fallback classification for `showInGameNavigation`. Exact scoping behavior must still be tested in Forever.
-
-When suppression is ON, it applies the CVar changes on login/world entry and on relevant `CVAR_UPDATE` events. It snapshots a value before the first attempted change and does not overwrite that snapshot with the suppressed value on later events.
-
-When suppression is OFF, it attempts to restore saved values; failed restorations remain recorded for a later attempt. An OFF character is not continuously monitored for enforced hiding.
-
-### Repository layout
+### Source layout
 
 ```text
 NoQuestHintsForever/
-├── NoQuestHintsForever.toc   # Addon manifest, version, SavedVariables
-├── NoQuestHintsForever.lua   # CVar management, events, slash commands
-└── LICENSE                   # MIT license for distributed addon
+├── NoQuestHintsForever.toc    # Interface, version, SavedVariables and load order
+├── NoQuestHintsForever.lua    # CVar and tracker control; slash commands
+├── Options.lua               # Native window and Blizzard AddOns entry
+└── LICENSE                   # MIT license in the installation archive
 tests/
-└── test_runtime.lua          # Mocked Lua runtime checks
-README.md
+├── test_runtime.lua          # SavedVariables/reload and CVar regression checks
+└── test_ui.lua               # UI, tracker hook, combat and alt simulations
+.github/
+├── release-request.txt       # Release request: changing this triggers publication
+└── workflows/
+    ├── release.yml           # Verify/build ZIP on commits and tags
+    └── publish.yml           # Automated tag + GitHub Release publication
 CHANGELOG.md
+README.md
 LICENSE
+.pkgmeta                       # CurseForge's native source packager configuration
 ```
 
-The release ZIP only needs the `NoQuestHintsForever/` directory. The repository's tests and documentation do not need to be installed into the game.
-
-### Running the local tests
-
-From the repository root, using a standard Lua interpreter:
+Local tests, using Lua 5.1 from the repository root:
 
 ```sh
-lua tests/test_runtime.lua
+lua5.1 tests/test_runtime.lua
+lua5.1 tests/test_ui.lua
 ```
 
-The test harness covers actual SavedVariables load order (Lua chunk first, SavedVariables second, then `ADDON_LOADED`), default-OFF behavior, `on → /reload → off` restoration, CVar re-enforcement, switching to a second character, and absent CVar APIs. **These are mocked-runtime tests, not an integration test with the Forever game client.**
+Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. **They are not a substitute for an in-game integration test.**
 
-## Testing in Forever
+## Validation checklist for Forever 1.2.0
 
-Before calling this version fully compatible, verify the following in the actual released client:
+1. Run `/nqh`: confirm the standalone settings window opens with two checkboxes. Open it again to close it.
+2. Open **Options → AddOns → No Quest Hints - Forever**: confirm **Open addon settings** opens the same window.
+3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
+4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
+5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
+6. Run `/nqh on`, `/reload`, `/nqh off`; verify map hints return and the tracker checkbox keeps its independent state.
+7. Log in as another character: verify default-off settings do not inherit hidden hints. Switch back to confirm both options persist.
+8. If possible, check in combat and Edit Mode. Note any blocked-action error, click-blocking invisible region or conflict with other UI addons.
 
-1. **Fresh character:** Run `/nqh status`. The default should be OFF. Note which CVars report `unavailable`.
-2. **Enable hiding:** Run `/nqh on`, inspect the world map, minimap, objective areas, and navigation guidance. Verify that journal text, NPC exclamation marks, and the on-screen tracker remain usable.
-3. **Re-enforcement:** While ON, try `/console questPOI 1`, then `/nqh status`. Check whether the client sends the expected CVar update and whether the value returns to `0`.
-4. **Persistence:** Log out normally and back in. Check that the character remains ON.
-5. **Character isolation:** Log into a second character that has never enabled the addon. It should be OFF and should not inherit forced quest-hint suppression from the first character.
-6. **Restoration:** Back on the first character, run `/nqh off` and check whether previously changed hints return to their original state.
+Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 
-If some visual hints remain even with their relevant CVars at `0`, please report the specific hint and location rather than assuming all quest hints use the same API.
+## Automated releases and CurseForge
 
-## Automated builds and publishing
+**Normal development:** Pushes to `main` run tests and build an installable ZIP in [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). They **do not publish** to CurseForge.
 
-GitHub Actions runs `lua5.1 tests/test_runtime.lua` and builds an installable ZIP on each push to `main`, on `v*` tags, and on manual runs. Build artifacts can be downloaded from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). A matching `vX.Y.Z` tag (same version as the `.toc`) also creates a GitHub Release containing the ZIP. Alpha/beta tags produce prereleases; a plain version tag produces a stable release.
+**Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.2.0-beta.1`. The workflow runs tests, verifies the version, creates the annotated `v1.2.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.2.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
 
-**CurseForge packages release tags itself**, using the repository configured under CurseForge Authors → Source → GitHub → Automatic Packaging. Do **not** enable a second GitHub Actions API upload: that would create duplicate CurseForge files.
+**CurseForge:** The project uses GitHub source-based Automatic Packaging and a GitHub webhook. The tag push requests packaging through the configured webhook; CurseForge handles its own file approval. Do not add a second upload through Actions, and **never commit CurseForge author tokens**. The [.pkgmeta](.pkgmeta) tells CurseForge which files to package.
 
-The [`.pkgmeta`](.pkgmeta) tells CurseForge to omit tests and repository documentation from the installation archive, move the addon files into the expected `NoQuestHintsForever/` root directory, and use `CHANGELOG.md` as the formatted changelog.
+The original [`release.yml`](.github/workflows/release.yml) still builds ZIPs for direct, manually pushed tags. Tags created by `publish.yml` use the release action in that same workflow, because GitHub Actions does not automatically trigger another workflow from a tag push made with the default `GITHUB_TOKEN`.
 
-### Set up the CurseForge webhook
-
-CurseForge's [automatic packaging guide](https://support.curseforge.com/support/solutions/articles/9000197281) documents a GitHub repository webhook for external sources. If linking GitHub in the CurseForge Source tab does not already trigger packaging, configure:
-
-1. Generate a CurseForge author token at [CurseForge API Tokens](https://www.curseforge.com/account/api-tokens).
-2. Find the **numeric CurseForge project ID** on its project page.
-3. In GitHub repository **Settings → Webhooks → Add webhook**, paste this as the payload URL, replacing the placeholders **privately**:
-
-   ```text
-   https://www.curseforge.com/api/projects/PROJECT_ID/package?token=API_TOKEN
-   ```
-
-4. Use the default **push** event and enable the webhook. GitHub will send tag pushes to the packager. Keep the token confidential; never commit it to the repository or share screenshots containing the full webhook URL.
-
-The CurseForge token is only used by the webhook; **no GitHub Actions CurseForge secret or `CF_PROJECT_ID` variable is required**.
-
-To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For the initial 1.1.1 release:
-
-```sh
-git tag v1.1.1
-git push origin v1.1.1
-```
-
-CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. 1.1.1 has been tested on one character in the released Forever client. Cross-character handling is still not verified in game, so reports are welcome. Confirm the packaged ZIP structure and game-version metadata on CurseForge after publication.
-
-## Issues and contributions
-
-Bug reports and suggestions are welcome: [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
-
-For a useful report, include the Forever client build, addon version, `/nqh status` output, reproduction steps, expected and actual behavior, and (if relevant) a map or minimap screenshot.
-
-- [Changelog](CHANGELOG.md)
-- [MIT License](LICENSE)
-- Blizzard API references: [C_CVar.GetCVar](https://warcraft.wiki.gg/wiki/API_C_CVar.GetCVar), [C_CVar.GetCVarInfo](https://warcraft.wiki.gg/wiki/API_C_CVar.GetCVarInfo), [Console variables](https://warcraft.wiki.gg/wiki/Console_variables)
+See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 
 ---
 
