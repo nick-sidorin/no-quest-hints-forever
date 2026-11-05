@@ -35,18 +35,27 @@ for _,id in ipairs({101,102}) do
         local style=self.poiIsComplete and "Complete" or "InProgress"
         self.poiButton={id=self.poiQuestID,style=style}
     end
+    function block:SetPOIInfo(id,complete,super,world)
+        self.poiQuestID=id
+        self.poiIsComplete=complete
+        self.poiIsSuperTracked=super
+        self.poiIsWorldQuest=world
+    end
     function block:CheckAndReleasePOIButton()
         self.poiButton=nil
-        self.poiQuestID=nil
+        self:SetPOIInfo(nil)
     end
     trackerBlocks[id]=block
 end
 QuestObjectiveTracker={usedBlocks={quest=trackerBlocks}}
+for _,block in pairs(trackerBlocks) do block.parentModule=QuestObjectiveTracker end
+C_QuestLog={
+    ReadyForTurnIn=function(id) return id==101 end,
+    IsWorldQuest=function() return false end,
+}
+C_SuperTrack={GetSuperTrackedQuestID=function() return 101 end}
 function QuestObjectiveTracker:MarkDirty()
     trackerRebuilds=trackerRebuilds+1
-    for _,block in pairs(self.usedBlocks.quest) do
-        block.poiQuestID=block.id
-    end
 end
 local hookFunctions={}
 hooksecurefunc=function(target, method, handler)
@@ -68,9 +77,8 @@ QuestLogQuests_Update=function()
 end
 ObjectiveTrackerQuestPOIBlockMixin={
     OnLayout=function(block)
-        -- Blizzard hides all POI buttons under questPOI=0.
-        block.poiButton=nil
-        block.poiQuestID=block.id
+        -- Blizzard hides all POI buttons under questPOI=0, clearing POI info.
+        if block.poiButton then block:CheckAndReleasePOIButton() end
     end,
 }
 local eventFrame,registered
@@ -124,6 +132,7 @@ ObjectiveTrackerQuestPOIBlockMixin.OnLayout(trackerBlocks[102])
 assert(not trackerBlocks[102].poiButton,"layout hook should not mutate secure frame")
 flush()
 assert(trackerBlocks[102].poiButton,"deferred update should restore allowed marker")
+assert(trackerBlocks[102].poiQuestID==102,"POI ID not reconstructed after Blizzard released it")
 hidden=false
 api.RefreshQuestInlineHints()
 assert(not journalIcons[101] and not journalIcons[102],
