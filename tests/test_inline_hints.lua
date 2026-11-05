@@ -58,7 +58,7 @@ hooksecurefunc=function(target, method, handler)
         return rv
     end
     if type(target)=="string" then _G[target]=hooked else target[method]=hooked end
-    hookFunctions[method]=true
+    hookFunctions[type(target)=="string" and target or method]=true
 end
 QuestLogQuests_Update=function()
     updateCount=updateCount+1
