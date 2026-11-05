@@ -184,8 +184,8 @@ s.menus.MENU_QUEST_OBJECTIVE_TRACKER({},trackerRoot)
 assert(#trackerRoot.items==2 and trackerRoot.items[2].label=="Show hint",
     "right-click on quest 20 did not resolve the clicked quest")
 trackerRoot.items[2].click()
-assert(s.core.IsQuestRevealed(20) and s.opened[#s.opened]==20,
-    "tracker action must allow quest 20 and open its map details")
+assert(s.core.IsQuestRevealed(20) and #s.opened==0,
+    "tracker action must allow quest 20 without opening the map")
 ObjectiveTrackerBlockHeaderMixin.OnClick(s.trackerHeader,"RightButton")
 local afterClick={items={}}
 function afterClick:CreateDivider() self.items[#self.items+1]={divider=true} end
@@ -214,7 +214,7 @@ s.menus.MENU_QUEST_MAP_LOG_TITLE({questID=10},root)
 assert(root.items[2].label=="Show hint")
 root.items[2].click()
 assert(s.core.IsQuestRevealed(10))
-assert(s.opened[#s.opened]==10,"revealing from journal menu must open focused quest")
+assert(#s.opened==0,"journal context action must not open the map")
 local empty={items={}}
 function empty:CreateDivider() self.items[#self.items+1]={divider=true} end
 function empty:CreateButton(label,callback) self.items[#self.items+1]={label=label,click=callback} end
