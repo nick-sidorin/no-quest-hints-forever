@@ -50,11 +50,13 @@ function QuestObjectiveTracker:MarkDirty()
 end
 local hookFunctions={}
 hooksecurefunc=function(target, method, handler)
-    local orig = type(target)=="string" and _G[target] or target[method]
-    assert(type(orig)=="function")
+    local isGlobal=type(target)=="string"
+    local orig = isGlobal and _G[target] or target[method]
+    local callback = isGlobal and method or handler
+    assert(type(orig)=="function" and type(callback)=="function")
     local hooked=function(...)
         local rv=orig(...)
-        handler(...)
+        callback(...)
         return rv
     end
     if type(target)=="string" then _G[target]=hooked else target[method]=hooked end
