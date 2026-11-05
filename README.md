@@ -8,7 +8,7 @@ Remember when finding a quest objective meant reading its description, studying 
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Release status:** This is an early, experimental release. Initial player testing in the released Forever client confirmed that map/minimap guidance can disappear, but a `/reload` restoration bug was discovered in 1.1.0. Version 1.1.1 fixes the SavedVariables initialization error; **the hotfix still needs an in-game regression test**. See [Testing in Forever](#testing-in-forever) before reporting a feature as working or broken.
+> **Compatibility status:** Tested on the released Forever client: world-map/minimap hints are suppressed, and the `/nqh on → /reload → /nqh off` sequence restores available CVars in version 1.1.1 after one-time recovery from the broken 1.1.0 baseline. **Switching between characters still needs live testing.** Not all documented Blizzard CVars exist in Forever.
 
 ## What it does
 
@@ -96,7 +96,7 @@ The current implementation attempts to set the following CVars to `0`:
 | `minimapShowQuestBlobs` | Suppress highlighted quest areas on the minimap. |
 | `showInGameNavigation` | Suppress Blizzard's in-game navigation hints. |
 
-These names are based on documented Blizzard CVars. **The map and minimap effects were reported working in initial in-game testing; the complete set of CVars and post-reload behavior still need verification on 1.1.1.** Some interface elements may be controlled by other mechanisms. The addon checks whether it can read a CVar and safely ignores unavailable APIs rather than assuming full support.
+These names are based on documented Blizzard CVars. **World-map/minimap suppression and the reload/off fix have been verified in an initial 1.1.1 game test.** Some interface elements may be controlled by other mechanisms. The addon checks whether it can read a CVar and safely ignores unavailable APIs rather than assuming full support.
 
 `/nqh status` shows `unavailable` when a value cannot be read. A reported value of `0` confirms the stored CVar value, **not necessarily that every visual marker disappeared**.
 
@@ -125,6 +125,7 @@ tests/
 └── test_runtime.lua          # Mocked Lua runtime checks
 README.md
 CHANGELOG.md
+LICENSE
 ```
 
 The release ZIP only needs the `NoQuestHintsForever/` directory. The repository's tests and documentation do not need to be installed into the game.
@@ -152,6 +153,19 @@ Before calling this version fully compatible, verify the following in the actual
 
 If some visual hints remain even with their relevant CVars at `0`, please report the specific hint and location rather than assuming all quest hints use the same API.
 
+### Troubleshooting: hints remain hidden after upgrading from 1.1.0
+
+Version 1.1.0 could lose the original CVar values during WoW's SavedVariables load sequence. **The fix in 1.1.1 prevents new snapshots from being lost, but cannot reconstruct values previously lost by 1.1.0.** If you had already run the affected version and `/nqh off` leaves quest hints hidden, run `/nqh off` and then restore the known supported CVars manually:
+
+```text
+/console questPOI 1
+/console questPOILocalStory 1
+/console showInGameNavigation 1
+/nqh status
+```
+
+On the tested Forever build, `showQuestObjectivesOnMap` and `minimapShowQuestBlobs` report `unavailable`, so don't assume those settings are exposed by your client. Once the working values are back, test `/nqh on`, `/reload`, and `/nqh off` again. These console commands are a **one-time recovery procedure for affected installs**, not a normal part of installation or operation. If you had intentionally turned one of those hints off before installing the addon, restore your preferred value instead of `1`.
+
 
 ## Automated builds and publishing
 
@@ -177,14 +191,14 @@ CurseForge's [automatic packaging guide](https://support.curseforge.com/support/
 
 The CurseForge token is only used by the webhook; **no GitHub Actions CurseForge secret or `CF_PROJECT_ID` variable is required**.
 
-To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For example, **once version 1.1.0 is verified:**
+To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For the 1.1.1 beta candidate:
 
 ```sh
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.1.1-beta.1
+git push origin v1.1.1-beta.1
 ```
 
-CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. For our **unverified** first build, use `v1.1.0-alpha.1` rather than `v1.1.0` to avoid labeling it a stable CurseForge release. The packaged ZIP and game's version metadata still need to be checked on CurseForge after its first packaging attempt.
+CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. The 1.1.1 build has passed initial in-game tests on one character, but cross-character behavior is still unverified, so use a beta tag before publishing a stable `v1.1.1`. Confirm both the packaged ZIP structure and game-version metadata on CurseForge after publication.
 
 ## Issues and contributions
 
@@ -193,6 +207,7 @@ Bug reports and suggestions are welcome: [GitHub Issues](https://github.com/nick
 For a useful report, include the Forever client build, addon version, `/nqh status` output, reproduction steps, expected and actual behavior, and (if relevant) a map or minimap screenshot.
 
 - [Changelog](CHANGELOG.md)
+- [MIT License](LICENSE)
 - Blizzard API references: [C_CVar.GetCVar](https://warcraft.wiki.gg/wiki/API_C_CVar.GetCVar), [C_CVar.GetCVarInfo](https://warcraft.wiki.gg/wiki/API_C_CVar.GetCVarInfo), [Console variables](https://warcraft.wiki.gg/wiki/Console_variables)
 
 ---
