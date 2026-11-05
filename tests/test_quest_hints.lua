@@ -81,6 +81,10 @@ local function session(char, hasNative)
                 self:Refresh()
             end,
             TryDrawQuest=function(self,id)
+                -- Real Blizzard mixin always calls IsShowingWorldQuests.
+                assert(type(self.dataProvider.IsShowingWorldQuests) == "function",
+                    "native QuestBlobPinMixin requires IsShowingWorldQuests")
+                assert(self.dataProvider:IsShowingWorldQuests() == true)
                 if id ~= 404 then self:DrawBlob(id, true) end
             end,
             OnAcquired=function() end,
