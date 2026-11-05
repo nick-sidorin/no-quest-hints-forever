@@ -3,7 +3,7 @@
 local api = NoQuestHintsForeverAPI
 if not api then return end
 
-local TITLE = "No Quest Hints - Forever"
+local TITLE = "No Quest Hints"
 local window, mapCheck, trackerCheck
 
 local function addText(parent, text, font, point, relative, relativePoint, x, y)
