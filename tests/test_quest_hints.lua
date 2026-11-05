@@ -93,11 +93,14 @@ local function session(char, hasNative)
     end
 
     local detail=newFrame(); detail.questID=10; detail.TrackButton=newFrame()
+    detail.BackFrame={BackButton=newFrame()}
     QuestMapFrame={DetailsFrame=detail}
     local popup=newFrame(); popup.questID=20; popup.TrackButton=newFrame()
     function popup:ShowQuest(id) self.questID=id end
     QuestLogPopupDetailFrame=popup
     QuestMapFrame_ShowQuestDetails=function(id) detail.questID=id end
+    local opened={}
+    QuestMapFrame_OpenToQuestDetails=function(id) opened[#opened+1]=id end
     hooksecurefunc=function(owner, method, fn)
         if type(owner)=="string" then
             local orig=_G[owner]
@@ -134,7 +137,7 @@ local function session(char, hasNative)
     end
     fire("ADDON_LOADED")
     return {
-        db=char, map=map, buttons=buttons, menus=menus, core=core,
+        db=char, map=map, buttons=buttons, menus=menus, core=core, opened=opened,
         detail=detail, popup=popup, fire=fire,
         setMapHidden=function(v) mapHidden=v; core.RefreshQuestHintPins() end,
         enableNative=function()
@@ -154,9 +157,10 @@ assert(s.map.added==1,"native blob data provider not installed")
 assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
 assert(#s.map.pin.drawn==0,"default must show no hint areas")
 assert(#s.buttons==2,"both journal layouts need a button")
-assert(s.buttons[1].width==94 and s.buttons[1].position[1]=="TOP","journal button not centered")
+assert(s.buttons[1].width==94 and s.buttons[1].position[1]=="LEFT" and s.buttons[1].position[2]==s.detail.BackFrame.BackButton,"journal button should align with Blizzard Back button")
 assert(s.menus.MENU_QUEST_MAP_LOG_TITLE,"journal right click menu missing")
 assert(s.menus.MENU_QUEST_LOG_POPUP_DETAIL_FRAME,"popup context menu missing")
+assert(s.menus.MENU_QUEST_OBJECTIVE_TRACKER,"tracker context menu not registered")
 
 assert(s.core.SetQuestRevealed(10,true))
 assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"only quest 10 must be drawn")
@@ -178,6 +182,7 @@ s.menus.MENU_QUEST_MAP_LOG_TITLE({questID=10},root)
 assert(root.items[2].label=="Show hint")
 root.items[2].click()
 assert(s.core.IsQuestRevealed(10))
+assert(s.opened[#s.opened]==10,"revealing from journal menu must open focused quest")
 local empty={items={}}
 function empty:CreateDivider() self.items[#self.items+1]={divider=true} end
 function empty:CreateButton(label,callback) self.items[#self.items+1]={label=label,click=callback} end
