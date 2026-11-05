@@ -96,4 +96,4 @@ jobs:
         with:
           files: dist/*.zip
           generate_release_notes: true
-          prerelease: true  # Until the Forever client compatibility is verified.
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') }}
