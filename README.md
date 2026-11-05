@@ -136,7 +136,7 @@ tests/
 .github/
 ├── release-request.txt       # Release request: changing this triggers publication
 └── workflows/
-    ├── release.yml           # Verify/build ZIP on commits and tags
+    ├── release.yml           # Manual/test and tagged-release builds
     └── publish.yml           # Automated tag + GitHub Release publication
 CHANGELOG.md
 README.md
@@ -179,7 +179,7 @@ Please report the Forever build, version, `/nqh status` output, steps to reprodu
 
 ## Automated releases and CurseForge
 
-**Normal development:** Pushes to `main` run tests and build an installable ZIP in [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). They **do not publish** to CurseForge.
+**Normal development:** Commits to `main` do **not** automatically run Actions. This avoids noisy failure notifications during active development. To produce a test ZIP, run **Actions → Build and release → Run workflow** manually; this runs tests and uploads the installable ZIP as an artifact but **does not publish** it to CurseForge. Pushing an explicit version tag still runs the build/release workflow.
 
 **Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.2.0-beta.1`. The workflow runs tests, verifies the version, creates the annotated `v1.2.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.2.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
 
