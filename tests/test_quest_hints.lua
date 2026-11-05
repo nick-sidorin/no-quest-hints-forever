@@ -1,186 +1,206 @@
--- Run: lua5.1 tests/test_quest_hints.lua
--- Proves whitelisting, in-journal toggle, map filtering and missing APIs
--- without modifying Blizzard quest watch, native CVars or objective tracker.
-local file = "NoQuestHintsForever/QuestHints.lua"
+-- Native quest-blob regression tests. Run from root with Lua 5.1.
+local addon = "NoQuestHintsForever/QuestHints.lua"
 
-local function frame()
-    local obj = {scripts={}, shown=true, buttonText="", hookScripts={}}
-    function obj:SetSize() end
-    function obj:SetPoint() end
-    function obj:SetText(value) self.buttonText = value end
-    function obj:SetScript(name, fn) self.scripts[name] = fn end
-    function obj:Show() self.shown = true end
-    function obj:Hide() self.shown = false end
-    function obj:IsShown() return self.shown end
-    function obj:CreateFontString() return {} end
-    function obj:HookScript(name, fn)
-        self.hookScripts[name] = fn
-    end
-    return obj
+local function newFrame()
+    local f = { shown=true, texts={}, scripts={}, events={}, position=nil }
+    function f:SetSize(w,h) self.width, self.height = w,h end
+    function f:SetPoint(...) self.position = {...} end
+    function f:SetText(text) self.text=text end
+    function f:SetScript(event, fn) self.scripts[event]=fn end
+    function f:Show() self.shown=true end
+    function f:Hide() self.shown=false end
+    function f:HookScript(event, fn) self.scripts[event]=fn end
+    function f:GetName() return self.name end
+    return f
 end
 
-local function session(db, withMap)
-    NoQuestHintsForeverChar = db
-    local revealed = db.revealedQuests or {}
-    db.revealedQuests = revealed
-    local globalHidden = true
-    local received = {}
-    local map = { mapID = 101, pins = {} }
+local function session(char, hasNative)
+    NoQuestHintsForeverAPI = nil
+    NoQuestHintsForeverChar = char
+    NQHQuestBlobPinMixin = nil
+    local events, menus, buttons = {}, {}, {}
+    local mapHidden = true
+    local map = {mapID=301, added=0}
     function map:GetMapID() return self.mapID end
-    function map:RemoveAllPinsByTemplate(template)
-        assert(template == "NQHQuestHintPinTemplate")
-        self.pins = {}
+    function map:AddDataProvider(p)
+        self.provider=p
+        self.added=self.added+1
+        p:OnAdded(self)
     end
-    function map:AcquirePin(template, questID, x, y)
-        assert(template == "NQHQuestHintPinTemplate")
-        self.pins[#self.pins+1] = {id=questID, x=x, y=y}
+    function map:AcquirePin(template)
+        assert(template=="NQHQuestBlobPinTemplate", "not a native quest blob template")
+        local pin = {map=self, drawn={}}
+        function pin:GetMap() return self.map end
+        function pin:DrawNone() self.drawn={} end
+        function pin:DrawBlob(id, shape) assert(shape==true); self.drawn[#self.drawn+1]=id end
+        function pin:SetPosition(x,y) self.position={x,y} end
+        function pin:SetMapID(id) self.blobMapID=id end
+        function pin:SetFillTexture(path) self.fill=path end
+        function pin:SetBorderTexture(path) self.border=path end
+        function pin:SetFillAlpha(v) self.fillAlpha=v end
+        function pin:SetBorderAlpha(v) self.borderAlpha=v end
+        function pin:SetBorderScalar(v) self.borderScalar=v end
+        function pin:SetIgnoreGlobalPinScale(v) self.ignoreScale=v end
+        function pin:UseFrameLevelType(t) self.level=t end
+        for k,v in pairs(NQHQuestBlobPinMixin) do pin[k]=v end
+        assert(pin.OnLoad, "Blizzard QuestBlobPinMixin wasn't inherited")
+        pin:OnLoad()
+        pin:OnShow()
+        self.pin=pin
+        return pin
     end
-    function map:AddDataProvider(provider)
-        received.provider = provider
-        provider:OnAdded(self)
-    end
-    if withMap then WorldMapFrame = map else WorldMapFrame = nil end
+    function map:RemovePin(pin) assert(self.pin==pin); self.pin=nil end
+    WorldMapFrame=map
 
-    NQHQuestHintDataProviderMixin = nil
-    NQHQuestHintPinMixin = nil
-    MapCanvasPinMixin = {}
-    MapCanvasDataProviderMixin = {
-        OnAdded = function(self, worldMap) self.worldMap = worldMap end,
-        GetMap = function(self) return self.worldMap end,
+    MapCanvasDataProviderMixin={
+        OnAdded=function(self, canvas) self.map=canvas end,
+        GetMap=function(self) return self.map end,
     }
-    CreateFromMixins = function(parent)
-        local o = {}
-        for k,v in pairs(parent) do o[k]=v end
-        return o
+    CreateFromMixins=function(parent)
+        local obj={}
+        for k,v in pairs(parent) do obj[k]=v end
+        return obj
     end
-    C_QuestLog = {
-        GetQuestsOnMap = function(mapID)
-            if mapID ~= 101 then return {} end
-            return {
-                {questID=11, x=0.2, y=0.3},
-                {questID=12, x=0.6, y=0.7},
-                {questID=13, x=0.1, y=0.9},
-                {questID=15, x=1.2, y=0.1},
-            }
-        end,
-        GetNextWaypointForMap = function(questID, mapID)
-            if questID == 14 and mapID == 101 then return 0.9, 0.5 end
-        end,
-    }
-
-    local details = frame()
-    details.questID = 11
-    details.TrackButton = frame()
-    QuestMapFrame = {DetailsFrame=details}
-    QuestLogPopupDetailFrame = frame()
-    QuestLogPopupDetailFrame.questID = 12
-    QuestLogPopupDetailFrame.TrackButton = frame()
-    function QuestLogPopupDetailFrame:ShowQuest(questID) self.questID = questID end
-    QuestMapFrame_ShowQuestDetails = function(questID) details.questID = questID end
-
-    local buttons, events = {}, {}
-    CreateFrame = function(kind, name, parent, template)
-        local item = frame()
-        item.template = template
-        if kind == "Button" then
-            item.parent = parent
-            buttons[#buttons+1] = item
-        else
-            function item:RegisterEvent(name) events[name] = true end
-            function item:UnregisterEvent(name) events[name] = nil end
-            received.lifecycle = item
-        end
-        return item
+    QuestBlobPinMixin=nil
+    if hasNative then
+        QuestBlobPinMixin={
+            OnLoad=function(self)
+                self:SetFillTexture("Interface\\WorldMap\\UI-QuestBlob-Inside")
+                self:SetBorderTexture("Interface\\WorldMap\\UI-QuestBlob-Outside")
+                self:SetFillAlpha(128)
+                self:SetBorderAlpha(192)
+                self:SetBorderScalar(1)
+                self:SetIgnoreGlobalPinScale(true)
+                self:UseFrameLevelType("PIN_FRAME_LEVEL_QUEST_BLOB")
+            end,
+            OnCanvasScaleChanged=function(self) self.dirty=true end,
+            OnUpdate=function(self) if self.dirty then self.dirty=nil; self:Refresh() end end,
+            OnMapChanged=function(self)
+                self.mapAllowsBlobs = self:GetMap():GetMapID()==301
+                self:SetMapID(self:GetMap():GetMapID())
+                self:Refresh()
+            end,
+            TryDrawQuest=function(self,id)
+                if id ~= 404 then self:DrawBlob(id, true) end
+            end,
+            OnAcquired=function() end,
+            Refresh=function() error("stock global CVar check must not run") end,
+        }
     end
-    hooksecurefunc = function(object, method, hook)
-        if type(object) == "string" then
-            local original = _G[object]
-            assert(type(original)=="function")
-            _G[object] = function(...)
-                local result = original(...)
-                method(...)
-                return result
-            end
+
+    local detail=newFrame(); detail.questID=10; detail.TrackButton=newFrame()
+    QuestMapFrame={DetailsFrame=detail}
+    local popup=newFrame(); popup.questID=20; popup.TrackButton=newFrame()
+    function popup:ShowQuest(id) self.questID=id end
+    QuestLogPopupDetailFrame=popup
+    QuestMapFrame_ShowQuestDetails=function(id) detail.questID=id end
+    hooksecurefunc=function(owner, method, fn)
+        if type(owner)=="string" then
+            local orig=_G[owner]
+            _G[owner]=function(...) local r=orig(...); method(...); return r end
         else
-            local original = object[method]
-            object[method] = function(self, ...)
-                local result = original(self, ...)
-                hook(self, ...)
-                return result
-            end
+            local orig=owner[method]
+            owner[method]=function(self,...) local r=orig(self,...); fn(self,...); return r end
         end
     end
-
-    NoQuestHintsForeverAPI = {
-        IsMapHidden = function() return globalHidden end,
-    }
-    assert(loadfile(file))()
-    local function event(name)
-        assert(events[name], "unregistered event: " .. name)
-        received.lifecycle.scripts.OnEvent(nil, name)
+    Menu={ModifyMenu=function(tag,cb) menus[tag]=cb end}
+    CreateFrame=function(kind,name,parent,template)
+        if kind=="Frame" then
+            local f=newFrame()
+            _G.__nqhLastEventFrame=f
+            function f:RegisterEvent(e) events[e]=true end
+            return f
+        end
+        assert(kind=="Button" and template=="UIPanelButtonTemplate")
+        local b=newFrame(); b.parent=parent
+        buttons[#buttons+1]=b
+        return b
     end
-    event("ADDON_LOADED")
-    event("PLAYER_LOGIN")
+    GameTooltip=nil
+    NoQuestHintsForeverAPI={IsMapHidden=function() return mapHidden end}
+
+    assert(loadfile(addon))()
+    local core=NoQuestHintsForeverAPI
+    -- Find event frame: we don't expose it except via a monkey patch.
+    local eventFrame = _G.__nqhLastEventFrame
+    assert(eventFrame and eventFrame.scripts.OnEvent)
+    local function fire(e)
+        assert(events[e], "event not registered: "..e)
+        eventFrame.scripts.OnEvent(eventFrame,e,"Blizzard_WorldMap")
+    end
+    fire("ADDON_LOADED")
     return {
-        db=db, map=map, api=NoQuestHintsForeverAPI, buttons=buttons,
-        details=details, event=event,
-        setMapHidden=function(x) globalHidden=x; NoQuestHintsForeverAPI.RefreshQuestHintPins() end,
+        db=char, map=map, buttons=buttons, menus=menus, core=core,
+        detail=detail, popup=popup, fire=fire,
+        setMapHidden=function(v) mapHidden=v; core.RefreshQuestHintPins() end,
+        enableNative=function()
+            QuestBlobPinMixin={
+                OnLoad=function(self) self.native=true end,
+                OnMapChanged=function(self) self.mapAllowsBlobs=true;self:SetMapID(self:GetMap():GetMapID());self:Refresh() end,
+                TryDrawQuest=function(self,id) self:DrawBlob(id,true) end,
+            }
+            fire("ADDON_LOADED")
+        end,
     }
 end
 
-local db = {}
-local s = session(db, true)
-assert(s.map.pins and #s.map.pins == 0, "no whitelisted quests should show pins")
-assert(#s.buttons == 2, "journal detail and popup need separate buttons")
-assert(s.buttons[1].buttonText == "Show map hint")
-assert(s.buttons[2].buttonText == "Show map hint")
+-- Capture the event frame while leaving every method functional.
+local s=session({},true)
+assert(s.map.added==1,"native blob data provider not installed")
+assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
+assert(#s.map.pin.drawn==0,"default must show no hint areas")
+assert(#s.buttons==2,"both journal layouts need a button")
+assert(s.buttons[1].width==94 and s.buttons[1].position[1]=="TOP","journal button not centered")
+assert(s.menus.MENU_QUEST_MAP_LOG_TITLE,"journal right click menu missing")
+assert(s.menus.MENU_QUEST_LOG_POPUP_DETAIL_FRAME,"popup context menu missing")
 
-s.buttons[1].scripts.OnClick()
-assert(s.api.IsQuestRevealed(11), "button did not whitelist the selected quest")
-assert(#s.map.pins == 1 and s.map.pins[1].id == 11, "quest 11 missing")
-assert(s.buttons[1].buttonText == "Hide map hint", "button label did not update")
-assert(s.api.SetQuestRevealed(12, true))
-assert(#s.map.pins == 2 and s.map.pins[1].id == 11 and s.map.pins[2].id == 12,
-    "whitelisted quest IDs should appear, all others excluded")
-assert(s.api.SetQuestRevealed(11, false))
-assert(#s.map.pins == 1 and s.map.pins[1].id == 12, "disabling quest 11 removed wrong pins")
-assert(not s.api.IsQuestRevealed(11) and s.api.IsQuestRevealed(12))
+assert(s.core.SetQuestRevealed(10,true))
+assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"only quest 10 must be drawn")
+assert(s.buttons[1].text=="Hide hint")
+s.core.SetQuestRevealed(20,true)
+assert(#s.map.pin.drawn==2,"both opted-in quest blobs should be drawn")
+s.core.SetQuestRevealed(10,false)
+assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==20)
+assert(s.buttons[1].text=="Show hint")
+assert(s.core.SetQuestRevealed(404,true))
+assert(#s.map.pin.drawn==1,"quest without shape data should not get fake icons")
+assert(not s.core.SetQuestRevealed(-2,true),"invalid quest ID accepted")
 
-s.api.SetQuestRevealed(14, true)
-assert(#s.map.pins == 2 and s.map.pins[2].id == 14, "waypoint fallback missing")
-s.api.SetQuestRevealed(15, true)
-assert(#s.map.pins == 2, "invalid coordinates should not create a pin")
-s.api.SetQuestRevealed(15, false)
-assert(not s.api.SetQuestRevealed(-1, true), "invalid ID accepted")
+-- A menu entry is created only for the clicked quest and changes that quest.
+local root={items={}}
+function root:CreateDivider() self.items[#self.items+1]={divider=true} end
+function root:CreateButton(label,callback) self.items[#self.items+1]={label=label,click=callback} end
+s.menus.MENU_QUEST_MAP_LOG_TITLE({questID=10},root)
+assert(root.items[2].label=="Show hint")
+root.items[2].click()
+assert(s.core.IsQuestRevealed(10))
+local empty={items={}}
+function empty:CreateDivider() self.items[#self.items+1]={divider=true} end
+function empty:CreateButton(label,callback) self.items[#self.items+1]={label=label,click=callback} end
+s.menus.MENU_QUEST_MAP_LOG_TITLE({},empty)
+assert(#empty.items==0,"menu shown for nonquest header")
 
 s.setMapHidden(false)
-assert(#s.map.pins == 0, "turning OFF global hiding should remove custom pins")
-assert(s.api.IsQuestRevealed(12), "global option should not erase user whitelist")
+assert(#s.map.pin.drawn==0,"native hints ON must remove custom blob")
 s.setMapHidden(true)
-assert(#s.map.pins == 2, "whitelisted pins not restored when global hiding enabled")
+assert(#s.map.pin.drawn==2,"whitelist not restored after hiding globally")
+s.map.mapID=500
+s.map.provider:OnMapChanged()
+assert(#s.map.pin.drawn==0,"blob must respect map type")
+s.map.mapID=301
+s.map.provider:OnMapChanged()
+assert(#s.map.pin.drawn==2)
 
-QuestMapFrame_ShowQuestDetails(12)
-assert(s.buttons[1].buttonText == "Hide map hint", "native quest selection did not update hint button")
-s.buttons[2].scripts.OnClick()
-assert(#s.map.pins == 1 and s.map.pins[1].id == 14, "popup toggle not respected")
+local saved=s.db
+local reload=session(saved,true)
+assert(reload.core.IsQuestRevealed(10) and #reload.map.pin.drawn==2,
+    "reload did not restore saved whitelist")
+local alt=session({},true)
+assert(#alt.map.pin.drawn==0 and not alt.core.IsQuestRevealed(10),
+    "another character inherited whitelist")
 
-s.map.mapID = 202
-s.api.RefreshQuestHintPins()
-assert(#s.map.pins == 0, "old map pins persisted on another zone")
-s.map.mapID = 101
-s.api.RefreshQuestHintPins()
-assert(#s.map.pins == 1 and s.map.pins[1].id == 14, "map change lost waypoint pin")
-assert(db.revealedQuests[14] == true, "per-character persistence not stored")
-
-local alt = session({}, true)
-assert(#alt.map.pins == 0 and alt.api.IsQuestRevealed(14) == false,
-    "new character inherited hint permissions")
-local reload = session(db, true)
-assert(reload.api.IsQuestRevealed(14) and #reload.map.pins == 1,
-    "per-character whitelist not restored after simulated reload")
-
-local noMap = session({}, false)
-assert(noMap.api.SetQuestRevealed(11, true), "missing world map blocked preference saving")
-assert(noMap.api.IsQuestRevealed(11))
-
-io.write("PASS: one-quest reveal, multiple whitelist pins, journal hooks, waypoints, map changes, reload and alts\n")
+local late=session({},false)
+assert(late.map.added==0,"provider registered before native module exists")
+late.enableNative()
+assert(late.map.added==1,"late loading Blizzard provider not detected")
+print("PASS: native Blizzard quest blob, independent whitelist, journal/menu, reload and alt\n")
