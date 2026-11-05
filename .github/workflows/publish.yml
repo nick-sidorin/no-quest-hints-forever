@@ -1,0 +1,117 @@
+name: Publish requested version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/release-request.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: no-quest-hints-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'nick-sidorin/no-quest-hints-forever'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.1
+
+      - name: Test and validate requested version
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          lua5.1 tests/test_runtime.lua
+          lua5.1 tests/test_ui.lua
+
+          version="$(tr -d '\r\n ' < .github/release-request.txt)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
+            echo "::error::Invalid version in .github/release-request.txt: $version"
+            exit 1
+          fi
+          toc_version="$(sed -n 's/^## Version: *//p' NoQuestHintsForever/NoQuestHintsForever.toc | tr -d '\r' | head -n1)"
+          if [[ "${version%%-*}" != "$toc_version" ]]; then
+            echo "::error::TOC version $toc_version differs from requested $version"
+            exit 1
+          fi
+          if ! grep -qF "## [$toc_version]" CHANGELOG.md; then
+            echo "::error::Missing CHANGELOG.md entry for $toc_version"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "::error::Tag v$version already exists; release was already requested"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Package and verify ZIP
+        shell: bash
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          zip -q -X "dist/NoQuestHintsForever-v$VERSION.zip" \
+            NoQuestHintsForever/NoQuestHintsForever.toc \
+            NoQuestHintsForever/NoQuestHintsForever.lua \
+            NoQuestHintsForever/Options.lua \
+            NoQuestHintsForever/LICENSE
+          python3 - "$VERSION" <<'PY'
+          import sys, zipfile
+          version = sys.argv[1]
+          path = f"dist/NoQuestHintsForever-v{version}.zip"
+          expected = {
+              "NoQuestHintsForever/NoQuestHintsForever.toc",
+              "NoQuestHintsForever/NoQuestHintsForever.lua",
+              "NoQuestHintsForever/Options.lua",
+              "NoQuestHintsForever/LICENSE",
+          }
+          with zipfile.ZipFile(path) as z:
+              assert set(z.namelist()) == expected, z.namelist()
+              assert z.testzip() is None
+          print("Validated:", path)
+          PY
+
+      - name: Create tag and GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$TAG" -m "No Quest Hints Forever $VERSION"
+          git push origin "refs/tags/$TAG"
+
+          toc_version="${VERSION%%-*}"
+          awk -v heading="## [$toc_version]" '
+            index($0, heading) == 1 { active = 1; next }
+            active && /^## \[/ { exit }
+            active { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md || echo "No Quest Hints Forever $VERSION" > release-notes.md
+
+          args=()
+          if [[ "$VERSION" == *"-alpha"* || "$VERSION" == *"-beta"* ]]; then
+            args+=(--prerelease)
+          fi
+          gh release create "$TAG" "dist/NoQuestHintsForever-v$VERSION.zip" \
+            --verify-tag \
+            --title "No Quest Hints Forever v$VERSION" \
+            --notes-file release-notes.md \
+            "${args[@]}"
