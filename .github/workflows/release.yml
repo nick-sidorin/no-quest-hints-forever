@@ -1,8 +1,9 @@
 name: Build and release
 
+# Normal development commits are intentionally NOT built automatically.
+# Builds run manually from Actions, or when a version tag is pushed.
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
