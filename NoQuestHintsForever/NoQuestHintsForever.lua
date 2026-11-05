@@ -86,6 +86,10 @@ local function setMapHints(enabled)
         restoreMapValues(character.original)
         restoreMapValues(account.original)
     end
+    -- The opted-in map pin layer is independent of Blizzard's global CVars.
+    if NoQuestHintsForeverAPI and type(NoQuestHintsForeverAPI.RefreshQuestHintPins) == "function" then
+        NoQuestHintsForeverAPI.RefreshQuestHintPins()
+    end
 end
 
 -- ObjectiveTrackerFrame is Blizzard-owned. Do not Hide() it in secure
