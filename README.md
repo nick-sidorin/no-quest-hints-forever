@@ -157,7 +157,7 @@ If some visual hints remain even with their relevant CVars at `0`, please report
 
 ## Automated builds and publishing
 
-GitHub Actions runs `lua5.1 tests/test_runtime.lua` and builds an installable ZIP on each push to `main`, on `v*` tags, and on manual runs. Build artifacts can be downloaded from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). A matching `vX.Y.Z` tag (same version as the `.toc`) also creates a GitHub prerelease containing the ZIP.
+GitHub Actions runs `lua5.1 tests/test_runtime.lua` and builds an installable ZIP on each push to `main`, on `v*` tags, and on manual runs. Build artifacts can be downloaded from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). A matching `vX.Y.Z` tag (same version as the `.toc`) also creates a GitHub Release containing the ZIP. Alpha/beta tags produce prereleases; a plain version tag produces a stable release.
 
 **CurseForge packages release tags itself**, using the repository configured under CurseForge Authors → Source → GitHub → Automatic Packaging. Do **not** enable a second GitHub Actions API upload: that would create duplicate CurseForge files.
 
