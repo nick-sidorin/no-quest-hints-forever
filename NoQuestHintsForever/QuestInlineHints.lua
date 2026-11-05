@@ -115,6 +115,11 @@ function api.RefreshQuestInlineHints()
     installHooks()
     refreshJournal()
     refreshTracker()
+    if QuestObjectiveTracker and type(QuestObjectiveTracker.MarkDirty) == "function" then
+        -- Blizzard will repopulate block.poiQuestID on the next refresh
+        -- even if CheckAndReleasePOIButton() cleared it when hiding.
+        pcall(QuestObjectiveTracker.MarkDirty, QuestObjectiveTracker)
+    end
 end
 
 local events = CreateFrame("Frame")
