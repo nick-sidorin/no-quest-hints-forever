@@ -136,7 +136,16 @@ local function session(char, hasNative)
         return b
     end
     GameTooltip=nil
-    NoQuestHintsForeverAPI={IsMapHidden=function() return mapHidden end}
+    local selected
+    local navRefreshes=0
+    C_SuperTrack={
+        GetSuperTrackedQuestID=function() return selected end,
+        SetSuperTrackedQuestID=function(id) selected=id end,
+    }
+    NoQuestHintsForeverAPI={
+        IsMapHidden=function() return mapHidden end,
+        RefreshNavigation=function() navRefreshes=navRefreshes+1 end,
+    }
 
     assert(loadfile(addon))()
     local core=NoQuestHintsForeverAPI
@@ -153,6 +162,8 @@ local function session(char, hasNative)
         trackerHeader=trackerHeader,
         detail=detail, popup=popup, fire=fire,
         setMapHidden=function(v) mapHidden=v; core.RefreshQuestHintPins() end,
+        selectedQuest=function() return selected end,
+        navRefreshes=function() return navRefreshes end,
         enableNative=function()
             QuestBlobPinMixin={
                 OnLoad=function(self) self.native=true end,
@@ -195,11 +206,16 @@ assert(#afterClick.items==0,"tracker right-click retained stale quest ID")
 s.core.SetQuestRevealed(20,false)
 
 assert(s.core.SetQuestRevealed(10,true))
+assert(s.selectedQuest()==10 and s.core.IsQuestNavigationAllowed(),
+    "Show hint failed to select the allowed native SuperTrack quest")
+assert(s.navRefreshes()>0,"hint toggle did not refresh nav CVars")
 assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"only quest 10 must be drawn")
 assert(s.buttons[1].text=="Hide hint")
 s.core.SetQuestRevealed(20,true)
 assert(#s.map.pin.drawn==2,"both opted-in quest blobs should be drawn")
 s.core.SetQuestRevealed(10,false)
+assert(s.core.IsQuestNavigationAllowed() == true,
+    "another revealed supertracked quest should keep navigation allowed")
 assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==20)
 assert(s.buttons[1].text=="Show hint")
 assert(s.core.SetQuestRevealed(404,true))
