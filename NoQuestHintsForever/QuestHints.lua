@@ -103,7 +103,7 @@ local function createJournalButton(details)
     button:SetSize(94, 22)
     local backButton = details.BackFrame and details.BackFrame.BackButton
     if backButton then
-        button:SetPoint("LEFT", backButton, "RIGHT", 10, 0)
+        button:SetPoint("LEFT", backButton, "RIGHT", 7, 0)
     elseif details.ShowMapButton then
         -- Separate popup quest journal: stay beside the Show Map control.
         button:SetPoint("RIGHT", details.ShowMapButton, "LEFT", -10, 0)
