@@ -53,7 +53,7 @@ local function createSession(savedChar, savedAccount, values, withInfo)
     end
     event("ADDON_LOADED", "SomeOtherAddon")
     event("ADDON_LOADED", addonName)
-    assert(frame.events.ADDON_LOADED == nil, "loaded event not unregistered")
+    assert(frame.events.ADDON_LOADED == true, "loaded event must watch for late Blizzard tracker loading")
     event("PLAYER_LOGIN")
     assert(NoQuestHintsForeverChar == savedChar, "character DB replaced")
     assert(NoQuestHintsForeverAccount == savedAccount, "account DB replaced")
