@@ -1,11 +1,13 @@
 # Changelog
 
-## [1.1.1] — 2026-11-05 (alpha hotfix)
+## [1.1.1] — 2026-11-05 (release candidate)
 
 - Fix per-character SavedVariables initialization: load data on `ADDON_LOADED` after Blizzard restores the globals, instead of capturing empty tables at Lua chunk execution.
 - Fix `/nqh off` not restoring quest hints after `/reload`.
 - Add regression tests that simulate the actual WoW addon loading order and verify `on → /reload → off`.
-- Early in-game feedback confirms map and minimap hint suppression on Forever. The tracker itself still remains visible by design; full regression testing for 1.1.1 is pending.
+- Verified in the released Forever client: world-map and minimap hints are suppressed; after manual recovery of values left by 1.1.0, the `on → /reload → off` scenario restores the three available CVars.
+- Upgrading from affected 1.1.0 installs may require a one-time manual reset of CVars to `1` because the original baseline was not saved by the buggy version.
+- The objective tracker remains visible by design. Cross-character switching remains to be verified on the live client.
 
 
 ## [1.1.0] — 2026-11-04 (initial release build)
