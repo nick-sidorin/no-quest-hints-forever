@@ -178,6 +178,9 @@ local function installProvider()
         or not WorldMapFrame or type(WorldMapFrame.AddDataProvider) ~= "function" then return end
 
     local candidate = CreateFromMixins(MapCanvasDataProviderMixin)
+    -- Blizzard's native QuestBlobPinMixin:TryDrawQuest() calls this method.
+    -- We explicitly select only whitelisted quest IDs, including world quests.
+    function candidate:IsShowingWorldQuests() return true end
     function candidate:OnAdded(map)
         MapCanvasDataProviderMixin.OnAdded(self, map)
         self.pin = map:AcquirePin(PIN_TEMPLATE)
