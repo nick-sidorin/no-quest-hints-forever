@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.1] — 2026-11-05 (release candidate)
+## [1.1.1] — 2026-11-05
 
 - Fix per-character SavedVariables initialization: load data on `ADDON_LOADED` after Blizzard restores the globals, instead of capturing empty tables at Lua chunk execution.
 - Fix `/nqh off` not restoring quest hints after `/reload`.
