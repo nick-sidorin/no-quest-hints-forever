@@ -4,6 +4,11 @@
 
 - Add a Blizzard-styled settings window opened with `/nqh`, and an entry under Options → AddOns with an Open Settings button.
 - Add two independent per-character options: hide quest map/navigation hints and hide the Blizzard objective tracker.
+- Align **Show hint / Hide hint** with Blizzard's **Back** button in the quest journal and keep it clear of CatQuest's **Read** button.
+- Add **Show hint / Hide hint** to the *right-side objective tracker* context menu, using the clicked quest header to resolve its ID without rewriting Blizzard's native click handler.
+- Revealing a quest via its context menu automatically opens Blizzard's map focused on that quest, without modifying quest-watch state.
+- Render original clickable Blizzard in-progress and turn-in quest map pins using a uniquely named template inheriting `QuestPinTemplate` and filtered `QuestDataProviderMixin:AddQuest()` calls. No custom coordinates or square icons; depends on the client's quest POI data.
+- Add regression tests for native quest icon filtering, tracker right-click context, stale quest IDs and map focus.
 - Add compact **Show hint / Hide hint** buttons to native quest details and popup panels, centered away from CatQuest's Read button; add right-click options to quest-journal menus without altering quest watch.
 - Remember opted-in quest IDs per character and render native Blizzard blue objective areas using a separate `QuestPOIFrame` and `QuestBlobPinMixin:TryDrawQuest(questID)`. No custom map icons or coordinate approximations.
 - The custom **refresh policy** skips the global CVar check only for our own map canvas provider, not for Blizzard's original UI. The engine's actual blob rendering with `questPOI=0` still needs a live Forever test; selective minimap guidance remains out of scope.
