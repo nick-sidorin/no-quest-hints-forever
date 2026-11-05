@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0] — unreleased (Forever UI test build)
+
+- Add a Blizzard-styled settings window opened with `/nqh`, and an entry under Options → AddOns with an Open Settings button.
+- Add two independent per-character options: hide quest map/navigation hints and hide the Blizzard objective tracker.
+- Preserve the `/nqh on` and `/nqh off` commands as controls for **map hints only**. `/nqh status` reports both states.
+- Preserve prior per-character `enabled` settings from 1.1.1; new `hideTracker` defaults to false.
+- Suppress the tracker visually via alpha, preserve its original alpha and mouse state, and defer post-hook updates to avoid changing a Blizzard frame inside a secure call path.
+- Add UI/runtime tests for window opening, Blizzard Settings category, independent toggles, deferred tracker re-hiding, combat, reload and character isolation.
+- Add an opt-in permanent GitHub release workflow triggered by editing `.github/release-request.txt`.
+- **Needs in-game verification in the released Forever client before publishing to CurseForge.**
+
+
 ## [1.1.1] — 2026-11-05
 
 - Fix per-character SavedVariables initialization: load data on `ADDON_LOADED` after Blizzard restores the globals, instead of capturing empty tables at Lua chunk execution.
