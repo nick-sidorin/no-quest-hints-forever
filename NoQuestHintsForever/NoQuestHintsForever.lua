@@ -1,5 +1,6 @@
 -- No Quest Hints - Forever
--- Native quest hints are optional for each character. No map frames are replaced.
+-- The game's map CVars and objective tracker are independent, per-character options.
+local ADDON_NAME = "NoQuestHintsForever"
 
 local cvars = {
     "questPOI",
@@ -8,6 +9,10 @@ local cvars = {
     "minimapShowQuestBlobs",
     "showInGameNavigation",
 }
+
+local function printMessage(message)
+    print("|cff80c0ffNo Quest Hints|r: " .. message)
+end
 
 local function getCVar(name)
     local getter = C_CVar and C_CVar.GetCVar or GetCVar
@@ -23,10 +28,6 @@ local function setCVar(name, value)
     return ok and getCVar(name) == value
 end
 
--- The listed quest CVars are documented as character-scoped, while
--- showInGameNavigation is account-scoped. Prefer the running client metadata.
--- GetCVarInfo reports *server-synchronized* scopes, so an unmarked CVar
--- needs the documented fallback below.
 local function isSharedCVar(name)
     if C_CVar and C_CVar.GetCVarInfo then
         local ok, _, _, isAccount, isCharacter = pcall(C_CVar.GetCVarInfo, name)
@@ -38,45 +39,37 @@ local function isSharedCVar(name)
     return name == "showInGameNavigation"
 end
 
--- SavedVariables are loaded AFTER the addon Lua chunk, before ADDON_LOADED.
--- Do not capture a table here: WoW replaces the global during SV loading.
+-- Do not capture SavedVariables until ADDON_LOADED: WoW loads them after Lua.
 local character, account
-local applying = false
+local enforcing = false
 
-local function initializeSavedVariables()
-    if type(NoQuestHintsForeverChar) ~= "table" then
-        NoQuestHintsForeverChar = {}
-    end
-    if type(NoQuestHintsForeverAccount) ~= "table" then
-        NoQuestHintsForeverAccount = {}
-    end
-    character = NoQuestHintsForeverChar
-    account = NoQuestHintsForeverAccount
+local function initialize()
+    if type(NoQuestHintsForeverChar) ~= "table" then NoQuestHintsForeverChar = {} end
+    if type(NoQuestHintsForeverAccount) ~= "table" then NoQuestHintsForeverAccount = {} end
+    character, account = NoQuestHintsForeverChar, NoQuestHintsForeverAccount
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
+    -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
+    -- hideTracker is a new independent option and defaults to false.
 end
 
-local function enforce()
-    if character.enabled ~= true or applying then return end
-    applying = true
-
+local function enforceMapHints()
+    if not character or character.enabled ~= true or enforcing then return end
+    enforcing = true
     for _, name in ipairs(cvars) do
-        local current = getCVar(name)
-        if current ~= nil then
-            -- Keep the value from before *our* first change. Never overwrite
-            -- the snapshot with zero on a later login or CVAR_UPDATE.
+        local value = getCVar(name)
+        if value ~= nil then
             local original = isSharedCVar(name) and account.original or character.original
-            if original[name] == nil then original[name] = current end
-            if current ~= "0" then setCVar(name, "0") end
+            if original[name] == nil then original[name] = value end
+            if value ~= "0" then setCVar(name, "0") end
         end
     end
-
-    applying = false
+    enforcing = false
 end
 
-local function restore(original)
+local function restoreMapValues(original)
+    if not original then return end
     for name, value in pairs(original) do
-        -- A failed restore should remain in the snapshot for the next login.
         local current = getCVar(name)
         if current == value or (current ~= nil and setCVar(name, value)) then
             original[name] = nil
@@ -84,36 +77,146 @@ local function restore(original)
     end
 end
 
-local function printMessage(message)
-    print("|cff80c0ffNo Quest Hints|r: " .. message)
+local function setMapHints(enabled)
+    if not character then return end
+    character.enabled = enabled == true
+    if character.enabled then
+        enforceMapHints()
+    else
+        restoreMapValues(character.original)
+        restoreMapValues(account.original)
+    end
 end
+
+-- ObjectiveTrackerFrame is Blizzard-owned. Do not Hide() it in secure
+-- update paths. Alpha avoids disturbing Blizzard's layout/visibility state.
+-- Defer reapplication from Show/SetAlpha hooks to avoid taint.
+local trackerFrame, trackerAlpha, trackerMouse
+local trackerHooked, trackerApplying, trackerQueued = false, false, false
+
+local function inCombat()
+    return type(InCombatLockdown) == "function" and InCombatLockdown()
+end
+
+local updateTracker
+
+local function queueTrackerUpdate()
+    if trackerQueued then return end
+    if C_Timer and type(C_Timer.After) == "function" then
+        trackerQueued = true
+        C_Timer.After(0, function()
+            trackerQueued = false
+            if character then updateTracker() end
+        end)
+    end
+end
+
+local function trackFrame()
+    local frame = ObjectiveTrackerFrame
+    if not frame or type(frame.SetAlpha) ~= "function" then return nil end
+    if trackerFrame ~= frame then
+        trackerFrame, trackerAlpha, trackerMouse = frame, nil, nil
+        trackerHooked = false
+    end
+    if not trackerHooked and type(hooksecurefunc) == "function" then
+        -- A post-hook is harmless when the feature is OFF. It cannot be removed,
+        -- so install it just once, and never mutate the frame in the hook body.
+        local successShow = pcall(hooksecurefunc, frame, "Show", function()
+            if character and character.hideTracker and not trackerApplying then
+                queueTrackerUpdate()
+            end
+        end)
+        local successAlpha = pcall(hooksecurefunc, frame, "SetAlpha", function()
+            if character and character.hideTracker and not trackerApplying then
+                queueTrackerUpdate()
+            end
+        end)
+        trackerHooked = successShow or successAlpha
+    end
+    return frame
+end
+
+updateTracker = function()
+    if not character or trackerApplying then return end
+    local frame = trackFrame()
+    if not frame then return end
+    trackerApplying = true
+    if character.hideTracker == true then
+        if trackerAlpha == nil and type(frame.GetAlpha) == "function" then
+            local ok, value = pcall(frame.GetAlpha, frame)
+            if ok then trackerAlpha = value end
+        end
+        if trackerMouse == nil and type(frame.IsMouseEnabled) == "function" then
+            local ok, value = pcall(frame.IsMouseEnabled, frame)
+            if ok then trackerMouse = value end
+        end
+        -- Changing alpha is cosmetic and does not untrack quests.
+        if type(frame.GetAlpha) == "function" then
+            local ok, current = pcall(frame.GetAlpha, frame)
+            if ok and current ~= 0 then pcall(frame.SetAlpha, frame, 0) end
+        else
+            pcall(frame.SetAlpha, frame, 0)
+        end
+        if not inCombat() and type(frame.EnableMouse) == "function" then
+            pcall(frame.EnableMouse, frame, false)
+        end
+    else
+        if trackerAlpha ~= nil then
+            pcall(frame.SetAlpha, frame, trackerAlpha)
+            trackerAlpha = nil
+        end
+        if trackerMouse ~= nil and not inCombat() and type(frame.EnableMouse) == "function" then
+            pcall(frame.EnableMouse, frame, trackerMouse)
+            trackerMouse = nil
+        end
+    end
+    trackerApplying = false
+end
+
+local function setTrackerHidden(hidden)
+    if not character then return end
+    character.hideTracker = hidden == true
+    updateTracker()
+end
+
+-- UI module attaches an OpenOptions callback after its own Lua file loads.
+local api = {}
+NoQuestHintsForeverAPI = api
+api.IsMapHidden = function() return character and character.enabled == true end
+api.IsTrackerHidden = function() return character and character.hideTracker == true end
+api.SetMapHidden = setMapHints
+api.SetTrackerHidden = setTrackerHidden
+api.UpdateTracker = updateTracker
 
 SLASH_NOQUESTHINTSFOREVER1 = "/nqh"
 SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     if not character then
-        printMessage("Still initializing. Please try again after login.")
+        printMessage("Settings are still loading.")
         return
     end
     local command = (message or ""):match("^%s*(%S+)")
-    command = command and command:lower() or "status"
-
-    if command == "on" then
-        character.enabled = true
-        enforce()
-        printMessage("ON for this character. Quest hints are suppressed where supported.")
+    command = command and command:lower() or ""
+    if command == "" then
+        if type(api.OpenOptions) == "function" then
+            api.OpenOptions()
+        else
+            printMessage("Settings window is not available.")
+        end
+    elseif command == "on" then
+        setMapHints(true)
+        printMessage("Map hints: ON (hidden). Objective tracker is controlled separately.")
     elseif command == "off" then
-        character.enabled = false
-        restore(character.original)
-        restore(account.original)
-        printMessage("OFF for this character. Blizzard controls quest hints now.")
+        setMapHints(false)
+        printMessage("Map hints: OFF (Blizzard controls them). Objective tracker is unchanged.")
     elseif command == "status" then
-        printMessage(character.enabled == true and "ON for this character" or "OFF for this character")
+        printMessage("Hide map hints: " .. (character.enabled == true and "ON" or "OFF"))
+        printMessage("Hide objective tracker: " .. (character.hideTracker == true and "ON" or "OFF"))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
             printMessage(name .. " = " .. (value == nil and "unavailable" or tostring(value)))
         end
     else
-        printMessage("Commands: /nqh on, /nqh off, /nqh status")
+        printMessage("Commands: /nqh, /nqh on, /nqh off, /nqh status")
     end
 end
 
@@ -122,29 +225,29 @@ frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CVAR_UPDATE")
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:SetScript("OnEvent", function(_, event, changed)
     if event == "ADDON_LOADED" then
-        if changed ~= "NoQuestHintsForever" then return end
-        initializeSavedVariables()
-        frame:UnregisterEvent("ADDON_LOADED")
+        if changed == ADDON_NAME then initialize() end
+        -- ObjectiveTrackerFrame can be loaded after our addon.
+        if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
-        if not character then initializeSavedVariables() end
+        if not character then initialize() end
         if character.enabled == true then
-            enforce()
+            enforceMapHints()
         else
-            -- Retry failed restores, including shared values changed on another
-            -- character. Never continuously enforce while OFF.
-            restore(character.original)
-            restore(account.original)
+            restoreMapValues(character.original)
+            restoreMapValues(account.original)
         end
+        updateTracker()
     elseif event == "PLAYER_ENTERING_WORLD" then
-        enforce()
+        enforceMapHints()
+        updateTracker()
     elseif event == "CVAR_UPDATE" and character and character.enabled == true and type(changed) == "string" then
         for _, name in ipairs(cvars) do
-            if changed:lower() == name:lower() then
-                enforce()
-                break
-            end
+            if changed:lower() == name:lower() then enforceMapHints(); break end
         end
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        updateTracker()
     end
 end)
