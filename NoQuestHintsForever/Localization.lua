@@ -1,0 +1,47 @@
+-- Display-language strings. English is the fallback for unsupported locales.
+-- Keep keys shared between the slash commands, native UI and quest menus.
+local en = {
+    TITLE = "No Quest Hints",
+    TAGLINE = "Read the quest. Explore the world. Find your own way.",
+    MAP_HINTS = "Hide quest map hints",
+    MAP_HINTS_DESC = "Quest markers, highlighted areas and navigation guidance.",
+    TRACKER = "Hide objective tracker",
+    TRACKER_DESC = "The on-screen task list and its progress counters.",
+    CHAR_SAVED = "Settings are saved separately for each character.",
+    SETTINGS_INTRO = "Explore Azeroth without quest directions.",
+    OPEN_SETTINGS = "Open addon settings",
+    SHOW_HINT = "Show hint",
+    HIDE_HINT = "Hide hint",
+    HINT_TOOLTIP = "Show or hide quest guidance on the map",
+    INIT = "Settings are still loading.",
+    UNAVAILABLE = "Settings window is not available.",
+    MAP_ON = "Map hints: hidden. Objective tracker is controlled separately.",
+    MAP_OFF = "Map hints: visible. Objective tracker is unchanged.",
+    MAP_STATUS = "Hide map hints: ",
+    TRACKER_STATUS = "Hide objective tracker: ",
+    COMMANDS = "Commands: /nqh, /nqh on, /nqh off, /nqh status",
+}
+local ru = {
+    TITLE = "No Quest Hints",
+    TAGLINE = "Читайте задания. Исследуйте мир. Находите свой путь.",
+    MAP_HINTS = "Скрывать подсказки на карте",
+    MAP_HINTS_DESC = "Метки заданий, области поиска и навигация.",
+    TRACKER = "Скрывать список заданий",
+    TRACKER_DESC = "Список задач справа и счётчики прогресса.",
+    CHAR_SAVED = "Настройки сохраняются отдельно для каждого персонажа.",
+    SETTINGS_INTRO = "Исследуйте Азерот без готовых указателей.",
+    OPEN_SETTINGS = "Открыть настройки аддона",
+    SHOW_HINT = "Показать подсказку",
+    HIDE_HINT = "Скрыть подсказку",
+    HINT_TOOLTIP = "Показать или скрыть подсказки для этого задания",
+    INIT = "Настройки ещё загружаются.",
+    UNAVAILABLE = "Окно настроек недоступно.",
+    MAP_ON = "Подсказки на карте скрыты. Список заданий настраивается отдельно.",
+    MAP_OFF = "Подсказки на карте восстановлены. Список заданий не изменён.",
+    MAP_STATUS = "Скрывать подсказки на карте: ",
+    TRACKER_STATUS = "Скрывать список заданий: ",
+    COMMANDS = "Команды: /nqh, /nqh on, /nqh off, /nqh status",
+}
+
+local locale = type(GetLocale) == "function" and GetLocale() or "enUS"
+NoQuestHintsForeverLocale = setmetatable(locale == "ruRU" and ru or {}, {__index = en})
