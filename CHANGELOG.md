@@ -4,11 +4,11 @@
 
 - Add a Blizzard-styled settings window opened with `/nqh`, and an entry under Options → AddOns with an Open Settings button.
 - Add two independent per-character options: hide quest map/navigation hints and hide the Blizzard objective tracker.
-- Add **Show map hint / Hide map hint** buttons to native quest detail panels (including the popup journal), independent of Blizzard quest watch.
-- Remember opted-in quest IDs per character; custom world-map pins use Blizzard's quest POI or waypoint coordinates without re-enabling all native map hints.
-- Custom map pins show only allowed quests when global map-hint suppression is enabled; other quest icons remain hidden. Mini-map pins and highlighted objective regions are deliberately not part of this first prototype.
+- Add compact **Show hint / Hide hint** buttons to native quest details and popup panels, centered away from CatQuest's Read button; add right-click options to quest-journal menus without altering quest watch.
+- Remember opted-in quest IDs per character and render native Blizzard blue objective areas using a separate `QuestPOIFrame` and `QuestBlobPinMixin:TryDrawQuest(questID)`. No custom map icons or coordinate approximations.
+- The custom **refresh policy** skips the global CVar check only for our own map canvas provider, not for Blizzard's original UI. The engine's actual blob rendering with `questPOI=0` still needs a live Forever test; selective minimap guidance remains out of scope.
 - Shorten the in-game addon title and Settings category from `No Quest Hints - Forever` to `No Quest Hints`.
-- Add regression tests for multiple quest selection, toggling hints on/off, switching maps, a late map frame and a saved whitelist after reload.
+- Replace the previous icon-based experimental implementation. Test native blob operations, multi-quest filters, journal context menus, reload, and delayed Blizzard module loading.
 - Preserve the `/nqh on` and `/nqh off` commands as controls for **map hints only**. `/nqh status` reports both states.
 - Preserve prior per-character `enabled` settings from 1.1.1; new `hideTracker` defaults to false.
 - Suppress the tracker visually via alpha, preserve its original alpha and mouse state, and defer post-hook updates to avoid changing a Blizzard frame inside a secure call path.
