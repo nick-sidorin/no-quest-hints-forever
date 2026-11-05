@@ -35,6 +35,7 @@ jobs:
           set -euo pipefail
           lua5.1 tests/test_runtime.lua
           lua5.1 tests/test_ui.lua
+          lua5.1 tests/test_quest_hints.lua
 
           version="$(tr -d '\r\n ' < .github/release-request.txt)"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
@@ -68,6 +69,8 @@ jobs:
             NoQuestHintsForever/NoQuestHintsForever.toc \
             NoQuestHintsForever/NoQuestHintsForever.lua \
             NoQuestHintsForever/Options.lua \
+            NoQuestHintsForever/QuestHints.lua \
+            NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/LICENSE
           python3 - "$VERSION" <<'PY'
           import sys, zipfile
@@ -77,6 +80,8 @@ jobs:
               "NoQuestHintsForever/NoQuestHintsForever.toc",
               "NoQuestHintsForever/NoQuestHintsForever.lua",
               "NoQuestHintsForever/Options.lua",
+              "NoQuestHintsForever/QuestHints.lua",
+              "NoQuestHintsForever/QuestHintPins.xml",
               "NoQuestHintsForever/LICENSE",
           }
           with zipfile.ZipFile(path) as z:
