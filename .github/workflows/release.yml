@@ -24,7 +24,9 @@ jobs:
           sudo apt-get install -y -qq lua5.1
 
       - name: Run tests
-        run: lua5.1 tests/test_runtime.lua
+        run: |
+          lua5.1 tests/test_runtime.lua
+          lua5.1 tests/test_ui.lua
 
       - name: Validate addon version
         id: version
@@ -57,6 +59,7 @@ jobs:
           zip -q -X "dist/$FILENAME" \
             NoQuestHintsForever/NoQuestHintsForever.toc \
             NoQuestHintsForever/NoQuestHintsForever.lua \
+            NoQuestHintsForever/Options.lua \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
@@ -66,6 +69,7 @@ jobs:
           expected = {
               'NoQuestHintsForever/NoQuestHintsForever.toc',
               'NoQuestHintsForever/NoQuestHintsForever.lua',
+              'NoQuestHintsForever/Options.lua',
               'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:
