@@ -8,7 +8,7 @@ Remember when finding a quest objective meant reading its description, studying 
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Compatibility status:** Tested on the released Forever client: world-map/minimap hints are suppressed, and the `/nqh on → /reload → /nqh off` sequence restores available CVars in version 1.1.1 after one-time recovery from the broken 1.1.0 baseline. **Switching between characters still needs live testing.** Not all documented Blizzard CVars exist in Forever.
+> **Compatibility status:** Tested in the released WoW Forever client: map/minimap quest hints can be suppressed, and `on → /reload → off` was verified with version 1.1.1. Some CVars are unavailable on Forever; switching between characters still needs live testing.
 
 ## What it does
 
@@ -153,20 +153,6 @@ Before calling this version fully compatible, verify the following in the actual
 
 If some visual hints remain even with their relevant CVars at `0`, please report the specific hint and location rather than assuming all quest hints use the same API.
 
-### Troubleshooting: hints remain hidden after upgrading from 1.1.0
-
-Version 1.1.0 could lose the original CVar values during WoW's SavedVariables load sequence. **The fix in 1.1.1 prevents new snapshots from being lost, but cannot reconstruct values previously lost by 1.1.0.** If you had already run the affected version and `/nqh off` leaves quest hints hidden, run `/nqh off` and then restore the known supported CVars manually:
-
-```text
-/console questPOI 1
-/console questPOILocalStory 1
-/console showInGameNavigation 1
-/nqh status
-```
-
-On the tested Forever build, `showQuestObjectivesOnMap` and `minimapShowQuestBlobs` report `unavailable`, so don't assume those settings are exposed by your client. Once the working values are back, test `/nqh on`, `/reload`, and `/nqh off` again. These console commands are a **one-time recovery procedure for affected installs**, not a normal part of installation or operation. If you had intentionally turned one of those hints off before installing the addon, restore your preferred value instead of `1`.
-
-
 ## Automated builds and publishing
 
 GitHub Actions runs `lua5.1 tests/test_runtime.lua` and builds an installable ZIP on each push to `main`, on `v*` tags, and on manual runs. Build artifacts can be downloaded from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions). A matching `vX.Y.Z` tag (same version as the `.toc`) also creates a GitHub prerelease containing the ZIP.
@@ -191,14 +177,14 @@ CurseForge's [automatic packaging guide](https://support.curseforge.com/support/
 
 The CurseForge token is only used by the webhook; **no GitHub Actions CurseForge secret or `CF_PROJECT_ID` variable is required**.
 
-To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For the 1.1.1 beta candidate:
+To publish a version, update `## Version:` in the TOC and `CHANGELOG.md`, push to `main`, and push a matching tag. For the initial 1.1.1 release:
 
 ```sh
-git tag v1.1.1-beta.1
-git push origin v1.1.1-beta.1
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
-CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. The 1.1.1 build has passed initial in-game tests on one character, but cross-character behavior is still unverified, so use a beta tag before publishing a stable `v1.1.1`. Confirm both the packaged ZIP structure and game-version metadata on CurseForge after publication.
+CurseForge's native packager determines the release channel from the tag: tags containing `alpha` are alpha, `beta` are beta, and regular version tags are treated as releases. The workflow supports `vX.Y.Z-alpha` / `vX.Y.Z-alpha.1` and `vX.Y.Z-beta.1` tags while the TOC still holds `X.Y.Z`. 1.1.1 has been tested on one character in the released Forever client. Cross-character handling is still not verified in game, so reports are welcome. Confirm the packaged ZIP structure and game-version metadata on CurseForge after publication.
 
 ## Issues and contributions
 
