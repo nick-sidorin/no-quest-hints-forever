@@ -56,13 +56,31 @@ local function refreshJournal()
     refreshingJournal = false
 end
 
+local function safeBool(func, id)
+    if type(func) ~= "function" then return false end
+    local ok, value = pcall(func, id)
+    return ok and value == true
+end
+
 local function applyTrackerIcon(block)
     if not block or not api.IsMapHidden or api.IsMapHidden() ~= true then return end
-    if block.poiQuestID and shouldShow(block.poiQuestID) then
+    -- The native OnLayout() releases its POI under questPOI=0. That may
+    -- clear poiQuestID entirely, so recover the quest from the active block.
+    local id = block.id
+    if type(id) ~= "number" or id <= 0 then return end
+    if shouldShow(id) then
         if not block.poiButton and type(block.AddPOIButton) == "function" then
-            -- Blizzard's own method selects QuestInProgress / QuestComplete
-            -- and places its real POI button beside the quest header.
-            pcall(block.AddPOIButton, block)
+            if not block.poiQuestID and type(block.SetPOIInfo) == "function" then
+                local ready = C_QuestLog and safeBool(C_QuestLog.ReadyForTurnIn, id)
+                local worldQuest = C_QuestLog and safeBool(C_QuestLog.IsWorldQuest, id)
+                local isSuperTracked = C_SuperTrack
+                    and type(C_SuperTrack.GetSuperTrackedQuestID) == "function"
+                    and C_SuperTrack.GetSuperTrackedQuestID() == id
+                pcall(block.SetPOIInfo, block, id, ready == true, isSuperTracked == true, worldQuest == true)
+            end
+            -- Original Blizzard method sets QuestInProgress / QuestComplete
+            -- and anchors the native POI directly beside the header.
+            if block.poiQuestID then pcall(block.AddPOIButton, block) end
         end
     elseif block.poiButton and type(block.CheckAndReleasePOIButton) == "function" then
         pcall(block.CheckAndReleasePOIButton, block)
@@ -82,7 +100,7 @@ local function refreshTracker()
 end
 
 local function queueTrackerBlock(block)
-    if not block or queued[block] then return end
+    if not block or block.parentModule ~= QuestObjectiveTracker or queued[block] then return end
     if C_Timer and type(C_Timer.After) == "function" then
         queued[block] = true
         C_Timer.After(0, function()
