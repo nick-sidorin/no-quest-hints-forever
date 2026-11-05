@@ -61,7 +61,7 @@ local function session(char, account, withSettings, withTracker)
             obj.TitleText = { SetText = function(self, text) self.text = text end }
         end
         if kind == "CheckButton" then checks[#checks + 1] = obj end
-        if not eventFrame and kind == "Frame" and not parent then eventFrame = obj end
+        if not eventFrame and kind == "Frame" and not parent and not name then eventFrame = obj end
         return obj
     end
 
