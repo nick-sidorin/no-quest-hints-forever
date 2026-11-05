@@ -8,7 +8,7 @@ Remember when finding a quest objective meant reading the description, looking a
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Compatibility status:** Quest map/minimap hint suppression and the 1.1.1 `on → /reload → off` fix have been tested in the released Forever client. The **1.2.0 native blue objective areas work in the Forever client** (reported in player screenshots). The redesigned quest controls and selective native map '?'/progress icons are **new experimental code awaiting live verification**. Some CVars are not available in Forever. Cross-character switching still requires a live test.
+> **Compatibility status:** Quest map/minimap hint suppression and the 1.1.1 `on → /reload → off` fix have been tested in the released Forever client. The **1.2.0 native blue objective areas work in the Forever client** (reported in player screenshots). Native '?' and progress markers on the world map have also been reported working. The **selective in-world navigation diamond, icons next to quest names, and Russian localization are a new test build awaiting live verification**. Some CVars are not available in Forever. Cross-character switching still requires a live test.
 
 ## Features
 
@@ -16,9 +16,9 @@ Two **independent, per-character** options:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
-- **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. Selecting **Show hint** from a context menu also opens the map on that quest.
+- **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
-The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons.
+The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface automatically uses **Russian** when the WoW client locale is `ruRU`; otherwise it uses English.
 
 **Remove the directions, not the adventure.**
 
@@ -35,10 +35,13 @@ World of Warcraft/
         └── AddOns/
             └── NoQuestHintsForever/
                 ├── NoQuestHintsForever.toc
+                ├── Localization.lua
                 ├── NoQuestHintsForever.lua
                 ├── Options.lua
                 ├── QuestHints.lua
+                ├── QuestMarkers.lua
                 ├── QuestHintPins.xml
+                ├── QuestInlineHints.lua
                 └── LICENSE
 ```
 
@@ -74,7 +77,10 @@ The existing `on`/`off` commands stay backward-compatible with version 1.1.1. Th
 - Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. The new `hideTracker` value defaults to **false**.
 - CVar baselines are saved before the addon modifies them. A separate `NoQuestHintsForeverAccount` SavedVariable tracks original values for CVars treated as shared across characters.
 - While map hint suppression is enabled, relevant `CVAR_UPDATE` events trigger re-enforcement. When disabled, the addon restores the saved baselines and stops enforcing.
-- Individual quest map permissions are stored in the character's `revealedQuests` table, keyed by quest ID. A separate native `QuestPOIFrame` uses Blizzard's `QuestBlobPinMixin` and calls `DrawBlob(questID, true)` for allowed quests. This has produced the original blue objective blobs in Forever with `questPOI=0`. A second provider uses a **unique XML template inherited from Blizzard's `QuestPinTemplate`** and `QuestDataProviderMixin:AddQuest()` to render the native clickable POIs (in-progress or turn-in) for those quests, where the client provides coordinates. **The new native POI buttons must still be verified in game.** While global hint suppression is OFF, our custom providers draw nothing; Blizzard handles the normal map. Blizzard's quest-watch state is never modified.
+- Individual quest permissions are stored in the character's `revealedQuests` table, keyed by quest ID. A separate native `QuestPOIFrame` uses Blizzard's `QuestBlobPinMixin` and calls `DrawBlob(questID, true)` for allowed quests. The original blue blobs work in Forever with `questPOI=0`. A second provider uses a unique XML template inherited from Blizzard's `QuestPinTemplate` and `QuestDataProviderMixin:AddQuest()` for the clickable map POIs; both areas and POIs have been confirmed in an in-game test.
+- The journal's `POIButtonOwnerMixin` and tracker's `ObjectiveTrackerQuestPOIBlockMixin` originally suppress all title badges when `questPOI=0`. The addon restores their *native pooled buttons* only for allowed quest IDs, using post-hooks and deferred layout updates. **This new behavior still requires in-game validation.**
+- `Show hint` changes the native `C_SuperTrack` quest target, **not** the Blizzard watch list, so it can drive the world-space diamond while leaving the right-side list independently hidden. While the global Hide Quest Map Hints option is ON, `showInGameNavigation` is allowed only when the active super-tracked quest is itself permitted; it is otherwise suppressed. The original account/character CVar value is restored when the global option is turned OFF. Navigation cannot be guaranteed for quests lacking a valid destination in the Forever client.
+- When global hint suppression is OFF, the addon draws no extra map pins and Blizzard handles the normal map. Its journal/tracker badge hooks likewise stay passive.
 - The tracker option is cosmetic: the addon changes the Blizzard `ObjectiveTrackerFrame` alpha to zero, and disables its mouse input when allowed. It retains that frame's previous alpha/mouse values in memory for restoration when unchecked.
 - Blizzard can update the tracker itself. The addon watches its `Show` and `SetAlpha` methods, then **defers** its own update rather than mutating Blizzard frames inside a secure hook. There is no continuous `OnUpdate` loop.
 - If the tracker frame is not loaded, the addon waits until it appears instead of raising an error.
@@ -104,24 +110,29 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 | `minimapShowQuestBlobs` | Quest objective areas on the minimap |
 | `showInGameNavigation` | Native in-game navigation guidance |
 
-The addon attempts to set available CVars to `0`. In the initially tested Forever client, `showQuestObjectivesOnMap` and `minimapShowQuestBlobs` reported **unavailable**. The other three could be read and set. A `0` in `/nqh status` does not, by itself, prove a visual feature is suppressed.
+The addon normally suppresses available hint CVars using `0`. The exception is `showInGameNavigation`: with global hiding ON it becomes `1` **only** when the active Blizzard SuperTrack target is an allowed quest, otherwise `0`. When global hiding is disabled, all original saved CVar values are restored. In the initially tested Forever client, `showQuestObjectivesOnMap` and `minimapShowQuestBlobs` reported **unavailable**. Other three CVars were usable.
 
 ### Source layout
 
 ```text
 NoQuestHintsForever/
 ├── NoQuestHintsForever.toc    # Interface, version, SavedVariables and load order
-├── NoQuestHintsForever.lua    # CVar and tracker control; slash commands
+├── Localization.lua          # Russian UI, English fallback
+├── NoQuestHintsForever.lua    # CVar/navigation and tracker controls; slash commands
 ├── Options.lua               # Native window and Blizzard AddOns entry
-├── QuestHints.lua            # Journal buttons, tracker context menu and native blue blobs
-├── QuestMarkers.lua          # Filtered native in-progress / turn-in quest POI buttons
-├── QuestHintPins.xml         # XML templates inheriting native Blizzard quest widgets
+├── QuestHints.lua            # Per-quest permission, menus, native blue blobs and SuperTrack
+├── QuestMarkers.lua          # Filtered native in-progress / turn-in map POI buttons
+├── QuestHintPins.xml         # XML templates inheriting native Blizzard map widgets
+├── QuestInlineHints.lua      # Per-quest journal and objective-tracker POI badges
 └── LICENSE                   # MIT license in the installation archive
 tests/
 ├── test_runtime.lua          # SavedVariables/reload and CVar regression checks
 ├── test_ui.lua               # UI, tracker hook, combat and alt simulations
 ├── test_quest_hints.lua      # Native blobs, journal/tracker menus and whitelist tests
-└── test_quest_markers.lua    # Native quest progress/turn-in pin tests
+├── test_quest_markers.lua    # Native quest progress/turn-in pin tests
+├── test_inline_hints.lua     # Journal/tracker title badges, secure/deferred layout
+├── test_navigation.lua       # Selective in-world diamond and CVar restoration
+└── test_localization.lua     # Russian and English UI translations
 .github/
 ├── release-request.txt       # Release request: changing this triggers publication
 └── workflows/
@@ -140,9 +151,12 @@ lua5.1 tests/test_runtime.lua
 lua5.1 tests/test_ui.lua
 lua5.1 tests/test_quest_hints.lua
 lua5.1 tests/test_quest_markers.lua
+lua5.1 tests/test_inline_hints.lua
+lua5.1 tests/test_navigation.lua
+lua5.1 tests/test_localization.lua
 ```
 
-Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, native quest marker provider filtering, tracker right-click capture, context-menu map focus, loading order and per-character reload. Native blobs **have** been observed working in the Forever client; the new marker provider and tracker context menu still need in-game integration tests. **They are not a substitute for an in-game integration test.**
+Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs and map POIs **have** been observed working in Forever; the in-world diamond, inline title badges and localized UI still need in-game integration tests. **They are not a substitute for an in-game integration test.**
 
 ## Validation checklist for Forever 1.2.0
 
@@ -154,9 +168,12 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 6. Run `/nqh on`, `/reload`, `/nqh off`; verify map hints return and the tracker checkbox keeps its independent state.
 7. Log in as another character: verify default-off settings do not inherit hidden hints. Switch back to confirm both options persist.
 8. In the journal, click **Show hint** next to **Back**. Confirm the blue objective area is visible and look for Blizzard's native round quest icon (in-progress or turn-in). If an icon is missing even when a blob is present, note the quest title and state; the client's quest POI APIs may not return coordinates with `questPOI=0`.
-9. Right-click a quest **in the objective tracker** and select **Show hint**. Verify the journal/map opens focused on that quest and that no other quest becomes visible. Repeat with a different quest, then **Hide hint**. Check that the right-click doesn't accidentally affect a different quest. Journal context menu should behave the same way.
-10. Confirm that the journal button is horizontally aligned with Blizzard's **Back** button and does not overlap CatQuest's **Read** button. Check both detail layouts.
-11. If possible, check in combat and Edit Mode. Note any blocked-action error, click-blocking invisible region or conflict with other UI addons.
+9. Right-click a quest **in the objective tracker** and select **Show hint**. Verify **the map does not automatically open**; the allowed quest's map guidance still appears when you open the map normally. Repeat with a different quest, then **Hide hint**. Check that the right-click never affects a different quest. The journal context menu should behave the same way.
+10. With global quest hints hidden, show a hint and return to the game world. Check for Blizzard's in-world **navigation diamond and distance** toward that quest. Hide it and verify the diamond disappears. If another quest becomes SuperTracked, verify it is suppressed until explicitly allowed. Confirm normal CVar behavior with `/nqh off`.
+11. Verify the native '?' / '...' badges appear beside the title of **allowed quests only** in both the quest journal and right-side objective tracker. Verify they disappear when a hint is hidden, and return after `/reload`.
+12. With a **Russian client (`ruRU`)**, check the localized UI and context-menu labels; the short journal button should read **Показать / Скрыть**.
+13. Confirm that the journal button is horizontally aligned with Blizzard's **Back** button and does not overlap CatQuest's **Read** button. Check both detail layouts.
+14. If possible, check in combat and Edit Mode. Note any blocked-action error, click-blocking invisible region or conflict with other UI addons.
 
 Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 
