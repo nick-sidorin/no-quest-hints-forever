@@ -72,9 +72,6 @@ local function setRevealed(id, value)
     end
     updateJournalButtons()
     refreshMap()
-    if type(api.RefreshQuestInlineHints) == "function" then
-        api.RefreshQuestInlineHints()
-    end
     if type(api.RefreshNavigation) == "function" then
         api.RefreshNavigation()
     end
@@ -84,6 +81,10 @@ end
 function api.IsQuestNavigationAllowed()
     if not C_SuperTrack or type(C_SuperTrack.GetSuperTrackedQuestID) ~= "function" then
         return false
+    end
+    if type(C_SuperTrack.IsSuperTrackingQuest) == "function" then
+        local ok, active = pcall(C_SuperTrack.IsSuperTrackingQuest)
+        if ok and active ~= true then return false end
     end
     local ok, id = pcall(C_SuperTrack.GetSuperTrackedQuestID)
     return ok and isRevealed(id) or false
