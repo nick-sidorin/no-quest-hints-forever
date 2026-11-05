@@ -38,15 +38,23 @@ local function isSharedCVar(name)
     return name == "showInGameNavigation"
 end
 
-NoQuestHintsForeverChar = NoQuestHintsForeverChar or {}
-NoQuestHintsForeverAccount = NoQuestHintsForeverAccount or {}
-
-local character = NoQuestHintsForeverChar
-local account = NoQuestHintsForeverAccount
-character.original = character.original or {}
-account.original = account.original or {}
-
+-- SavedVariables are loaded AFTER the addon Lua chunk, before ADDON_LOADED.
+-- Do not capture a table here: WoW replaces the global during SV loading.
+local character, account
 local applying = false
+
+local function initializeSavedVariables()
+    if type(NoQuestHintsForeverChar) ~= "table" then
+        NoQuestHintsForeverChar = {}
+    end
+    if type(NoQuestHintsForeverAccount) ~= "table" then
+        NoQuestHintsForeverAccount = {}
+    end
+    character = NoQuestHintsForeverChar
+    account = NoQuestHintsForeverAccount
+    if type(character.original) ~= "table" then character.original = {} end
+    if type(account.original) ~= "table" then account.original = {} end
+end
 
 local function enforce()
     if character.enabled ~= true or applying then return end
@@ -82,6 +90,10 @@ end
 
 SLASH_NOQUESTHINTSFOREVER1 = "/nqh"
 SlashCmdList.NOQUESTHINTSFOREVER = function(message)
+    if not character then
+        printMessage("Still initializing. Please try again after login.")
+        return
+    end
     local command = (message or ""):match("^%s*(%S+)")
     command = command and command:lower() or "status"
 
@@ -106,22 +118,28 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
 end
 
 local frame = CreateFrame("Frame")
+frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CVAR_UPDATE")
 frame:SetScript("OnEvent", function(_, event, changed)
-    if event == "PLAYER_LOGIN" then
+    if event == "ADDON_LOADED" then
+        if changed ~= "NoQuestHintsForever" then return end
+        initializeSavedVariables()
+        frame:UnregisterEvent("ADDON_LOADED")
+    elseif event == "PLAYER_LOGIN" then
+        if not character then initializeSavedVariables() end
         if character.enabled == true then
             enforce()
         else
-            -- Retry any failed restore and undo account-scoped changes
-            -- left by another ON character. Otherwise do not touch CVars.
+            -- Retry failed restores, including shared values changed on another
+            -- character. Never continuously enforce while OFF.
             restore(character.original)
             restore(account.original)
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         enforce()
-    elseif event == "CVAR_UPDATE" and character.enabled == true and type(changed) == "string" then
+    elseif event == "CVAR_UPDATE" and character and character.enabled == true and type(changed) == "string" then
         for _, name in ipairs(cvars) do
             if changed:lower() == name:lower() then
                 enforce()
