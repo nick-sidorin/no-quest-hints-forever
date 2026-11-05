@@ -8,7 +8,7 @@ Remember when finding a quest objective meant reading its description, studying 
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Release status:** This is an early, experimental release. The Lua logic has been tested with a mocked WoW environment, but the exact CVar availability and visual results **have not yet been verified in the released Forever client**. See [Testing in Forever](#testing-in-forever) before reporting a feature as working or broken.
+> **Release status:** This is an early, experimental release. Initial player testing in the released Forever client confirmed that map/minimap guidance can disappear, but a `/reload` restoration bug was discovered in 1.1.0. Version 1.1.1 fixes the SavedVariables initialization error; **the hotfix still needs an in-game regression test**. See [Testing in Forever](#testing-in-forever) before reporting a feature as working or broken.
 
 ## What it does
 
@@ -67,7 +67,7 @@ If you have a custom WoW installation, locate the **Forever** game directory rat
 
 You may want to wander without hints on your main character while keeping the default questing UI on an alt. The addon is designed for exactly that.
 
-- The ON/OFF preference is stored **per character** using `SavedVariablesPerCharacter`.
+- The ON/OFF preference is stored **per character** using `SavedVariablesPerCharacter`, initialized when `ADDON_LOADED` fires after saved data becomes available.
 - It persists through normal logouts and `/reload`.
 - The addon tracks the values it changed so `/nqh off` can attempt to restore them, rather than blindly forcing every hint ON.
 - Some WoW CVars can be shared between characters. The addon keeps a separate account-level snapshot for the shared settings it manages and attempts to restore outstanding changes when logging into a character with suppression OFF.
@@ -96,7 +96,7 @@ The current implementation attempts to set the following CVars to `0`:
 | `minimapShowQuestBlobs` | Suppress highlighted quest areas on the minimap. |
 | `showInGameNavigation` | Suppress Blizzard's in-game navigation hints. |
 
-These names are based on documented Blizzard CVars. **Their existence and actual effects in the released Forever client are not yet confirmed.** Some interface elements may be controlled by other mechanisms. The addon checks whether it can read a CVar and safely ignores unavailable APIs rather than assuming full support.
+These names are based on documented Blizzard CVars. **The map and minimap effects were reported working in initial in-game testing; the complete set of CVars and post-reload behavior still need verification on 1.1.1.** Some interface elements may be controlled by other mechanisms. The addon checks whether it can read a CVar and safely ignores unavailable APIs rather than assuming full support.
 
 `/nqh status` shows `unavailable` when a value cannot be read. A reported value of `0` confirms the stored CVar value, **not necessarily that every visual marker disappeared**.
 
@@ -137,7 +137,7 @@ From the repository root, using a standard Lua interpreter:
 lua tests/test_runtime.lua
 ```
 
-The test harness covers default-OFF behavior, persistence between simulated sessions, CVar re-enforcement, switching to a second character, restoration, and absent CVar APIs. **These are mocked-runtime tests, not an integration test with the Forever game client.**
+The test harness covers actual SavedVariables load order (Lua chunk first, SavedVariables second, then `ADDON_LOADED`), default-OFF behavior, `on → /reload → off` restoration, CVar re-enforcement, switching to a second character, and absent CVar APIs. **These are mocked-runtime tests, not an integration test with the Forever game client.**
 
 ## Testing in Forever
 
