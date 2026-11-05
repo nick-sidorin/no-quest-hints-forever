@@ -1,0 +1,29 @@
+-- Verify locale selection and a complete Russian UI translation.
+local function loadLocale(locale)
+    GetLocale = function() return locale end
+    NoQuestHintsForeverLocale = nil
+    assert(loadfile("NoQuestHintsForever/Localization.lua"))()
+    return NoQuestHintsForeverLocale
+end
+local english = loadLocale("enUS")
+local russian = loadLocale("ruRU")
+local fallback = loadLocale("deDE")
+local keys = {
+    "TITLE", "TAGLINE", "MAP_HINTS", "MAP_HINTS_DESC",
+    "TRACKER", "TRACKER_DESC", "CHAR_SAVED", "SETTINGS_INTRO",
+    "OPEN_SETTINGS", "SHOW_HINT", "HIDE_HINT",
+    "SHOW_HINT_BUTTON", "HIDE_HINT_BUTTON", "HINT_TOOLTIP",
+    "INIT", "UNAVAILABLE", "MAP_ON", "MAP_OFF",
+    "MAP_STATUS", "TRACKER_STATUS", "COMMANDS",
+}
+for _, key in ipairs(keys) do
+    assert(type(english[key]) == "string" and #english[key] > 0, "missing English "..key)
+    assert(type(russian[key]) == "string" and #russian[key] > 0, "missing Russian "..key)
+    assert(fallback[key] == english[key], "unsupported locale fallback wrong for "..key)
+end
+assert(english.SHOW_HINT ~= russian.SHOW_HINT)
+assert(russian.SHOW_HINT == "Показать подсказку")
+assert(russian.SHOW_HINT_BUTTON == "Показать")
+assert(russian.HIDE_HINT_BUTTON == "Скрыть")
+assert(russian.TITLE == "No Quest Hints")
+io.write("PASS: ruRU translation, compact journal buttons and enUS fallback\n")
