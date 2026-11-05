@@ -5,8 +5,10 @@
 ## Author: nick-sidorin
 ## SavedVariables: NoQuestHintsForeverAccount
 ## SavedVariablesPerCharacter: NoQuestHintsForeverChar
+Localization.lua
 NoQuestHintsForever.lua
 Options.lua
 QuestHints.lua
 QuestMarkers.lua
 QuestHintPins.xml
+QuestInlineHints.lua
