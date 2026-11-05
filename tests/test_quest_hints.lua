@@ -11,6 +11,7 @@ local function newFrame()
     function f:Hide() self.shown=false end
     function f:HookScript(event, fn) self.scripts[event]=fn end
     function f:GetName() return self.name end
+    function f:GetParent() return self.parent end
     return f
 end
 
@@ -98,6 +99,17 @@ local function session(char, hasNative)
     local popup=newFrame(); popup.questID=20; popup.TrackButton=newFrame()
     function popup:ShowQuest(id) self.questID=id end
     QuestLogPopupDetailFrame=popup
+    local trackerHeader=newFrame()
+    local trackerBlock={id=20}
+    QuestObjectiveTracker={usedBlocks={Quest={}}}
+    trackerBlock.parentModule=QuestObjectiveTracker
+    trackerHeader.parent=trackerBlock
+    trackerBlock.HeaderButton=trackerHeader
+    QuestObjectiveTracker.usedBlocks.Quest[20]=trackerBlock
+    ObjectiveTrackerBlockHeaderMixin={
+        OnLoad=function() end,
+        OnClick=function() end,
+    }
     QuestMapFrame_ShowQuestDetails=function(id) detail.questID=id end
     local opened={}
     QuestMapFrame_OpenToQuestDetails=function(id) opened[#opened+1]=id end
@@ -138,6 +150,7 @@ local function session(char, hasNative)
     fire("ADDON_LOADED")
     return {
         db=char, map=map, buttons=buttons, menus=menus, core=core, opened=opened,
+        trackerHeader=trackerHeader,
         detail=detail, popup=popup, fire=fire,
         setMapHidden=function(v) mapHidden=v; core.RefreshQuestHintPins() end,
         enableNative=function()
@@ -161,6 +174,25 @@ assert(s.buttons[1].width==94 and s.buttons[1].position[1]=="LEFT" and s.buttons
 assert(s.menus.MENU_QUEST_MAP_LOG_TITLE,"journal right click menu missing")
 assert(s.menus.MENU_QUEST_LOG_POPUP_DETAIL_FRAME,"popup context menu missing")
 assert(s.menus.MENU_QUEST_OBJECTIVE_TRACKER,"tracker context menu not registered")
+assert(s.trackerHeader.scripts.OnMouseDown,"tracker quest header lacks a right-click capture")
+local trackerRoot={items={}}
+function trackerRoot:CreateDivider() self.items[#self.items+1]={divider=true} end
+function trackerRoot:CreateButton(label,cb) self.items[#self.items+1]={label=label,click=cb} end
+s.trackerHeader.scripts.OnMouseDown(s.trackerHeader,"RightButton")
+-- The owner is Blizzard's tracker container, *not* the quest block.
+s.menus.MENU_QUEST_OBJECTIVE_TRACKER({},trackerRoot)
+assert(#trackerRoot.items==2 and trackerRoot.items[2].label=="Show hint",
+    "right-click on quest 20 did not resolve the clicked quest")
+trackerRoot.items[2].click()
+assert(s.core.IsQuestRevealed(20) and s.opened[#s.opened]==20,
+    "tracker action must allow quest 20 and open its map details")
+ObjectiveTrackerBlockHeaderMixin.OnClick(s.trackerHeader,"RightButton")
+local afterClick={items={}}
+function afterClick:CreateDivider() self.items[#self.items+1]={divider=true} end
+function afterClick:CreateButton(label,cb) self.items[#self.items+1]={label=label,click=cb} end
+s.menus.MENU_QUEST_OBJECTIVE_TRACKER({},afterClick)
+assert(#afterClick.items==0,"tracker right-click retained stale quest ID")
+s.core.SetQuestRevealed(20,false)
 
 assert(s.core.SetQuestRevealed(10,true))
 assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"only quest 10 must be drawn")
