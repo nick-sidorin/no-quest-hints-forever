@@ -8,7 +8,7 @@ Remember when finding a quest objective meant reading the description, looking a
 
 **No more following dots. Just you, your quest journal, and Azeroth.**
 
-> **Compatibility status:** Quest map/minimap hint suppression and the 1.1.1 `on → /reload → off` fix have been tested in the released Forever client. The **1.2.0 native blue objective areas work in the Forever client** (reported in player screenshots). Native '?' and progress markers on the world map have also been reported working. The **selective in-world navigation diamond, icons next to quest names, and Russian localization are a new test build awaiting live verification**. Some CVars are not available in Forever. Cross-character switching still requires a live test.
+> **Compatibility status:** Tested in World of Warcraft: Forever. Native blue quest objective areas, round progress/turn-in map pins, the in-world navigation diamond with distance, quest icons in the journal and tracker, and the Russian quest-hint UI have been confirmed in player testing. The 1.1.1 `/reload` restoration fix was also verified. Some Blizzard CVars are unavailable in Forever; switching between characters has not yet been verified in the live client.
 
 ## Features
 
@@ -156,7 +156,7 @@ lua5.1 tests/test_navigation.lua
 lua5.1 tests/test_localization.lua
 ```
 
-Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs and map POIs **have** been observed working in Forever; the in-world diamond, inline title badges and localized UI still need in-game integration tests. **They are not a substitute for an in-game integration test.**
+Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
 
 ## Validation checklist for Forever 1.2.0
 
