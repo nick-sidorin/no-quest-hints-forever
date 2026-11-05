@@ -28,6 +28,7 @@ jobs:
           lua5.1 tests/test_runtime.lua
           lua5.1 tests/test_ui.lua
           lua5.1 tests/test_quest_hints.lua
+          lua5.1 tests/test_quest_markers.lua
 
       - name: Validate addon version
         id: version
@@ -62,6 +63,7 @@ jobs:
             NoQuestHintsForever/NoQuestHintsForever.lua \
             NoQuestHintsForever/Options.lua \
             NoQuestHintsForever/QuestHints.lua \
+            NoQuestHintsForever/QuestMarkers.lua \
             NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
@@ -74,6 +76,7 @@ jobs:
               'NoQuestHintsForever/NoQuestHintsForever.lua',
               'NoQuestHintsForever/Options.lua',
               'NoQuestHintsForever/QuestHints.lua',
+              'NoQuestHintsForever/QuestMarkers.lua',
               'NoQuestHintsForever/QuestHintPins.xml',
               'NoQuestHintsForever/LICENSE',
           }
