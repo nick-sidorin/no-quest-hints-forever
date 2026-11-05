@@ -15,6 +15,7 @@ local keys = {
     "SHOW_HINT_BUTTON", "HIDE_HINT_BUTTON", "HINT_TOOLTIP",
     "INIT", "UNAVAILABLE", "MAP_ON", "MAP_OFF",
     "MAP_STATUS", "TRACKER_STATUS", "COMMANDS",
+    "STATUS_ON", "STATUS_OFF", "VALUE_UNAVAILABLE",
 }
 for _, key in ipairs(keys) do
     assert(type(english[key]) == "string" and #english[key] > 0, "missing English "..key)
