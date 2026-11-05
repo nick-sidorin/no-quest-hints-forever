@@ -22,6 +22,9 @@ local en = {
     MAP_STATUS = "Hide map hints: ",
     TRACKER_STATUS = "Hide objective tracker: ",
     COMMANDS = "Commands: /nqh, /nqh on, /nqh off, /nqh status",
+    STATUS_ON = "ON",
+    STATUS_OFF = "OFF",
+    VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
     TITLE = "No Quest Hints",
@@ -45,6 +48,9 @@ local ru = {
     MAP_STATUS = "Скрывать подсказки на карте: ",
     TRACKER_STATUS = "Скрывать список заданий: ",
     COMMANDS = "Команды: /nqh, /nqh on, /nqh off, /nqh status",
+    STATUS_ON = "ВКЛ",
+    STATUS_OFF = "ВЫКЛ",
+    VALUE_UNAVAILABLE = "недоступно",
 }
 
 local locale = type(GetLocale) == "function" and GetLocale() or "enUS"
