@@ -9,6 +9,7 @@ ignore:
   - tests
   - README.md
   - CHANGELOG.md
+  - LICENSE
 
 move-folders:
   NoQuestHintsForever/NoQuestHintsForever: NoQuestHintsForever
