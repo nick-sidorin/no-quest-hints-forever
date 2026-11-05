@@ -1,6 +1,7 @@
 -- No Quest Hints - Forever
 -- The game's map CVars and objective tracker are independent, per-character options.
 local ADDON_NAME = "NoQuestHintsForever"
+local L = NoQuestHintsForeverLocale or {}
 
 local cvars = {
     "questPOI",
@@ -61,7 +62,15 @@ local function enforceMapHints()
         if value ~= nil then
             local original = isSharedCVar(name) and account.original or character.original
             if original[name] == nil then original[name] = value end
-            if value ~= "0" then setCVar(name, "0") end
+            local target = "0"
+            -- Navigation is a single globally drawn diamond. Allow it ONLY
+            -- when the currently super-tracked quest is explicitly revealed.
+            if name == "showInGameNavigation" and NoQuestHintsForeverAPI
+                and type(NoQuestHintsForeverAPI.IsQuestNavigationAllowed) == "function"
+                and NoQuestHintsForeverAPI.IsQuestNavigationAllowed() then
+                target = "1"
+            end
+            if value ~= target then setCVar(name, target) end
         end
     end
     enforcing = false
@@ -191,11 +200,12 @@ api.IsTrackerHidden = function() return character and character.hideTracker == t
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.UpdateTracker = updateTracker
+api.RefreshNavigation = enforceMapHints
 
 SLASH_NOQUESTHINTSFOREVER1 = "/nqh"
 SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     if not character then
-        printMessage("Settings are still loading.")
+        printMessage(L.INIT or "Settings are still loading.")
         return
     end
     local command = (message or ""):match("^%s*(%S+)")
@@ -204,23 +214,23 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         if type(api.OpenOptions) == "function" then
             api.OpenOptions()
         else
-            printMessage("Settings window is not available.")
+            printMessage(L.UNAVAILABLE or "Settings window is not available.")
         end
     elseif command == "on" then
         setMapHints(true)
-        printMessage("Map hints: ON (hidden). Objective tracker is controlled separately.")
+        printMessage(L.MAP_ON or "Map hints: ON (hidden).")
     elseif command == "off" then
         setMapHints(false)
-        printMessage("Map hints: OFF (Blizzard controls them). Objective tracker is unchanged.")
+        printMessage(L.MAP_OFF or "Map hints: OFF (visible).")
     elseif command == "status" then
-        printMessage("Hide map hints: " .. (character.enabled == true and "ON" or "OFF"))
-        printMessage("Hide objective tracker: " .. (character.hideTracker == true and "ON" or "OFF"))
+        printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and "ON" or "OFF"))
+        printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and "ON" or "OFF"))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
             printMessage(name .. " = " .. (value == nil and "unavailable" or tostring(value)))
         end
     else
-        printMessage("Commands: /nqh, /nqh on, /nqh off, /nqh status")
+        printMessage(L.COMMANDS or "Commands: /nqh, /nqh on, /nqh off, /nqh status")
     end
 end
 
@@ -230,6 +240,7 @@ frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CVAR_UPDATE")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+frame:RegisterEvent("SUPER_TRACKING_CHANGED")
 frame:SetScript("OnEvent", function(_, event, changed)
     if event == "ADDON_LOADED" then
         if changed == ADDON_NAME then initialize() end
@@ -251,6 +262,9 @@ frame:SetScript("OnEvent", function(_, event, changed)
         for _, name in ipairs(cvars) do
             if changed:lower() == name:lower() then enforceMapHints(); break end
         end
+    elseif event == "SUPER_TRACKING_CHANGED" then
+        -- Never reveal navigation toward a non-permitted quest.
+        enforceMapHints()
     elseif event == "PLAYER_REGEN_ENABLED" then
         updateTracker()
     end
