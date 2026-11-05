@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.2.0] — unreleased (Forever test build)
+## [1.2.0] — 2026-11-05
 
 - Add a Blizzard-styled standalone settings window (`/nqh`) and a launch button under Options → AddOns.
 - Add independent per-character options for global quest hint suppression and the on-screen objective tracker.
@@ -14,7 +14,7 @@
 - Preserve existing per-character options and `/nqh on | off | status` behavior; `on/off` still applies to map hints only.
 - Expand Lua regression coverage for SavedVariables lifecycle, navigation gating, localized strings, native POI badges, tracker and journal controls, reload, and character separation.
 - Add an opt-in GitHub Actions publishing workflow invoked by a version request, with automatic tag and GitHub Release.
-- **The native blue objective areas and map POI icons have been confirmed working in WoW Forever. The in-world navigation diamond, restored inline badges and localized labels still need live testing before public release.**
+- Verified in World of Warcraft: Forever: selective native blue quest areas, round quest POIs, in-world navigation diamond with distance, quest journal/tracker POI badges, and Russian quest-hint labels. The user also reported no recurrence of a previously observed Blizzard blocked-action dialog in follow-up testing. The root cause of that earlier warning has not been established, and cross-character behavior remains to be checked in-game.
 
 ## [1.1.1] — 2026-11-05
 
