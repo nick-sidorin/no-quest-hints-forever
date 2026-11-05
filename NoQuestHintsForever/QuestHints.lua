@@ -2,6 +2,7 @@
 -- This intentionally does NOT change the game's watch list or questPOI CVar.
 local api = NoQuestHintsForeverAPI
 if not api then return end
+local L = NoQuestHintsForeverLocale or {}
 
 local PIN_TEMPLATE = "NQHQuestBlobPinTemplate"
 -- The XML template is parsed after this Lua file; the original Blizzard
@@ -42,7 +43,9 @@ local function updateJournalButtons()
     for _, entry in ipairs(journalButtons) do
         local id = entry.details.questID
         if validQuestID(id) then
-            entry.button:SetText(isRevealed(id) and "Hide hint" or "Show hint")
+            entry.button:SetText(isRevealed(id)
+                and (L.HIDE_HINT_BUTTON or "Hide hint")
+                or (L.SHOW_HINT_BUTTON or "Show hint"))
             entry.button:Show()
         else
             entry.button:Hide()
@@ -53,10 +56,34 @@ end
 local function setRevealed(id, value)
     local list = allowed()
     if not list or not validQuestID(id) then return false end
-    if value then list[id] = true else list[id] = nil end
+    if value then
+        list[id] = true
+        -- Point Blizzard's native in-world diamond at this quest.
+        -- SuperTrack is distinct from adding it to the objective watch list.
+        if api.IsMapHidden() and C_SuperTrack
+            and type(C_SuperTrack.SetSuperTrackedQuestID) == "function" then
+            pcall(C_SuperTrack.SetSuperTrackedQuestID, id)
+        end
+    else
+        list[id] = nil
+    end
     updateJournalButtons()
     refreshMap()
+    if type(api.RefreshQuestInlineHints) == "function" then
+        api.RefreshQuestInlineHints()
+    end
+    if type(api.RefreshNavigation) == "function" then
+        api.RefreshNavigation()
+    end
     return true
+end
+
+function api.IsQuestNavigationAllowed()
+    if not C_SuperTrack or type(C_SuperTrack.GetSuperTrackedQuestID) ~= "function" then
+        return false
+    end
+    local ok, id = pcall(C_SuperTrack.GetSuperTrackedQuestID)
+    return ok and isRevealed(id) or false
 end
 
 api.IsQuestRevealed = isRevealed
@@ -79,7 +106,7 @@ local function createJournalButton(details)
     else
         button:SetPoint("TOPLEFT", details, "TOPLEFT", 105, -20)
     end
-    button:SetText("Show hint")
+    button:SetText(L.SHOW_HINT_BUTTON or "Show hint")
     button:SetScript("OnClick", function()
         local id = details.questID
         if validQuestID(id) then setRevealed(id, not isRevealed(id)) end
@@ -88,7 +115,7 @@ local function createJournalButton(details)
         button:SetScript("OnEnter", function(self)
             if GameTooltip then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetText("Show or hide this quest's map area")
+                GameTooltip:SetText(L.HINT_TOOLTIP or "Show or hide this quest's map area")
                 GameTooltip:Show()
             end
         end)
@@ -103,22 +130,15 @@ end
 local trackerContextQuestID
 local trackerHeaderHooked, trackerClicksHooked = false, false
 
-local function openQuestOnMap(id)
-    if not validQuestID(id) then return end
-    -- This is Blizzard's existing action ("Open quest map") and does NOT
-    -- add a quest watch or change SuperTrack.
-    if type(QuestMapFrame_OpenToQuestDetails) == "function" then
-        QuestMapFrame_OpenToQuestDetails(id)
-    end
-end
-
 local function addMenuOption(owner, root)
     local id = owner and owner.questID
     if not validQuestID(id) then return end
     root:CreateDivider()
-    root:CreateButton(isRevealed(id) and "Hide hint" or "Show hint", function()
-        local reveal = not isRevealed(id)
-        if setRevealed(id, reveal) and reveal then openQuestOnMap(id) end
+    root:CreateButton(isRevealed(id)
+        and (L.HIDE_HINT or "Hide hint")
+        or (L.SHOW_HINT or "Show hint"), function()
+        -- Menus change only the permission, never open the world map.
+        setRevealed(id, not isRevealed(id))
     end)
 end
 
@@ -172,9 +192,11 @@ local function addTrackerMenuOption(_, root)
     local id = trackerContextQuestID
     if not validQuestID(id) then return end
     root:CreateDivider()
-    root:CreateButton(isRevealed(id) and "Hide hint" or "Show hint", function()
-        local reveal = not isRevealed(id)
-        if setRevealed(id, reveal) and reveal then openQuestOnMap(id) end
+    root:CreateButton(isRevealed(id)
+        and (L.HIDE_HINT or "Hide hint")
+        or (L.SHOW_HINT or "Show hint"), function()
+        -- Menus change only the permission, never open the world map.
+        setRevealed(id, not isRevealed(id))
     end)
 end
 
