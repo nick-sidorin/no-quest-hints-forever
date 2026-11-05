@@ -1,0 +1,83 @@
+name: Publish v1.1.1 (one-time)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v1.1.1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.repository == 'nick-sidorin/no-quest-hints-forever'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: no-quest-hints-publish-v1.1.1
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.1
+
+      - name: Run regression tests
+        run: lua5.1 tests/test_runtime.lua
+
+      - name: Check release version and package addon
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -qx '## Version: 1.1.1' NoQuestHintsForever/NoQuestHintsForever.toc
+          mkdir -p dist
+          zip -q -X dist/NoQuestHintsForever-v1.1.1.zip \
+            NoQuestHintsForever/NoQuestHintsForever.toc \
+            NoQuestHintsForever/NoQuestHintsForever.lua \
+            NoQuestHintsForever/LICENSE
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile("dist/NoQuestHintsForever-v1.1.1.zip") as z:
+              expected = {
+                  "NoQuestHintsForever/NoQuestHintsForever.toc",
+                  "NoQuestHintsForever/NoQuestHintsForever.lua",
+                  "NoQuestHintsForever/LICENSE",
+              }
+              assert set(z.namelist()) == expected
+              assert z.testzip() is None
+          PY
+
+      - name: Create version tag and stable GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin refs/tags/v1.1.1 >/dev/null 2>&1; then
+            echo "::error::Tag v1.1.1 already exists: refusing to overwrite it"
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a v1.1.1 -m 'No Quest Hints Forever v1.1.1'
+          git push origin refs/tags/v1.1.1
+          cat > release-notes.md <<'EOF'
+          ## No Quest Hints Forever 1.1.1
+
+          First stable release for World of Warcraft: Forever.
+
+          - Hides native quest hints on the world map and minimap.
+          - Adds per-character `/nqh on`, `/nqh off`, and `/nqh status` controls.
+          - Fixes an issue where quest hints did not return after `/reload`.
+          - Keeps the quest journal, quest text and objective tracker available.
+
+          See [CHANGELOG.md](https://github.com/nick-sidorin/no-quest-hints-forever/blob/main/CHANGELOG.md) for technical details. Cross-character CVar behavior is still being evaluated in the live client.
+          EOF
+          gh release create v1.1.1 dist/NoQuestHintsForever-v1.1.1.zip \
+            --verify-tag \
+            --title 'No Quest Hints Forever v1.1.1' \
+            --notes-file release-notes.md
