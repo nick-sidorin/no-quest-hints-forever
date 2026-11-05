@@ -3,7 +3,8 @@
 local api = NoQuestHintsForeverAPI
 if not api then return end
 
-local TITLE = "No Quest Hints"
+local L = NoQuestHintsForeverLocale or {}
+local TITLE = L.TITLE or "No Quest Hints"
 local window, mapCheck, trackerCheck
 
 local function addText(parent, text, font, point, relative, relativePoint, x, y)
@@ -52,18 +53,18 @@ local function createWindow()
     end
 
     addText(window,
-        "Read the quest. Explore the world. Find your own way.",
+        L.TAGLINE or "Read the quest. Explore the world. Find your own way.",
         "GameFontHighlight", "TOPLEFT", window, "TOPLEFT", 24, -46)
 
-    mapCheck = createCheck(window, -85, "Hide quest map hints",
-        "Quest markers, highlighted areas and navigation guidance.",
+    mapCheck = createCheck(window, -85, L.MAP_HINTS or "Hide quest map hints",
+        L.MAP_HINTS_DESC or "Quest markers, highlighted areas and navigation guidance.",
         api.IsMapHidden, api.SetMapHidden)
 
-    trackerCheck = createCheck(window, -151, "Hide objective tracker",
-        "The on-screen task list and its progress counters.",
+    trackerCheck = createCheck(window, -151, L.TRACKER or "Hide objective tracker",
+        L.TRACKER_DESC or "The on-screen task list and its progress counters.",
         api.IsTrackerHidden, api.SetTrackerHidden)
 
-    addText(window, "Settings are saved separately for each character.",
+    addText(window, L.CHAR_SAVED or "Settings are saved separately for each character.",
         "GameFontDisableSmall", "BOTTOMLEFT", window, "BOTTOMLEFT", 24, 22)
 
     window:SetScript("OnShow", refresh)
@@ -96,13 +97,13 @@ local function registerBlizzardCategory()
     local panel = CreateFrame("Frame", nil, UIParent)
     panel:SetSize(550, 200)
     addText(panel, TITLE, "GameFontNormalLarge", "TOPLEFT", panel, "TOPLEFT", 16, -16)
-    addText(panel, "Explore Azeroth without quest directions.",
+    addText(panel, L.SETTINGS_INTRO or "Explore Azeroth without quest directions.",
         "GameFontHighlight", "TOPLEFT", panel, "TOPLEFT", 16, -52)
 
     local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     button:SetSize(190, 28)
     button:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -90)
-    button:SetText("Open addon settings")
+    button:SetText(L.OPEN_SETTINGS or "Open addon settings")
     button:SetScript("OnClick", function()
         local current = createWindow()
         refresh()
