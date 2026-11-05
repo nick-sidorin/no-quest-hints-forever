@@ -1,26 +1,20 @@
 # Changelog
 
-## [1.2.0] — unreleased (Forever UI test build)
+## [1.2.0] — unreleased (Forever test build)
 
-- Add a Blizzard-styled settings window opened with `/nqh`, and an entry under Options → AddOns with an Open Settings button.
-- Add two independent per-character options: hide quest map/navigation hints and hide the Blizzard objective tracker.
-- Align **Show hint / Hide hint** with Blizzard's **Back** button in the quest journal and keep it clear of CatQuest's **Read** button.
-- Add **Show hint / Hide hint** to the *right-side objective tracker* context menu, using the clicked quest header to resolve its ID without rewriting Blizzard's native click handler.
-- Revealing a quest via its context menu automatically opens Blizzard's map focused on that quest, without modifying quest-watch state.
-- Render original clickable Blizzard in-progress and turn-in quest map pins using a uniquely named template inheriting `QuestPinTemplate` and filtered `QuestDataProviderMixin:AddQuest()` calls. No custom coordinates or square icons; depends on the client's quest POI data.
-- Add regression tests for native quest icon filtering, tracker right-click context, stale quest IDs and map focus.
-- Add compact **Show hint / Hide hint** buttons to native quest details and popup panels, centered away from CatQuest's Read button; add right-click options to quest-journal menus without altering quest watch.
-- Remember opted-in quest IDs per character and render native Blizzard blue objective areas using a separate `QuestPOIFrame` and `QuestBlobPinMixin:TryDrawQuest(questID)`. No custom map icons or coordinate approximations.
-- The custom **refresh policy** skips the global CVar check only for our own map canvas provider, not for Blizzard's original UI. The engine's actual blob rendering with `questPOI=0` still needs a live Forever test; selective minimap guidance remains out of scope.
-- Shorten the in-game addon title and Settings category from `No Quest Hints - Forever` to `No Quest Hints`.
-- Replace the previous icon-based experimental implementation. Test native blob operations, multi-quest filters, journal context menus, reload, and delayed Blizzard module loading.
-- Preserve the `/nqh on` and `/nqh off` commands as controls for **map hints only**. `/nqh status` reports both states.
-- Preserve prior per-character `enabled` settings from 1.1.1; new `hideTracker` defaults to false.
-- Suppress the tracker visually via alpha, preserve its original alpha and mouse state, and defer post-hook updates to avoid changing a Blizzard frame inside a secure call path.
-- Add UI/runtime tests for window opening, Blizzard Settings category, independent toggles, deferred tracker re-hiding, combat, reload and character isolation.
-- Add an opt-in permanent GitHub release workflow triggered by editing `.github/release-request.txt`.
-- **Needs in-game verification in the released Forever client before publishing to CurseForge.**
-
+- Add a Blizzard-styled standalone settings window (`/nqh`) and a launch button under Options → AddOns.
+- Add independent per-character options for global quest hint suppression and the on-screen objective tracker.
+- Let players selectively reveal *native Blizzard* blue quest objective areas and original round progress/turn-in map POIs by quest ID. These are not custom pin images.
+- Add **Show hint / Hide hint** to the journal's details panel, its right-click menu, and the objective tracker's right-click menu; align the details button beside Blizzard's **Back** button.
+- Context-menu hint toggles no longer open the map. Normal clicking of a quest still does.
+- When revealing a quest, set its native `C_SuperTrack` target for the in-world diamond and distance without adding it to the watch list. Enable `showInGameNavigation` only while the active super-tracked quest is explicitly permitted; restore saved CVar values when global hint suppression is disabled.
+- Show Blizzard's **original POI buttons next to quest names** only for permitted quests in the native journal and objective tracker, without turning `questPOI` on globally.
+- Add **ruRU** localization for all addon UI controls, hints and status messages, with English (`enUS`) default/fallback.
+- Keep the objective-tracker visibility checkbox independent of quest hint permission and native SuperTrack focus.
+- Preserve existing per-character options and `/nqh on | off | status` behavior; `on/off` still applies to map hints only.
+- Expand Lua regression coverage for SavedVariables lifecycle, navigation gating, localized strings, native POI badges, tracker and journal controls, reload, and character separation.
+- Add an opt-in GitHub Actions publishing workflow invoked by a version request, with automatic tag and GitHub Release.
+- **The native blue objective areas and map POI icons have been confirmed working in WoW Forever. The in-world navigation diamond, restored inline badges and localized labels still need live testing before public release.**
 
 ## [1.1.1] — 2026-11-05
 
