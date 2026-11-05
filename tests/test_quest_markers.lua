@@ -60,6 +60,7 @@ end
 local db={revealedQuests={[14]=true,[15]=true,[18]=true,[21]=true}}
 local s=run(db,true)
 assert(s.map.count==1)
+io.write("DEBUG pins: "..#s.map.pins.." IDs: "..table.concat((function() local t={} for _,pin in ipairs(s.map.pins) do t[#t+1]=tostring(pin.id) end return t end)(),",").."\\n")
 assert(#s.map.pins==3 and s.map.pins[1].id==14 and s.map.pins[2].id==15
     and s.map.pins[3].id==21,"filter, duplicate or waypoint incorrect")
 assert(s.map.pins[2].style=="turnin","turn-in style lost")
