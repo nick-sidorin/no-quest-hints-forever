@@ -33,6 +33,9 @@ local function refreshMap()
         -- Use a protected refresh while the map changes/loads.
         pcall(provider.pin.Refresh, provider.pin)
     end
+    if type(api.RefreshQuestMarkers) == "function" then
+        api.RefreshQuestMarkers()
+    end
 end
 
 local function updateJournalButtons()
@@ -64,10 +67,18 @@ api.RefreshQuestHintPins = refreshMap
 local function createJournalButton(details)
     if not details or not details.TrackButton then return end
     local button = CreateFrame("Button", nil, details, "UIPanelButtonTemplate")
-    -- Center between Blizzard's Back button (left) and CatQuest's Read
-    -- button (right). A compact button avoids covering either.
+    -- Use the real Blizzard Back button as our anchor when present.
+    -- This is the same vertical centerline even if UI scaling changes.
     button:SetSize(94, 22)
-    button:SetPoint("TOP", details, "TOP", 0, -7)
+    local backButton = details.BackFrame and details.BackFrame.BackButton
+    if backButton then
+        button:SetPoint("LEFT", backButton, "RIGHT", 10, 0)
+    elseif details.ShowMapButton then
+        -- Separate popup quest journal: stay beside the Show Map control.
+        button:SetPoint("RIGHT", details.ShowMapButton, "LEFT", -10, 0)
+    else
+        button:SetPoint("TOPLEFT", details, "TOPLEFT", 105, -20)
+    end
     button:SetText("Show hint")
     button:SetScript("OnClick", function()
         local id = details.questID
@@ -89,21 +100,90 @@ local function createJournalButton(details)
     updateJournalButtons()
 end
 
+local trackerContextQuestID
+local trackerHeaderHooked, trackerClicksHooked = false, false
+
+local function openQuestOnMap(id)
+    if not validQuestID(id) then return end
+    -- This is Blizzard's existing action ("Open quest map") and does NOT
+    -- add a quest watch or change SuperTrack.
+    if type(QuestMapFrame_OpenToQuestDetails) == "function" then
+        QuestMapFrame_OpenToQuestDetails(id)
+    end
+end
+
 local function addMenuOption(owner, root)
     local id = owner and owner.questID
     if not validQuestID(id) then return end
     root:CreateDivider()
     root:CreateButton(isRevealed(id) and "Hide hint" or "Show hint", function()
-        setRevealed(id, not isRevealed(id))
+        local reveal = not isRevealed(id)
+        if setRevealed(id, reveal) and reveal then openQuestOnMap(id) end
+    end)
+end
+
+-- Unlike quest-journal menu tags, MENU_QUEST_OBJECTIVE_TRACKER does not
+-- pass its questID to Menu.ModifyMenu. Capture the right-click on the
+-- original header's MouseDown *before* Blizzard creates the popup.
+-- HookScript/hooksecurefunc preserve the original Blizzard callbacks.
+local function captureTrackerMouseDown(button, mouseButton)
+    trackerContextQuestID = nil
+    if mouseButton ~= "RightButton" or not button then return end
+    local block = button:GetParent()
+    if block and block.parentModule == QuestObjectiveTracker and validQuestID(block.id) then
+        trackerContextQuestID = block.id
+    end
+end
+
+local function hookTrackerHeader(button)
+    if not button or button.nqhMouseHooked or type(button.HookScript) ~= "function" then return end
+    button:HookScript("OnMouseDown", captureTrackerMouseDown)
+    button.nqhMouseHooked = true
+end
+
+local function hookExistingTrackerHeaders()
+    if not QuestObjectiveTracker or type(QuestObjectiveTracker.usedBlocks) ~= "table" then return end
+    for _, blocks in pairs(QuestObjectiveTracker.usedBlocks) do
+        for _, block in pairs(blocks) do
+            hookTrackerHeader(block.HeaderButton)
+        end
+    end
+end
+
+local function installTrackerHooks()
+    if not trackerHeaderHooked and type(ObjectiveTrackerBlockHeaderMixin) == "table"
+        and type(ObjectiveTrackerBlockHeaderMixin.OnLoad) == "function"
+        and type(hooksecurefunc) == "function" then
+        trackerHeaderHooked = pcall(hooksecurefunc, ObjectiveTrackerBlockHeaderMixin,
+            "OnLoad", hookTrackerHeader)
+    end
+    if not trackerClicksHooked and type(ObjectiveTrackerBlockHeaderMixin) == "table"
+        and type(ObjectiveTrackerBlockHeaderMixin.OnClick) == "function"
+        and type(hooksecurefunc) == "function" then
+        -- Do not leave stale IDs for a later menu, even if a modified click
+        -- did not create a context menu.
+        trackerClicksHooked = pcall(hooksecurefunc, ObjectiveTrackerBlockHeaderMixin,
+            "OnClick", function() trackerContextQuestID = nil end)
+    end
+    hookExistingTrackerHeaders()
+end
+
+local function addTrackerMenuOption(_, root)
+    local id = trackerContextQuestID
+    if not validQuestID(id) then return end
+    root:CreateDivider()
+    root:CreateButton(isRevealed(id) and "Hide hint" or "Show hint", function()
+        local reveal = not isRevealed(id)
+        if setRevealed(id, reveal) and reveal then openQuestOnMap(id) end
     end)
 end
 
 local function installMenus()
     if menusInstalled or not Menu or type(Menu.ModifyMenu) ~= "function" then return end
-    -- Both tags are defined by the Blizzard Forever quest journal.
     local success1 = pcall(Menu.ModifyMenu, "MENU_QUEST_MAP_LOG_TITLE", addMenuOption)
     local success2 = pcall(Menu.ModifyMenu, "MENU_QUEST_LOG_POPUP_DETAIL_FRAME", addMenuOption)
-    menusInstalled = success1 and success2
+    local success3 = pcall(Menu.ModifyMenu, "MENU_QUEST_OBJECTIVE_TRACKER", addTrackerMenuOption)
+    menusInstalled = success1 and success2 and success3
 end
 
 local function installJournal()
@@ -224,9 +304,11 @@ lifecycle:SetScript("OnEvent", function(_, event)
         installProvider()
         installJournal()
         installMenus()
+        installTrackerHooks()
     elseif event == "QUEST_LOG_UPDATE" then
         updateJournalButtons()
         refreshMap()
+        hookExistingTrackerHeaders()
     elseif event == "QUEST_POI_UPDATE" then
         refreshMap()
     end
