@@ -8,4 +8,6 @@
             <OnUpdate method="OnUpdate"/>
         </Scripts>
     </QuestPOIFrame>
+    <!-- Full native Blizzard quest POI buttons, with their '?' / '...' styles. -->
+    <Button name="NQHQuestMarkerPinTemplate" inherits="QuestPinTemplate" virtual="true"/>
 </Ui>
