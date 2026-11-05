@@ -156,7 +156,12 @@ local function installProvider()
     if not WorldMapFrame or type(WorldMapFrame.AddDataProvider) ~= "function" then return end
     local candidate = CreateFromMixins(NQHQuestHintDataProviderMixin)
     local ok = pcall(WorldMapFrame.AddDataProvider, WorldMapFrame, candidate)
-    if ok then provider = candidate end
+    if ok then
+        provider = candidate
+        -- A provider registered on an already-open map may not receive an
+        -- initial canvas refresh. Apply the persisted whitelist immediately.
+        refreshMap()
+    end
 end
 
 local function createJournalButton(details)
