@@ -223,11 +223,12 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         setMapHints(false)
         printMessage(L.MAP_OFF or "Map hints: OFF (visible).")
     elseif command == "status" then
-        printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and "ON" or "OFF"))
-        printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and "ON" or "OFF"))
+        local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
+        printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
-            printMessage(name .. " = " .. (value == nil and "unavailable" or tostring(value)))
+            printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
         end
     else
         printMessage(L.COMMANDS or "Commands: /nqh, /nqh on, /nqh off, /nqh status")
