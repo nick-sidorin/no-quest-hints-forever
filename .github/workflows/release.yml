@@ -27,6 +27,7 @@ jobs:
         run: |
           lua5.1 tests/test_runtime.lua
           lua5.1 tests/test_ui.lua
+          lua5.1 tests/test_quest_hints.lua
 
       - name: Validate addon version
         id: version
@@ -60,6 +61,8 @@ jobs:
             NoQuestHintsForever/NoQuestHintsForever.toc \
             NoQuestHintsForever/NoQuestHintsForever.lua \
             NoQuestHintsForever/Options.lua \
+            NoQuestHintsForever/QuestHints.lua \
+            NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
@@ -70,6 +73,8 @@ jobs:
               'NoQuestHintsForever/NoQuestHintsForever.toc',
               'NoQuestHintsForever/NoQuestHintsForever.lua',
               'NoQuestHintsForever/Options.lua',
+              'NoQuestHintsForever/QuestHints.lua',
+              'NoQuestHintsForever/QuestHintPins.xml',
               'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:
