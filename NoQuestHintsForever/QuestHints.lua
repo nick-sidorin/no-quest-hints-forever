@@ -37,6 +37,9 @@ local function refreshMap()
     if type(api.RefreshQuestMarkers) == "function" then
         api.RefreshQuestMarkers()
     end
+    if type(api.RefreshQuestInlineHints) == "function" then
+        api.RefreshQuestInlineHints()
+    end
 end
 
 local function updateJournalButtons()
