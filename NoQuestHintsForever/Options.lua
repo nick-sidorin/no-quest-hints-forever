@@ -101,7 +101,7 @@ local function registerBlizzardCategory()
         "GameFontHighlight", "TOPLEFT", panel, "TOPLEFT", 16, -52)
 
     local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    button:SetSize(190, 28)
+    button:SetSize(type(GetLocale) == "function" and GetLocale() == "ruRU" and 245 or 190, 28)
     button:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -90)
     button:SetText(L.OPEN_SETTINGS or "Open addon settings")
     button:SetScript("OnClick", function()
