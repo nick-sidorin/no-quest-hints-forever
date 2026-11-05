@@ -29,6 +29,9 @@ jobs:
           lua5.1 tests/test_ui.lua
           lua5.1 tests/test_quest_hints.lua
           lua5.1 tests/test_quest_markers.lua
+          lua5.1 tests/test_inline_hints.lua
+          lua5.1 tests/test_navigation.lua
+          lua5.1 tests/test_localization.lua
 
       - name: Validate addon version
         id: version
@@ -61,10 +64,12 @@ jobs:
           zip -q -X "dist/$FILENAME" \
             NoQuestHintsForever/NoQuestHintsForever.toc \
             NoQuestHintsForever/NoQuestHintsForever.lua \
+            NoQuestHintsForever/Localization.lua \
             NoQuestHintsForever/Options.lua \
             NoQuestHintsForever/QuestHints.lua \
             NoQuestHintsForever/QuestMarkers.lua \
             NoQuestHintsForever/QuestHintPins.xml \
+            NoQuestHintsForever/QuestInlineHints.lua \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
@@ -74,10 +79,12 @@ jobs:
           expected = {
               'NoQuestHintsForever/NoQuestHintsForever.toc',
               'NoQuestHintsForever/NoQuestHintsForever.lua',
+              'NoQuestHintsForever/Localization.lua',
               'NoQuestHintsForever/Options.lua',
               'NoQuestHintsForever/QuestHints.lua',
               'NoQuestHintsForever/QuestMarkers.lua',
               'NoQuestHintsForever/QuestHintPins.xml',
+              'NoQuestHintsForever/QuestInlineHints.lua',
               'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:
