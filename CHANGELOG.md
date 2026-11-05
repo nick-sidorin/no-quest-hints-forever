@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1] — 2026-11-05 (alpha hotfix)
+
+- Fix per-character SavedVariables initialization: load data on `ADDON_LOADED` after Blizzard restores the globals, instead of capturing empty tables at Lua chunk execution.
+- Fix `/nqh off` not restoring quest hints after `/reload`.
+- Add regression tests that simulate the actual WoW addon loading order and verify `on → /reload → off`.
+- Early in-game feedback confirms map and minimap hint suppression on Forever. The tracker itself still remains visible by design; full regression testing for 1.1.1 is pending.
+
+
 ## [1.1.0] — 2026-11-04 (initial release build)
 
 - Add `/nqh on`, `/nqh off`, and `/nqh status`.
