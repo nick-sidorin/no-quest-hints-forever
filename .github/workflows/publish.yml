@@ -36,6 +36,7 @@ jobs:
           lua5.1 tests/test_runtime.lua
           lua5.1 tests/test_ui.lua
           lua5.1 tests/test_quest_hints.lua
+          lua5.1 tests/test_quest_markers.lua
 
           version="$(tr -d '\r\n ' < .github/release-request.txt)"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
@@ -70,6 +71,7 @@ jobs:
             NoQuestHintsForever/NoQuestHintsForever.lua \
             NoQuestHintsForever/Options.lua \
             NoQuestHintsForever/QuestHints.lua \
+            NoQuestHintsForever/QuestMarkers.lua \
             NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/LICENSE
           python3 - "$VERSION" <<'PY'
@@ -81,6 +83,7 @@ jobs:
               "NoQuestHintsForever/NoQuestHintsForever.lua",
               "NoQuestHintsForever/Options.lua",
               "NoQuestHintsForever/QuestHints.lua",
+              "NoQuestHintsForever/QuestMarkers.lua",
               "NoQuestHintsForever/QuestHintPins.xml",
               "NoQuestHintsForever/LICENSE",
           }
