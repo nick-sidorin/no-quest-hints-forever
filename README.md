@@ -48,7 +48,8 @@ World of Warcraft/
         └── AddOns/
             └── NoQuestHintsForever/
                 ├── NoQuestHintsForever.toc
-                └── NoQuestHintsForever.lua
+                ├── NoQuestHintsForever.lua
+                └── LICENSE
 ```
 
 If you have a custom WoW installation, locate the **Forever** game directory rather than assuming the default Windows location.
@@ -120,7 +121,8 @@ When suppression is OFF, it attempts to restore saved values; failed restoration
 ```text
 NoQuestHintsForever/
 ├── NoQuestHintsForever.toc   # Addon manifest, version, SavedVariables
-└── NoQuestHintsForever.lua   # CVar management, events, slash commands
+├── NoQuestHintsForever.lua   # CVar management, events, slash commands
+└── LICENSE                   # MIT license for distributed addon
 tests/
 └── test_runtime.lua          # Mocked Lua runtime checks
 README.md
