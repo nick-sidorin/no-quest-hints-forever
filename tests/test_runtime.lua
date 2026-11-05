@@ -1,18 +1,23 @@
--- Run from the repository root: lua tests/test_runtime.lua
+-- Run from repository root: lua5.1 tests/test_runtime.lua
+-- Simulate WoW's real load order: Lua chunk -> SavedVariables -> ADDON_LOADED.
 local addon = "NoQuestHintsForever/NoQuestHintsForever.lua"
+local addonName = "NoQuestHintsForever"
 local names = {
     "questPOI", "showQuestObjectivesOnMap", "questPOILocalStory",
     "minimapShowQuestBlobs", "showInGameNavigation",
 }
 
-local function createSession(characterDB, accountDB, values, withInfo)
-    NoQuestHintsForeverChar = characterDB
-    NoQuestHintsForeverAccount = accountDB
+local function createSession(savedChar, savedAccount, values, withInfo)
+    -- No SavedVariables are visible while Lua chunks are executed.
+    NoQuestHintsForeverChar = nil
+    NoQuestHintsForeverAccount = nil
     SlashCmdList = {}
-    local frame, writes = nil, {}
+    local frame, writes
+    writes = {}
     CreateFrame = function()
         frame = { events = {} }
         function frame:RegisterEvent(event) self.events[event] = true end
+        function frame:UnregisterEvent(event) self.events[event] = nil end
         function frame:SetScript(_, callback) self.onEvent = callback end
         return frame
     end
@@ -33,8 +38,25 @@ local function createSession(characterDB, accountDB, values, withInfo)
             return values[name], "1", name == "showInGameNavigation", name ~= "showInGameNavigation"
         end
     end
+
     assert(loadfile(addon))()
-    local function event(name, detail) frame.onEvent(frame, name, detail) end
+    assert(NoQuestHintsForeverChar == nil, "Lua must not initialize SavedVariables before ADDON_LOADED")
+    assert(NoQuestHintsForeverAccount == nil, "Lua must not initialize account SavedVariables before ADDON_LOADED")
+
+    -- WoW loads these tables AFTER the Lua chunk. This is the lifecycle
+    -- that was missing from the old test and caused the /reload bug.
+    NoQuestHintsForeverChar = savedChar
+    NoQuestHintsForeverAccount = savedAccount
+    local function event(name, detail)
+        assert(frame.events[name], "unexpected or unregistered event " .. name)
+        frame.onEvent(frame, name, detail)
+    end
+    event("ADDON_LOADED", "SomeOtherAddon")
+    event("ADDON_LOADED", addonName)
+    assert(frame.events.ADDON_LOADED == nil, "loaded event not unregistered")
+    event("PLAYER_LOGIN")
+    assert(NoQuestHintsForeverChar == savedChar, "character DB replaced")
+    assert(NoQuestHintsForeverAccount == savedAccount, "account DB replaced")
     return function(command) SlashCmdList.NOQUESTHINTSFOREVER(command) end, event, writes
 end
 
@@ -44,54 +66,68 @@ local values = {}
 for _, name in ipairs(names) do values[name] = "1" end
 
 local run, event, writes = createSession(a, shared, values, true)
-event("PLAYER_LOGIN")
-assert(a.enabled == nil and #writes == 0, "OFF by default must not write CVars")
+assert(a.enabled == nil and #writes == 0, "OFF by default must not change CVars")
 run("on")
 assert(a.enabled == true, "ON not saved per character")
 for _, name in ipairs(names) do assert(values[name] == "0", "not hidden: " .. name) end
-assert(shared.original.showInGameNavigation == "1", "account CVar snapshot missing")
-assert(a.original.questPOI == "1", "character CVar snapshot missing")
+assert(shared.original.showInGameNavigation == "1", "shared original wasn't saved")
+assert(a.original.questPOI == "1", "character original wasn't saved")
 
--- A Blizzard UI setting that turns the hint back on must be reverted.
+-- CVar update while ON must be overridden.
 C_CVar.SetCVar("questPOI", "1")
-assert(values.questPOI == "0", "CVAR_UPDATE did not re-enforce")
+assert(values.questPOI == "0", "ON did not re-enforce")
 
--- Reinitializing the Lua addon should restore this character's mode.
+-- The exact user-reported failure: enable -> /reload -> disable.
+-- Persisted tables remain visible only AFTER the second Lua chunk executes.
 run, event = createSession(a, shared, values, true)
-event("PLAYER_LOGIN")
-assert(a.enabled == true and values.questPOI == "0", "ON did not survive reload")
+assert(a.enabled == true, "ON did not survive reload")
+run("status")
+run("off")
+assert(a.enabled == false, "OFF did not save to the loaded character DB")
+for _, name in ipairs(names) do
+    assert(values[name] == "1", "OFF after reload did not restore " .. name)
+end
+assert(next(a.original) == nil and next(shared.original) == nil, "successful restoration not cleared")
 
--- Character B has its own quest CVars, but inherits the account CVar.
+-- OFF should not re-enforce, including after a second reload.
+C_CVar.SetCVar("questPOI", "0")
+assert(values.questPOI == "0", "OFF interfered with Blizzard setting")
+run, event = createSession(a, shared, values, true)
+assert(a.enabled == false, "OFF not persistent")
+C_CVar.SetCVar("questPOI", "1")
+assert(values.questPOI == "1", "OFF still enforces after reload")
+
+-- Enable again, switch to a fresh second character: only shared CVar
+-- suppression is reverted on the OFF character.
+run("on")
+for _, name in ipairs(names) do assert(values[name] == "0", "not hidden on re-enable") end
 local b = {}
 for _, name in ipairs(names) do
     if name ~= "showInGameNavigation" then values[name] = "1" end
 end
 run, event, writes = createSession(b, shared, values, true)
-event("PLAYER_LOGIN")
-assert(b.enabled == nil, "new alt must be OFF")
+assert(b.enabled == nil and #writes == 1, "fresh alt should only restore the shared CVar")
 assert(values.showInGameNavigation == "1", "shared navigation wasn't restored on alt")
-for _, name in ipairs(names) do assert(values[name] == "1", "alt quest UI was modified: " .. name) end
-assert(#writes == 1, "off-alt login should only restore shared CVar")
+for _, name in ipairs(names) do assert(values[name] == "1", "alt hint altered: " .. name) end
 C_CVar.SetCVar("questPOI", "0")
-assert(values.questPOI == "0", "OFF mode interfered with user setting")
+assert(values.questPOI == "0", "OFF alt interfered")
 
--- Disabling on A restores A's original character CVar settings.
+-- Coming back to A, its saved originals are still meaningful.
 for _, name in ipairs(names) do
     values[name] = name == "showInGameNavigation" and "1" or "0"
 end
 run, event = createSession(a, shared, values, true)
-event("PLAYER_LOGIN")
+assert(a.enabled == true, "main character lost ON")
 run("off")
-assert(a.enabled == false, "OFF not saved")
-for _, name in ipairs(names) do assert(values[name] == "1", "OFF failed to restore: " .. name) end
-C_CVar.SetCVar("questPOI", "0")
-assert(values.questPOI == "0", "OFF continued to enforce")
+for _, name in ipairs(names) do
+    assert(values[name] == "1", "main character OFF could not restore " .. name)
+end
 
--- Unknown CVars and missing GetCVarInfo shouldn't abort the addon.
+-- Unknown CVars and missing GetCVarInfo must not crash.
 values.questPOILocalStory = nil
 run, event = createSession({}, {}, values, false)
 run("status")
 run("on")
-assert(values.questPOI == "0", "fallback on client with missing APIs failed")
+assert(values.questPOI == "0", "fallback on missing info API failed")
 
-io.write("PASS: per-character mode, shared-CVar restoration, enforcement and missing APIs\n")
+io.write("PASS: SavedVariables load order, reload->off, per-character settings, re-enforcement and unavailable APIs\n")
