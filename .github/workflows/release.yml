@@ -56,7 +56,8 @@ jobs:
           mkdir -p dist
           zip -q -X "dist/$FILENAME" \
             NoQuestHintsForever/NoQuestHintsForever.toc \
-            NoQuestHintsForever/NoQuestHintsForever.lua
+            NoQuestHintsForever/NoQuestHintsForever.lua \
+            NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
           import zipfile
@@ -65,6 +66,7 @@ jobs:
           expected = {
               'NoQuestHintsForever/NoQuestHintsForever.toc',
               'NoQuestHintsForever/NoQuestHintsForever.lua',
+              'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:
               actual = set(archive.namelist())
