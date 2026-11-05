@@ -4,6 +4,11 @@
 
 - Add a Blizzard-styled settings window opened with `/nqh`, and an entry under Options → AddOns with an Open Settings button.
 - Add two independent per-character options: hide quest map/navigation hints and hide the Blizzard objective tracker.
+- Add **Show map hint / Hide map hint** buttons to native quest detail panels (including the popup journal), independent of Blizzard quest watch.
+- Remember opted-in quest IDs per character; custom world-map pins use Blizzard's quest POI or waypoint coordinates without re-enabling all native map hints.
+- Custom map pins show only allowed quests when global map-hint suppression is enabled; other quest icons remain hidden. Mini-map pins and highlighted objective regions are deliberately not part of this first prototype.
+- Shorten the in-game addon title and Settings category from `No Quest Hints - Forever` to `No Quest Hints`.
+- Add regression tests for multiple quest selection, toggling hints on/off, switching maps, a late map frame and a saved whitelist after reload.
 - Preserve the `/nqh on` and `/nqh off` commands as controls for **map hints only**. `/nqh status` reports both states.
 - Preserve prior per-character `enabled` settings from 1.1.1; new `hideTracker` defaults to false.
 - Suppress the tracker visually via alpha, preserve its original alpha and mouse state, and defer post-hook updates to avoid changing a Blizzard frame inside a secure call path.
