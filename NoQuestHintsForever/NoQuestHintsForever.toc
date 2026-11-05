@@ -8,4 +8,5 @@
 NoQuestHintsForever.lua
 Options.lua
 QuestHints.lua
+QuestMarkers.lua
 QuestHintPins.xml
