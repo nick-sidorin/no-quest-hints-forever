@@ -50,7 +50,7 @@ Select **Hide hint** when you no longer need help. You can reveal multiple quest
 
 ## ⚙️ Settings
 
-Open the settings window with `/nqh` or through **Options → AddOns → No Quest Hints**.
+Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. All six checkboxes appear on that page, with explanations on hover — no separate settings window.
 
 | Command | Action |
 |---|---|
