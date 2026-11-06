@@ -51,7 +51,9 @@ local function initialize()
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
     -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
-    -- hideTracker is a new independent option and defaults to false.
+    -- Hide quest lines on unit/object tooltips is a new independent,
+    -- opt-in option. Existing 1.2.0 users retain all their preferences.
+    -- Both hideTracker and hideQuestTooltips default to false.
 end
 
 local function enforceMapHints()
@@ -192,13 +194,22 @@ local function setTrackerHidden(hidden)
     updateTracker()
 end
 
+local function setTooltipHintsHidden(hidden)
+    if not character then return end
+    character.hideQuestTooltips = hidden == true
+    -- The Blizzard line-pre-callback reads this at tooltip creation time.
+    -- No reload, CVar change, or protected tooltip-frame manipulation.
+end
+
 -- UI module attaches an OpenOptions callback after its own Lua file loads.
 local api = {}
 NoQuestHintsForeverAPI = api
 api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
+api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
+api.SetTooltipHintsHidden = setTooltipHintsHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
@@ -226,6 +237,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
+        printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
