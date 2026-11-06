@@ -12,3 +12,4 @@ QuestHints.lua
 QuestMarkers.lua
 QuestHintPins.xml
 QuestInlineHints.lua
+QuestTooltips.lua
