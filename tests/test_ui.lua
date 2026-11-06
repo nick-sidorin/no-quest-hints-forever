@@ -20,6 +20,7 @@ local function session(char, account, withSettings, withTracker)
     current.UnitNameHostleNPC = "0"
     current.UnitNameNPC = "0"
     local deferred, checks, panels, combat = {}, {}, {}, false
+    local openedCategories, proxySettings = {}, {}
     local eventFrame
 
     local function frame(kind, name, parent, template)
@@ -74,12 +75,44 @@ local function session(char, account, withSettings, withTracker)
     Settings = nil
     if withSettings then
         Settings = {
-            RegisterCanvasLayoutCategory = function(panel, name)
-                local cat = { name = name, panel = panel }
+            VarType = { Boolean = "boolean" },
+            RegisterVerticalLayoutCategory = function(name)
+                local cat = { name = name, id = 42 }
+                function cat:GetID() return self.id end
                 panels[#panels + 1] = cat
                 return cat
             end,
+            RegisterProxySetting = function(cat, variable, varType, name, defaultValue, getter, setter)
+                assert(cat == panels[1] and varType == "boolean" and defaultValue == false)
+                assert(type(getter) == "function" and type(setter) == "function")
+                local setting = { variable = variable, name = name }
+                function setting:GetValue() return getter() end
+                function setting:SetValue(value) setter(value) end
+                proxySettings[#proxySettings + 1] = setting
+                return setting
+            end,
+            CreateCheckbox = function(cat, setting, tooltip)
+                assert(cat == panels[1] and type(tooltip) == "string" and #tooltip > 0,
+                    "each native checkbox must have a tooltip")
+                local check = { setting = setting, tooltip = tooltip, scripts = {} }
+                function check:SetChecked(value) self.pending = value end
+                function check:GetChecked()
+                    if self.pending ~= nil then return self.pending end
+                    return self.setting:GetValue()
+                end
+                check.scripts.OnClick = function(self)
+                    local value = self:GetChecked()
+                    self.pending = nil
+                    self.setting:SetValue(value)
+                end
+                checks[#checks + 1] = check
+                return check
+            end,
             RegisterAddOnCategory = function(cat) cat.registered = true end,
+            OpenToCategory = function(id)
+                assert(id == panels[1].id and panels[1].registered, "invalid native settings category")
+                openedCategories[#openedCategories + 1] = id
+            end,
         }
     end
     C_CVar = {
@@ -143,6 +176,7 @@ local function session(char, account, withSettings, withTracker)
     return {
         command = command, event = event, flush = flush, current = current,
         tracker = tracker, checks = checks, panels = panels,
+        opened = openedCategories, proxySettings = proxySettings,
         setCombat = function(value) combat = value end,
         newFrame = frame
     }
@@ -157,9 +191,17 @@ assert(s.current.questPOI == "0", "existing map enabled state lost")
 assert(s.tracker:GetAlpha() == 0.8, "tracker should be untouched when option is OFF")
 assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category not registered")
 
--- /nqh opens the standalone window and keeps native-looking check buttons.
+-- /nqh opens the real Blizzard settings category, not a standalone frame.
 s.command("")
-assert(NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh did not open settings")
+assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
+    "/nqh did not navigate to native Settings category")
+assert(NoQuestHintsForeverOptionsFrame == nil,
+    "legacy floating settings window must never be created")
+assert(#s.proxySettings == 6, "each option needs a native proxy setting")
+for _, control in ipairs(s.checks) do
+    assert(type(control.tooltip) == "string" and #control.tooltip > 0,
+        "native checkbox description must be shown in tooltip")
+end
 assert(#s.checks == 6, "expected six independent quest and immersion checkboxes")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
@@ -249,11 +291,12 @@ s.checks[4].scripts.OnClick(s.checks[4])
 s.checks[3]:SetChecked(true)
 s.checks[3].scripts.OnClick(s.checks[3])
 s.command("")
-assert(not NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh should toggle the window")
+assert(#s.opened == 2, "/nqh should navigate to the category again")
 
 -- Enter combat: cosmetic alpha still changes; mouse state is recovered after combat.
 s.setCombat(true)
 s.command("")
+assert(#s.opened == 3, "native Settings should remain accessible")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
 assert(s.tracker:GetAlpha() == 0 and s.tracker:IsMouseEnabled(), "combat tracker alpha should be hidden")
@@ -290,6 +333,7 @@ assert(reload.current.questPOI == "1", "map setting inherited tracker state")
 reload.command("off")
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
+assert(#reload.opened == 1, "/nqh must open native settings after reload")
 assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
     and reload.checks[4]:GetChecked() == true and reload.checks[5]:GetChecked() == true
     and reload.checks[6]:GetChecked() == true,
@@ -308,10 +352,13 @@ assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false
 assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOriginal == nil,
     "new alt should restore original account-wide NPC name CVar")
 
--- Missing Blizzard Settings API doesn't break /nqh.
+-- Missing Blizzard Settings API does not create a floating fallback or break commands.
 local noSettings = session({}, {}, false, true)
 noSettings.command("")
-assert(NoQuestHintsForeverOptionsFrame:IsShown(), "standalone UI requires Settings API")
+assert(#noSettings.opened == 0 and NoQuestHintsForeverOptionsFrame == nil,
+    "missing native settings must not spawn a custom popup")
+noSettings.command("on")
+assert(noSettings.current.questPOI == "0", "missing Settings API broke core slash toggles")
 
 -- Late creation of the objective tracker after our addon has loaded.
 local lateChar = {hideTracker = true}
@@ -321,4 +368,4 @@ lateFrame.alpha = 1
 late.event("ADDON_LOADED", "Blizzard_ObjectiveTracker")
 assert(lateFrame:GetAlpha() == 0, "late objective tracker not hidden")
 
-io.write("PASS: independent UI checkboxes, settings launcher, tracker hooks, combat, reload and alts\n")
+io.write("PASS: native vertical Settings controls/tooltips, independent options, tracker hooks, reload and alts\n")
