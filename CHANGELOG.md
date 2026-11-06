@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.0] — unreleased development build
 
 - Move all six configuration checkboxes directly into Blizzard's **Options → AddOns → No Quest Hints** using its native vertical Settings layout, like CatQuest.
 - Show short setting labels only; explanations now appear in the standard WoW hover tooltips rather than occupying permanent rows.
