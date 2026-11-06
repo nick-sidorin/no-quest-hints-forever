@@ -12,10 +12,13 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-Two **independent, per-character** options:
+> **Development branch:** Version 1.3.0 is being prepared and is **not published**. The optional tooltip setting described below is available only in a manually installed development build; the current stable CurseForge release remains v1.2.0.
+
+Three **independent, per-character** options in the unreleased development version:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
+- **Hide quest hints in tooltips (unreleased 1.3.0):** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain; floating NPC names and quest circles still use Blizzard's own settings.
 - **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
 The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface automatically uses **Russian** when the WoW client locale is `ruRU`; otherwise it uses English.
@@ -52,12 +55,13 @@ Restart the game or use `/reload` if you're updating an existing installation. E
 - Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
 - Or visit **Esc → Options → AddOns → No Quest Hints** and click **Open addon settings**.
 
-The settings window contains two checkboxes:
+The development version's settings window contains three checkboxes:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
 | Hide quest map hints | Hide the supported built-in map/minimap markers and navigation | Off |
 | Hide objective tracker | Hide the on-screen right-side task list | Off |
+| Hide quest hints in tooltips (dev) | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
@@ -124,6 +128,7 @@ NoQuestHintsForever/
 ├── QuestMarkers.lua          # Filtered native in-progress / turn-in map POI buttons
 ├── QuestHintPins.xml         # XML templates inheriting native Blizzard map widgets
 ├── QuestInlineHints.lua      # Per-quest journal and objective-tracker POI badges
+├── QuestTooltips.lua         # Opt-in quest line suppression on unit/object hover
 └── LICENSE                   # MIT license in the installation archive
 tests/
 ├── test_runtime.lua          # SavedVariables/reload and CVar regression checks
@@ -132,7 +137,8 @@ tests/
 ├── test_quest_markers.lua    # Native quest progress/turn-in pin tests
 ├── test_inline_hints.lua     # Journal/tracker title badges, secure/deferred layout
 ├── test_navigation.lua       # Selective in-world diamond and CVar restoration
-└── test_localization.lua     # Russian and English UI translations
+├── test_localization.lua     # Russian and English UI translations
+└── test_quest_tooltips.lua   # Tooltip callback, late load and isolation
 .github/
 ├── release-request.txt       # Release request: changing this triggers publication
 └── workflows/
@@ -154,6 +160,7 @@ lua5.1 tests/test_quest_markers.lua
 lua5.1 tests/test_inline_hints.lua
 lua5.1 tests/test_navigation.lua
 lua5.1 tests/test_localization.lua
+lua5.1 tests/test_quest_tooltips.lua
 ```
 
 Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
