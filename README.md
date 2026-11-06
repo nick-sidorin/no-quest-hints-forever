@@ -14,11 +14,12 @@ Remember when finding a quest objective meant reading the description, looking a
 
 > **Development branch:** Version 1.3.0 is being prepared and is **not published**. The optional tooltip setting described below is available only in a manually installed development build; the current stable CurseForge release remains v1.2.0.
 
-Three **independent, per-character** options in the unreleased development version:
+Four **independent, per-character** options in the unreleased development version:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
-- **Hide quest hints in tooltips (unreleased 1.3.0):** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain; floating NPC names and quest circles still use Blizzard's own settings.
+- **Hide quest hints in tooltips (unreleased 1.3.0):** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
+- **Hide quest NPC names (unreleased 1.3.0):** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
 - **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
 The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface automatically uses **Russian** when the WoW client locale is `ruRU`; otherwise it uses English.
@@ -55,13 +56,14 @@ Restart the game or use `/reload` if you're updating an existing installation. E
 - Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
 - Or visit **Esc → Options → AddOns → No Quest Hints** and click **Open addon settings**.
 
-The development version's settings window contains three checkboxes:
+The development version's settings window contains four checkboxes:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
 | Hide quest map hints | Hide the supported built-in map/minimap markers and navigation | Off |
 | Hide objective tracker | Hide the on-screen right-side task list | Off |
 | Hide quest hints in tooltips (dev) | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
+| Hide quest NPC names (dev) | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
@@ -84,12 +86,13 @@ The existing `on`/`off` commands stay backward-compatible with version 1.1.1. Th
 - Individual quest permissions are stored in the character's `revealedQuests` table, keyed by quest ID. A separate native `QuestPOIFrame` uses Blizzard's `QuestBlobPinMixin` and calls `DrawBlob(questID, true)` for allowed quests. The original blue blobs work in Forever with `questPOI=0`. A second provider uses a unique XML template inherited from Blizzard's `QuestPinTemplate` and `QuestDataProviderMixin:AddQuest()` for the clickable map POIs; both areas and POIs have been confirmed in an in-game test.
 - The journal's `POIButtonOwnerMixin` and tracker's `ObjectiveTrackerQuestPOIBlockMixin` originally suppress all title badges when `questPOI=0`. The addon restores their *native pooled buttons* only for allowed quest IDs, using post-hooks and deferred layout updates. **This new behavior still requires in-game validation.**
 - `Show hint` changes the native `C_SuperTrack` quest target, **not** the Blizzard watch list, so it can drive the world-space diamond while leaving the right-side list independently hidden. While the global Hide Quest Map Hints option is ON, `showInGameNavigation` is allowed only when the active super-tracked quest is itself permitted; it is otherwise suppressed. The original account/character CVar value is restored when the global option is turned OFF. Navigation cannot be guaranteed for quests lacking a valid destination in the Forever client.
+- The optional NPC name suppression uses only `UnitNameFriendlySpecialNPCName`. It never changes `UnitNameHostleNPC`, `UnitNameInteractiveNPC`, `UnitNameNPC` or `ShowQuestUnitCircles`. The original shared CVar is kept in `NoQuestHintsForeverAccount.npcNameOriginal` while suppression is enabled, restored when disabled or on the next character if they have the option turned off. Blizzard's NPC names dropdown may display an adjusted category while this override is active. Use Blizzard's own menu to control other name categories.
 - When global hint suppression is OFF, the addon draws no extra map pins and Blizzard handles the normal map. Its journal/tracker badge hooks likewise stay passive.
 - The tracker option is cosmetic: the addon changes the Blizzard `ObjectiveTrackerFrame` alpha to zero, and disables its mouse input when allowed. It retains that frame's previous alpha/mouse values in memory for restoration when unchecked.
 - Blizzard can update the tracker itself. The addon watches its `Show` and `SetAlpha` methods, then **defers** its own update rather than mutating Blizzard frames inside a secure hook. There is no continuous `OnUpdate` loop.
 - If the tracker frame is not loaded, the addon waits until it appears instead of raising an error.
 
-The goal is to leave the normal game behavior alone whenever each option is disabled. Another addon that also edits the same frame or CVars may conflict.
+The goal is to leave the normal game behavior alone whenever each option is disabled. **The new name-CVar override is account-wide at the game level** even though the addon preference is per character; when switching characters, the addon restores or reapplies the override for the newly loaded character. Another addon that also edits the same frame or CVars may conflict.
 
 WoW normally saves SavedVariables on logout and `/reload`; forced exits or crashes can lose the most recent change.
 
@@ -163,7 +166,7 @@ lua5.1 tests/test_localization.lua
 lua5.1 tests/test_quest_tooltips.lua
 ```
 
-Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
+Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. The unreleased name override tests preserve and restore the original account CVar and check that unrelated name CVars remain untouched. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
 
 ## Validation checklist for Forever 1.2.0
 
