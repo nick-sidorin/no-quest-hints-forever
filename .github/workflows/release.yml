@@ -33,6 +33,7 @@ jobs:
           lua5.1 tests/test_inline_hints.lua
           lua5.1 tests/test_navigation.lua
           lua5.1 tests/test_localization.lua
+          lua5.1 tests/test_quest_tooltips.lua
 
       - name: Validate addon version
         id: version
@@ -71,6 +72,7 @@ jobs:
             NoQuestHintsForever/QuestMarkers.lua \
             NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/QuestInlineHints.lua \
+            NoQuestHintsForever/QuestTooltips.lua \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
@@ -86,6 +88,7 @@ jobs:
               'NoQuestHintsForever/QuestMarkers.lua',
               'NoQuestHintsForever/QuestHintPins.xml',
               'NoQuestHintsForever/QuestInlineHints.lua',
+              'NoQuestHintsForever/QuestTooltips.lua',
               'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:
