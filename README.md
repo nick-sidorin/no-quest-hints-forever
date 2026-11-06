@@ -56,10 +56,10 @@ Restart the game or use `/reload` if you're updating an existing installation. E
 
 ### Open settings
 
-- Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
-- Or visit **Esc → Options → AddOns → No Quest Hints** and click **Open addon settings**.
+- Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
+- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All six checkboxes live directly on that page; no separate popup window.
 
-The settings window contains six checkboxes:
+The native Blizzard settings category contains six checkboxes. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ The second option is independent of the first: you can keep the task list while 
 
 | Command | What it does |
 | --- | --- |
-| `/nqh` | Open or close the addon settings window. |
+| `/nqh` | Open the native Blizzard AddOns settings category. |
 | `/nqh on` | Turn **on** hiding quest **map hints only**. |
 | `/nqh off` | Turn **off** hiding quest **map hints only** and restore their saved CVar values. |
 | `/nqh status` | Display all six option states and the values of targeted CVars. |
@@ -108,8 +108,7 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory`, if present.
-- **Stand-alone window:** native `BasicFrameTemplateWithInset`, `UICheckButtonTemplate`, and `UIPanelButtonTemplate`.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, six `Settings.RegisterProxySetting` values and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No custom popup or copied checkbox state.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
 
 ### Map and navigation CVars
@@ -131,7 +130,7 @@ NoQuestHintsForever/
 ├── NoQuestHintsForever.toc    # Interface, version, SavedVariables and load order
 ├── Localization.lua          # Russian UI, English fallback
 ├── NoQuestHintsForever.lua    # CVar/navigation and tracker controls; slash commands
-├── Options.lua               # Native window and Blizzard AddOns entry
+├── Options.lua               # Native Blizzard Settings page and tooltip checkboxes
 ├── QuestHints.lua            # Per-quest permission, menus, native blue blobs and SuperTrack
 ├── QuestMarkers.lua          # Filtered native in-progress / turn-in map POI buttons
 ├── QuestHintPins.xml         # XML templates inheriting native Blizzard map widgets
@@ -175,8 +174,8 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 
 ## Validation checklist for Forever 1.3.0
 
-1. Run `/nqh`: confirm the standalone settings window opens with all six independent checkboxes. Open it again to close it.
-2. Open **Options → AddOns → No Quest Hints**: confirm **Open addon settings** opens the same window.
+1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing six checkboxes (no floating window).
+2. Open the same category manually from the AddOns list: all six controls must appear directly in the page; hover each to see its explanation without a permanent description line.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
 5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
