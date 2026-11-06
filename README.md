@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Development preview:** The native in-panel settings redesign below belongs to unreleased **v1.4.0**. Stable **v1.3.0** still uses the original separate settings window until a new release is tested and published.
+
 Six **independent, per-character** options in version 1.3.0:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
