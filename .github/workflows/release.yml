@@ -43,6 +43,7 @@ jobs:
           lua5.1 tests/test_localization.lua
           lua5.1 tests/test_quest_tooltips.lua
           lua5.1 tests/test_sell_prices.lua
+          lua5.1 tests/test_quest_progress.lua
 
       - name: Validate addon version
         id: version
@@ -83,6 +84,7 @@ jobs:
             NoQuestHintsForever/QuestInlineHints.lua \
             NoQuestHintsForever/QuestTooltips.lua \
             NoQuestHintsForever/SellPrices.lua \
+            NoQuestHintsForever/QuestProgressMessages.lua \
             NoQuestHintsForever/LICENSE
           python3 - "$FILENAME" <<'PY'
           import sys
@@ -100,6 +102,7 @@ jobs:
               'NoQuestHintsForever/QuestInlineHints.lua',
               'NoQuestHintsForever/QuestTooltips.lua',
               'NoQuestHintsForever/SellPrices.lua',
+              'NoQuestHintsForever/QuestProgressMessages.lua',
               'NoQuestHintsForever/LICENSE',
           }
           with zipfile.ZipFile(filename) as archive:

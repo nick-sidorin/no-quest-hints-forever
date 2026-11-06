@@ -14,3 +14,4 @@ QuestHintPins.xml
 QuestInlineHints.lua
 QuestTooltips.lua
 SellPrices.lua
+QuestProgressMessages.lua
