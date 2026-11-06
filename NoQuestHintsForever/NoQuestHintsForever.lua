@@ -201,6 +201,12 @@ local function setTooltipHintsHidden(hidden)
     -- No reload, CVar change, or protected tooltip-frame manipulation.
 end
 
+local function setSellPriceHidden(hidden)
+    if not character then return end
+    character.hideSellPrices = hidden == true
+    -- TooltipDataProcessor reads this dynamically; vendor UI remains native.
+end
+
 -- Blizzard groups names of quest-relevant units with certain special NPCs
 -- behind one CVar. This is the closest native override, not per-quest filtering.
 -- Preserve the player's original account-wide CVar across character switches.
@@ -240,10 +246,12 @@ NoQuestHintsForeverAPI = api
 api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
+api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
 api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.SetTooltipHintsHidden = setTooltipHintsHidden
+api.SetSellPriceHidden = setSellPriceHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
@@ -274,6 +282,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
+        printMessage((L.SELL_PRICE_STATUS or "Hide item sell prices: ") .. (character.hideSellPrices == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
