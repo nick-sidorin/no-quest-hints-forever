@@ -1,11 +1,19 @@
 name: Build and release
 
-# Normal development commits are intentionally NOT built automatically.
-# Builds run manually from Actions, or when a version tag is pushed.
+# No checks on ordinary pushes to main. Pull requests run CI.
+# Manual builds remain available, and version tags can build a release ZIP.
 on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     tags: ['v*']
   workflow_dispatch:
+
+# Cancel superseded PR runs to avoid a pile of failed/outdated checks.
+concurrency:
+  group: addon-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
