@@ -2,6 +2,8 @@
 
 ## [1.3.0] — unreleased development build
 
+- Add an independent **Hide quest NPC names** setting using Blizzard's native `UnitNameFriendlySpecialNPCName` CVar. Store and restore the original account setting across character switches; leave ordinary NPC-name category CVars untouched. Blizzard groups some friendly/special NPC names with quest names, so these may also disappear.
+
 - Add an **optional per-character Hide quest hints in tooltips** checkbox, independent of map hints and objective tracker visibility. Default OFF to preserve 1.2.0 users' behavior.
 - Filter only native **creature and world-object** tooltip lines typed `QuestTitle`, `QuestObjective`, or `QuestPlayer`. Creature names, level, health and all unrelated tooltip content remain unchanged. Do not modify floating NPC names, nameplates or quest unit circles.
 - Provide Russian and English labels and include a tooltip status entry in `/nqh status`.

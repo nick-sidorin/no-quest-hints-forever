@@ -201,15 +201,50 @@ local function setTooltipHintsHidden(hidden)
     -- No reload, CVar change, or protected tooltip-frame manipulation.
 end
 
+-- Blizzard groups names of quest-relevant units with certain special NPCs
+-- behind one CVar. This is the closest native override, not per-quest filtering.
+-- Preserve the player's original account-wide CVar across character switches.
+local QUEST_NPC_NAME_CVAR = "UnitNameFriendlySpecialNPCName"
+local npcNamesApplying = false
+local function updateQuestNPCNames()
+    if not character or not account or npcNamesApplying then return end
+    npcNamesApplying = true
+    local current = getCVar(QUEST_NPC_NAME_CVAR)
+    if character.hideQuestNPCNames == true then
+        if current ~= nil then
+            if account.npcNameOriginal == nil then
+                account.npcNameOriginal = current
+            end
+            if current ~= "0" then
+                setCVar(QUEST_NPC_NAME_CVAR, "0")
+            end
+        end
+    elseif account.npcNameOriginal ~= nil then
+        local previous = account.npcNameOriginal
+        if current == previous or (current ~= nil and setCVar(QUEST_NPC_NAME_CVAR, previous)) then
+            account.npcNameOriginal = nil
+        end
+    end
+    npcNamesApplying = false
+end
+
+local function setQuestNPCNamesHidden(hidden)
+    if not character then return end
+    character.hideQuestNPCNames = hidden == true
+    updateQuestNPCNames()
+end
+
 -- UI module attaches an OpenOptions callback after its own Lua file loads.
 local api = {}
 NoQuestHintsForeverAPI = api
 api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
+api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.SetTooltipHintsHidden = setTooltipHintsHidden
+api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
@@ -238,6 +273,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
+        printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
@@ -268,12 +304,20 @@ frame:SetScript("OnEvent", function(_, event, changed)
             restoreMapValues(account.original)
         end
         updateTracker()
+        updateQuestNPCNames()
     elseif event == "PLAYER_ENTERING_WORLD" then
         enforceMapHints()
         updateTracker()
-    elseif event == "CVAR_UPDATE" and character and character.enabled == true and type(changed) == "string" then
-        for _, name in ipairs(cvars) do
-            if changed:lower() == name:lower() then enforceMapHints(); break end
+        updateQuestNPCNames()
+    elseif event == "CVAR_UPDATE" and character and type(changed) == "string" then
+        if character.enabled == true then
+            for _, name in ipairs(cvars) do
+                if changed:lower() == name:lower() then enforceMapHints(); break end
+            end
+        end
+        if character.hideQuestNPCNames == true
+            and changed:lower() == QUEST_NPC_NAME_CVAR:lower() then
+            updateQuestNPCNames()
         end
     elseif event == "SUPER_TRACKING_CHANGED" then
         -- Never reveal navigation toward a non-permitted quest.
