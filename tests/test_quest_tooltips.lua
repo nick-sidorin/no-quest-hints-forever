@@ -15,13 +15,19 @@ local function session(initial, delayed)
     NoQuestHintsForeverAPI = {
         IsTooltipHintsHidden = function() return hidden end,
     }
-    TooltipDataProcessor = delayed and nil or {
-        AddLinePreCall = function(kind, fn)
-            assert(calls[kind] == nil, "duplicate line-pre registration")
-            calls[kind] = fn
-            count[kind] = (count[kind] or 0) + 1
-        end,
-    }
+    -- Lua's "a and nil or b" always evaluates to b, even when a is true.
+    -- Use an explicit branch to actually emulate a not-yet-loaded processor.
+    if delayed then
+        TooltipDataProcessor = nil
+    else
+        TooltipDataProcessor = {
+            AddLinePreCall = function(kind, fn)
+                assert(calls[kind] == nil, "duplicate line-pre registration")
+                calls[kind] = fn
+                count[kind] = (count[kind] or 0) + 1
+            end,
+        }
+    end
     CreateFrame = function()
         local frame = {events={}}
         function frame:RegisterEvent(name) self.events[name]=true end
