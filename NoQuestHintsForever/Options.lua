@@ -5,7 +5,7 @@ if not api then return end
 
 local L = NoQuestHintsForeverLocale or {}
 local TITLE = L.TITLE or "No Quest Hints"
-local window, mapCheck, trackerCheck, tooltipCheck, npcNamesCheck, pricesCheck
+local window, mapCheck, trackerCheck, tooltipCheck, npcNamesCheck, pricesCheck, progressCheck
 
 local function addText(parent, text, font, point, relative, relativePoint, x, y)
     local label = parent:CreateFontString(nil, "OVERLAY", font)
@@ -20,6 +20,7 @@ local function refresh()
     if tooltipCheck then tooltipCheck:SetChecked(api.IsTooltipHintsHidden()) end
     if npcNamesCheck then npcNamesCheck:SetChecked(api.IsQuestNPCNamesHidden()) end
     if pricesCheck then pricesCheck:SetChecked(api.IsSellPriceHidden()) end
+    if progressCheck then progressCheck:SetChecked(api.IsQuestProgressHidden()) end
 end
 
 local function createCheck(parent, y, title, description, initialValue, onChange)
@@ -39,7 +40,7 @@ local function createWindow()
     if window then return window end
 
     window = CreateFrame("Frame", "NoQuestHintsForeverOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-    window:SetSize(560, 473)
+    window:SetSize(560, 539)
     window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     window:SetFrameStrata("DIALOG")
     window:SetClampedToScreen(true)
@@ -78,6 +79,10 @@ local function createWindow()
     pricesCheck = createCheck(window, -349, L.SELL_PRICES or "Hide item sell prices",
         L.SELL_PRICES_DESC or "Show vendor sell values only while a merchant window is open.",
         api.IsSellPriceHidden, api.SetSellPriceHidden)
+
+    progressCheck = createCheck(window, -415, L.PROGRESS_HINTS or "Hide quest progress popups",
+        L.PROGRESS_HINTS_DESC or "Suppress yellow objective updates, not other game messages.",
+        api.IsQuestProgressHidden, api.SetQuestProgressHidden)
 
     addText(window, L.CHAR_SAVED or "Settings are saved separately for each character.",
         "GameFontDisableSmall", "BOTTOMLEFT", window, "BOTTOMLEFT", 24, 22)
