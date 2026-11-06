@@ -7,7 +7,7 @@ local cvarNames = {
     "minimapShowQuestBlobs", "showInGameNavigation",
 }
 
-local function session(char, account, withSettings, withTracker)
+local function session(char, account, withSettings, withTracker, locale)
     NoQuestHintsForeverChar = nil
     NoQuestHintsForeverAccount = nil
     NoQuestHintsForeverAPI = nil
@@ -144,7 +144,7 @@ local function session(char, account, withSettings, withTracker)
     print = function() end
 
     -- Mirror the real TOC load order: localization precedes Options.lua.
-    GetLocale = function() return "enUS" end
+    GetLocale = function() return locale or "enUS" end
     assert(loadfile("NoQuestHintsForever/Localization.lua"))()
     assert(loadfile(addon))()
     assert(loadfile(ui))()
@@ -354,6 +354,15 @@ assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false
     "new alt inherited other character settings")
 assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOriginal == nil,
     "new alt should restore original account-wide NPC name CVar")
+
+-- The native Settings page must use localized labels and tooltip explanations.
+local localized = session({}, {}, true, false, "ruRU")
+assert(localized.checks[1].setting.name == "Скрывать подсказки на карте",
+    "native controls ignored the selected WoW locale")
+assert(localized.checks[4].tooltip:find("Blizzard", 1, true) ~= nil,
+    "Russian NPC name tooltip lost the Blizzard limitation warning")
+localized.command("")
+assert(#localized.opened == 1, "/nqh did not open Russian native settings")
 
 -- Missing Blizzard Settings API does not create a floating fallback or break commands.
 local noSettings = session({}, {}, false, true)
