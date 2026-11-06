@@ -33,16 +33,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          lua5.1 tests/test_runtime.lua
-          lua5.1 tests/test_ui.lua
-          lua5.1 tests/test_quest_hints.lua
-          lua5.1 tests/test_quest_markers.lua
-          lua5.1 tests/test_inline_hints.lua
-          lua5.1 tests/test_navigation.lua
-          lua5.1 tests/test_localization.lua
-          lua5.1 tests/test_quest_tooltips.lua
-          lua5.1 tests/test_sell_prices.lua
-          lua5.1 tests/test_quest_progress.lua
+          bash scripts/run_ci.sh
 
           version="$(tr -d '\r\n ' < .github/release-request.txt)"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
@@ -71,43 +62,7 @@ jobs:
           VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
-          mkdir -p dist
-          zip -q -X "dist/NoQuestHintsForever-v$VERSION.zip" \
-            NoQuestHintsForever/NoQuestHintsForever.toc \
-            NoQuestHintsForever/NoQuestHintsForever.lua \
-            NoQuestHintsForever/Localization.lua \
-            NoQuestHintsForever/Options.lua \
-            NoQuestHintsForever/QuestHints.lua \
-            NoQuestHintsForever/QuestMarkers.lua \
-            NoQuestHintsForever/QuestHintPins.xml \
-            NoQuestHintsForever/QuestInlineHints.lua \
-            NoQuestHintsForever/QuestTooltips.lua \
-            NoQuestHintsForever/SellPrices.lua \
-            NoQuestHintsForever/QuestProgressMessages.lua \
-            NoQuestHintsForever/LICENSE
-          python3 - "$VERSION" <<'PY'
-          import sys, zipfile
-          version = sys.argv[1]
-          path = f"dist/NoQuestHintsForever-v{version}.zip"
-          expected = {
-              "NoQuestHintsForever/NoQuestHintsForever.toc",
-              "NoQuestHintsForever/NoQuestHintsForever.lua",
-              "NoQuestHintsForever/Localization.lua",
-              "NoQuestHintsForever/Options.lua",
-              "NoQuestHintsForever/QuestHints.lua",
-              "NoQuestHintsForever/QuestMarkers.lua",
-              "NoQuestHintsForever/QuestHintPins.xml",
-              "NoQuestHintsForever/QuestInlineHints.lua",
-              "NoQuestHintsForever/QuestTooltips.lua",
-              "NoQuestHintsForever/SellPrices.lua",
-              "NoQuestHintsForever/QuestProgressMessages.lua",
-              "NoQuestHintsForever/LICENSE",
-          }
-          with zipfile.ZipFile(path) as z:
-              assert set(z.namelist()) == expected, z.namelist()
-              assert z.testzip() is None
-          print("Validated:", path)
-          PY
+          python3 scripts/package_addon.py "dist/NoQuestHintsForever-v$VERSION.zip"
 
       - name: Create tag and GitHub Release
         shell: bash

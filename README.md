@@ -12,16 +12,14 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-> **Development branch:** Version 1.3.0 is being prepared and is **not published**. The optional tooltip setting described below is available only in a manually installed development build; the current stable CurseForge release remains v1.2.0.
-
-Six **independent, per-character** options in the combined unreleased test version:
+Six **independent, per-character** options in version 1.3.0:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
-- **Hide quest hints in tooltips (unreleased 1.3.0):** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
-- **Hide quest NPC names (unreleased 1.3.0):** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
-- **Hide item sell prices (unreleased 1.3.0):** Suppress the native SellPrice line in item tooltips until a merchant window is open. The actual prices, item stats and NPC trading are unchanged; prices become visible while interacting with a vendor. Does not remove price overlays generated separately by other addons.
-- **Hide quest progress popups (unreleased 1.3.0):** Suppress the six native yellow quest objective progress/completion messages while preserving ordinary status messages and red combat/UI errors. Uses Blizzard `UIErrorsFrame:SetMessageTypeEnabled` and original visibility restoration instead of parsing translated strings.
+- **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
+- **Hide quest NPC names:** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
+- **Hide item sell prices:** Suppress the native SellPrice line in item tooltips until a merchant window is open. The actual prices, item stats and NPC trading are unchanged; prices become visible while interacting with a vendor. Does not remove price overlays generated separately by other addons.
+- **Hide quest progress popups:** Suppress the six native yellow quest objective progress/completion messages while preserving ordinary status messages and red combat/UI errors. Uses Blizzard `UIErrorsFrame:SetMessageTypeEnabled` and original visibility restoration instead of parsing translated strings.
 - **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
 The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface automatically uses **Russian** when the WoW client locale is `ruRU`; otherwise it uses English.
@@ -48,6 +46,9 @@ World of Warcraft/
                 ├── QuestMarkers.lua
                 ├── QuestHintPins.xml
                 ├── QuestInlineHints.lua
+                ├── QuestTooltips.lua
+                ├── SellPrices.lua
+                ├── QuestProgressMessages.lua
                 └── LICENSE
 ```
 
@@ -58,16 +59,16 @@ Restart the game or use `/reload` if you're updating an existing installation. E
 - Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
 - Or visit **Esc → Options → AddOns → No Quest Hints** and click **Open addon settings**.
 
-The combined test version's settings window contains six checkboxes:
+The settings window contains six checkboxes:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
 | Hide quest map hints | Hide the supported built-in map/minimap markers and navigation | Off |
 | Hide objective tracker | Hide the on-screen right-side task list | Off |
-| Hide quest hints in tooltips (dev) | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
-| Hide quest NPC names (dev) | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
-| Hide item sell prices (dev) | Hide vendor sell values in item tooltips until the merchant window is open | Off |
-| Hide quest progress popups (dev) | Hide yellow objective updates, preserving other notifications | Off |
+| Hide quest hints in tooltips | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
+| Hide quest NPC names | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
+| Hide item sell prices | Hide vendor sell values in item tooltips until the merchant window is open | Off |
+| Hide quest progress popups | Hide yellow objective updates, preserving other notifications | Off |
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
@@ -78,17 +79,17 @@ The second option is independent of the first: you can keep the task list while 
 | `/nqh` | Open or close the addon settings window. |
 | `/nqh on` | Turn **on** hiding quest **map hints only**. |
 | `/nqh off` | Turn **off** hiding quest **map hints only** and restore their saved CVar values. |
-| `/nqh status` | Display both option states and the values of targeted CVars. |
+| `/nqh status` | Display all six option states and the values of targeted CVars. |
 
-The existing `on`/`off` commands stay backward-compatible with version 1.1.1. They do **not** toggle the objective tracker. Use the new checkbox for that.
+The existing `on`/`off` commands stay backward-compatible with version 1.1.1. They control only map hints; the other five options have separate checkboxes.
 
 ## Per-character settings and persistence
 
-- Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. The new `hideTracker` value defaults to **false**.
+- Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. All five additional options default to **false**, preserving existing users' choices.
 - CVar baselines are saved before the addon modifies them. A separate `NoQuestHintsForeverAccount` SavedVariable tracks original values for CVars treated as shared across characters.
 - While map hint suppression is enabled, relevant `CVAR_UPDATE` events trigger re-enforcement. When disabled, the addon restores the saved baselines and stops enforcing.
 - Individual quest permissions are stored in the character's `revealedQuests` table, keyed by quest ID. A separate native `QuestPOIFrame` uses Blizzard's `QuestBlobPinMixin` and calls `DrawBlob(questID, true)` for allowed quests. The original blue blobs work in Forever with `questPOI=0`. A second provider uses a unique XML template inherited from Blizzard's `QuestPinTemplate` and `QuestDataProviderMixin:AddQuest()` for the clickable map POIs; both areas and POIs have been confirmed in an in-game test.
-- The journal's `POIButtonOwnerMixin` and tracker's `ObjectiveTrackerQuestPOIBlockMixin` originally suppress all title badges when `questPOI=0`. The addon restores their *native pooled buttons* only for allowed quest IDs, using post-hooks and deferred layout updates. **This new behavior still requires in-game validation.**
+- The journal's `POIButtonOwnerMixin` and tracker's `ObjectiveTrackerQuestPOIBlockMixin` originally suppress all title badges when `questPOI=0`. The addon restores their *native pooled buttons* only for allowed quest IDs, using post-hooks and deferred layout updates. **This behavior has been tested in Forever.**
 - `Show hint` changes the native `C_SuperTrack` quest target, **not** the Blizzard watch list, so it can drive the world-space diamond while leaving the right-side list independently hidden. While the global Hide Quest Map Hints option is ON, `showInGameNavigation` is allowed only when the active super-tracked quest is itself permitted; it is otherwise suppressed. The original account/character CVar value is restored when the global option is turned OFF. Navigation cannot be guaranteed for quests lacking a valid destination in the Forever client.
 - The optional NPC name suppression uses only `UnitNameFriendlySpecialNPCName`. It never changes `UnitNameHostleNPC`, `UnitNameInteractiveNPC`, `UnitNameNPC` or `ShowQuestUnitCircles`. The original shared CVar is kept in `NoQuestHintsForeverAccount.npcNameOriginal` while suppression is enabled, restored when disabled or on the next character if they have the option turned off. Blizzard's NPC names dropdown may display an adjusted category while this override is active. Use Blizzard's own menu to control other name categories.
 - When global hint suppression is OFF, the addon draws no extra map pins and Blizzard handles the normal map. Its journal/tracker badge hooks likewise stay passive.
@@ -150,6 +151,9 @@ tests/
 ├── test_quest_tooltips.lua   # Tooltip callback, late load and isolation
 ├── test_sell_prices.lua      # Vendor-only item price tooltip filtering
 └── test_quest_progress.lua   # Native quest progress message type filtering
+scripts/
+├── run_ci.sh                 # Shared regression, Lua syntax and manifest validation
+└── package_addon.py          # TOC-derived verified release ZIP
 .github/
 ├── release-request.txt       # Release request: changing this triggers publication
 └── workflows/
@@ -164,23 +168,14 @@ LICENSE
 Local tests, using Lua 5.1 from the repository root:
 
 ```sh
-lua5.1 tests/test_runtime.lua
-lua5.1 tests/test_ui.lua
-lua5.1 tests/test_quest_hints.lua
-lua5.1 tests/test_quest_markers.lua
-lua5.1 tests/test_inline_hints.lua
-lua5.1 tests/test_navigation.lua
-lua5.1 tests/test_localization.lua
-lua5.1 tests/test_quest_tooltips.lua
-lua5.1 tests/test_sell_prices.lua
-lua5.1 tests/test_quest_progress.lua
+bash scripts/run_ci.sh
 ```
 
-Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. The unreleased name override tests preserve and restore the original account CVar and check that unrelated name CVars remain untouched. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
+Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. The native NPC-name override tests preserve and restore the original account CVar and check that unrelated name CVars remain untouched. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
 
-## Validation checklist for Forever 1.2.0
+## Validation checklist for Forever 1.3.0
 
-1. Run `/nqh`: confirm the standalone settings window opens with all six independent checkboxes in the combined test build. Open it again to close it.
+1. Run `/nqh`: confirm the standalone settings window opens with all six independent checkboxes. Open it again to close it.
 2. Open **Options → AddOns → No Quest Hints**: confirm **Open addon settings** opens the same window.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
@@ -194,16 +189,20 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 12. With a **Russian client (`ruRU`)**, check the localized UI and context-menu labels; the short journal button should read **Показать / Скрыть**.
 13. Confirm that the journal button is horizontally aligned with Blizzard's **Back** button and does not overlap CatQuest's **Read** button. Check both detail layouts.
 14. If possible, check in combat and Edit Mode. Note any blocked-action error, click-blocking invisible region or conflict with other UI addons.
+15. Toggle **Hide quest hints in tooltips** and **Hide quest NPC names**; normal combat information should remain.
+16. Toggle **Hide item sell prices**; bag hover prices disappear outside a merchant and return while trading.
+17. Toggle **Hide quest progress popups**; quest counts disappear but ordinary warnings and status messages remain.
+18. Change characters and reload to check the six independent settings.
 
 Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 
 ## Automated releases and CurseForge
 
-**Normal development (GitHub Flow):** Implement changes in a feature branch and open a **Pull Request targeting `main`**. The PR triggers all eight Lua 5.1 test suites and, if they pass, uploads a test ZIP as a GitHub Actions artifact. A newer commit in the same PR cancels its superseded run. **Ordinary pushes to `main` do not run CI.** Manual builds remain available through **Actions → Build and release → Run workflow**. Publishing to CurseForge is a separate, explicit release request after an in-game test.
+**Normal development (GitHub Flow):** Implement changes in a feature branch and open a **Pull Request targeting `main`**. The PR runs the shared `scripts/run_ci.sh` gate: automatically discovered Lua 5.1 tests, syntax validation for every addon Lua file, TOC manifest checks, and packaging a ZIP from the exact TOC entries. Every failure turns the build red. New commits in the same PR cancel outdated runs. **Ordinary pushes to `main` do not run CI.** Manual builds remain available through **Actions → Build and release → Run workflow**. Stable publication follows green CI and a live Forever smoke test.
 
 **Merge safety:** The repository's CI check is named `build`. An administrator should enable a branch ruleset for `main` requiring Pull Requests and this check before merge. The GitHub App connection used for automated code updates cannot change branch-protection rules directly.
 
-**Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.2.0-beta.1`. The workflow runs tests, verifies the version, creates the annotated `v1.2.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.2.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
+**Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.4.0-beta.1`. The workflow re-runs the **same full regression, syntax and manifest gates**, verifies the version, creates the annotated `v1.4.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.4.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
 
 **CurseForge:** The project uses GitHub source-based Automatic Packaging and a GitHub webhook. The tag push requests packaging through the configured webhook; CurseForge handles its own file approval. Do not add a second upload through Actions, and **never commit CurseForge author tokens**. The [.pkgmeta](.pkgmeta) tells CurseForge which files to package.
 

@@ -32,18 +32,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq lua5.1
 
-      - name: Run tests
-        run: |
-          lua5.1 tests/test_runtime.lua
-          lua5.1 tests/test_ui.lua
-          lua5.1 tests/test_quest_hints.lua
-          lua5.1 tests/test_quest_markers.lua
-          lua5.1 tests/test_inline_hints.lua
-          lua5.1 tests/test_navigation.lua
-          lua5.1 tests/test_localization.lua
-          lua5.1 tests/test_quest_tooltips.lua
-          lua5.1 tests/test_sell_prices.lua
-          lua5.1 tests/test_quest_progress.lua
+      - name: Regression, Lua syntax and manifest gates
+        run: bash scripts/run_ci.sh
 
       - name: Validate addon version
         id: version
@@ -66,51 +56,13 @@ jobs:
           echo "version=$release_version" >> "$GITHUB_OUTPUT"
           echo "filename=NoQuestHintsForever-v$release_version.zip" >> "$GITHUB_OUTPUT"
 
-      - name: Package installable addon
+      - name: Package and verify installable addon
         shell: bash
         env:
           FILENAME: ${{ steps.version.outputs.filename }}
         run: |
           set -euo pipefail
-          mkdir -p dist
-          zip -q -X "dist/$FILENAME" \
-            NoQuestHintsForever/NoQuestHintsForever.toc \
-            NoQuestHintsForever/NoQuestHintsForever.lua \
-            NoQuestHintsForever/Localization.lua \
-            NoQuestHintsForever/Options.lua \
-            NoQuestHintsForever/QuestHints.lua \
-            NoQuestHintsForever/QuestMarkers.lua \
-            NoQuestHintsForever/QuestHintPins.xml \
-            NoQuestHintsForever/QuestInlineHints.lua \
-            NoQuestHintsForever/QuestTooltips.lua \
-            NoQuestHintsForever/SellPrices.lua \
-            NoQuestHintsForever/QuestProgressMessages.lua \
-            NoQuestHintsForever/LICENSE
-          python3 - "$FILENAME" <<'PY'
-          import sys
-          import zipfile
-
-          filename = 'dist/' + sys.argv[1]
-          expected = {
-              'NoQuestHintsForever/NoQuestHintsForever.toc',
-              'NoQuestHintsForever/NoQuestHintsForever.lua',
-              'NoQuestHintsForever/Localization.lua',
-              'NoQuestHintsForever/Options.lua',
-              'NoQuestHintsForever/QuestHints.lua',
-              'NoQuestHintsForever/QuestMarkers.lua',
-              'NoQuestHintsForever/QuestHintPins.xml',
-              'NoQuestHintsForever/QuestInlineHints.lua',
-              'NoQuestHintsForever/QuestTooltips.lua',
-              'NoQuestHintsForever/SellPrices.lua',
-              'NoQuestHintsForever/QuestProgressMessages.lua',
-              'NoQuestHintsForever/LICENSE',
-          }
-          with zipfile.ZipFile(filename) as archive:
-              actual = set(archive.namelist())
-              if actual != expected or archive.testzip() is not None:
-                  raise SystemExit(f'Invalid release ZIP contents: {actual}')
-          print(f'Validated {filename}')
-          PY
+          python3 scripts/package_addon.py "dist/$FILENAME"
 
       - uses: actions/upload-artifact@v4
         with:
