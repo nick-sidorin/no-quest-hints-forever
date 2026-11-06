@@ -210,6 +210,8 @@ Please report the Forever build, version, `/nqh status` output, steps to reprodu
 
 The original [`release.yml`](.github/workflows/release.yml) still builds ZIPs for direct, manually pushed tags. Tags created by `publish.yml` use the release action in that same workflow, because GitHub Actions does not automatically trigger another workflow from a tag push made with the default `GITHUB_TOKEN`.
 
+For repository work and continuation in a new chat, read [AGENTS.md](AGENTS.md) and the dated [project context](PROJECT_CONTEXT.md). Keep decisions and validation results in the repository rather than only in chat.
+
 See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 
 ---
