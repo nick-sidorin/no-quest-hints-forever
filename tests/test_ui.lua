@@ -16,6 +16,9 @@ local function session(char, account, withSettings, withTracker)
     UISpecialFrames = {}
     local current = {}
     for _, name in ipairs(cvarNames) do current[name] = "1" end
+    current.UnitNameFriendlySpecialNPCName = "1"
+    current.UnitNameHostleNPC = "0"
+    current.UnitNameNPC = "0"
     local deferred, checks, panels, combat = {}, {}, {}, false
     local eventFrame
 
@@ -156,9 +159,9 @@ assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category no
 -- /nqh opens the standalone window and keeps native-looking check buttons.
 s.command("")
 assert(NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh did not open settings")
-assert(#s.checks == 3, "expected map, tracker and tooltip checkboxes")
+assert(#s.checks == 4, "expected map, tracker, tooltip and quest-name checkboxes")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
-    and s.checks[3]:GetChecked() == false,
+    and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
@@ -168,6 +171,13 @@ s.checks[3]:SetChecked(true)
 s.checks[3].scripts.OnClick(s.checks[3])
 assert(original.hideQuestTooltips == true,
     "new tooltip setting not persisted per character")
+s.checks[4]:SetChecked(true)
+s.checks[4].scripts.OnClick(s.checks[4])
+assert(original.hideQuestNPCNames == true, "NPC name override not saved per character")
+assert(s.current.UnitNameFriendlySpecialNPCName == "0", "quest/special names CVar not suppressed")
+assert(shared.npcNameOriginal == "1", "account baseline not preserved")
+assert(s.current.UnitNameHostleNPC == "0" and s.current.UnitNameNPC == "0",
+    "NPC name override changed unrelated name categories")
 assert(s.current.questPOI == "0" and original.enabled == true
     and original.hideTracker == true, "tooltip checkbox must be independent")
 
@@ -182,13 +192,17 @@ assert(s.tracker:GetAlpha() == 0, "tracker visibility not re-enforced")
 
 -- The old slash commands control only map hints, not the tracker option.
 s.command("off")
-assert(original.enabled == false and original.hideTracker == true and original.hideQuestTooltips == true,
-    "slash off changed independent tracker/tooltip options")
+assert(original.enabled == false and original.hideTracker == true
+    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true,
+    "slash off changed independent settings")
+assert(s.current.UnitNameFriendlySpecialNPCName == "0",
+    "map off must not restore independent NPC name setting")
 assert(s.current.questPOI == "1", "map hints not restored")
 assert(s.tracker:GetAlpha() == 0, "tracker should stay hidden")
 s.command("on")
-assert(original.enabled == true and original.hideTracker == true and original.hideQuestTooltips == true,
-    "slash on changed independent tooltip setting")
+assert(original.enabled == true and original.hideTracker == true
+    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true,
+    "slash on changed independent settings")
 
 -- UI toggles remain independent in both directions.
 s.checks[1]:SetChecked(false)
@@ -202,7 +216,20 @@ assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled(), "tracker stat
 s.checks[3]:SetChecked(false)
 s.checks[3].scripts.OnClick(s.checks[3])
 assert(original.hideQuestTooltips == false and original.hideTracker == false
-    and original.enabled == false, "tooltip option changed unrelated settings")
+    and original.enabled == false and original.hideQuestNPCNames == true,
+    "tooltip option changed unrelated settings")
+-- Blizzard resets our cvar while the override is enabled: keep it suppressed.
+s.current.UnitNameFriendlySpecialNPCName = "1"
+s.event("CVAR_UPDATE", "UnitNameFriendlySpecialNPCName")
+assert(s.current.UnitNameFriendlySpecialNPCName == "0",
+    "CVAR_UPDATE did not re-enforce the user-selected name override")
+s.checks[4]:SetChecked(false)
+s.checks[4].scripts.OnClick(s.checks[4])
+assert(original.hideQuestNPCNames == false and shared.npcNameOriginal == nil
+    and s.current.UnitNameFriendlySpecialNPCName == "1",
+    "disabling NPC override must restore account baseline")
+s.checks[4]:SetChecked(true)
+s.checks[4].scripts.OnClick(s.checks[4])
 s.checks[3]:SetChecked(true)
 s.checks[3].scripts.OnClick(s.checks[3])
 s.command("")
@@ -230,7 +257,8 @@ assert(reload.current.questPOI == "1", "map setting inherited tracker state")
 reload.command("off")
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
-assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true,
+assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
+    and reload.checks[4]:GetChecked() == true,
     "UI did not reflect loaded tracker/tooltip settings")
 
 -- Different character starts without any suppression.
@@ -238,8 +266,11 @@ local alt = session({}, shared, true, true)
 assert(alt.tracker:GetAlpha() == 0.8 and alt.tracker:IsMouseEnabled(),
     "new alt inherited objective tracker suppression")
 assert(alt.current.questPOI == "1", "new alt inherited map suppression")
-assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false,
-    "new alt inherited tooltip suppression")
+assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false
+    and NoQuestHintsForeverAPI.IsQuestNPCNamesHidden() == false,
+    "new alt inherited other character settings")
+assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOriginal == nil,
+    "new alt should restore original account-wide NPC name CVar")
 
 -- Missing Blizzard Settings API doesn't break /nqh.
 local noSettings = session({}, {}, false, true)
