@@ -148,7 +148,7 @@ end
 local original = { enabled = true }
 local shared = {}
 local s = session(original, shared, true, true)
-assert(original.enabled == true and original.hideTracker == nil)
+assert(original.enabled == true and original.hideTracker == nil and original.hideQuestTooltips == nil)
 assert(s.current.questPOI == "0", "existing map enabled state lost")
 assert(s.tracker:GetAlpha() == 0.8, "tracker should be untouched when option is OFF")
 assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category not registered")
@@ -156,13 +156,20 @@ assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category no
 -- /nqh opens the standalone window and keeps native-looking check buttons.
 s.command("")
 assert(NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh did not open settings")
-assert(#s.checks == 2, "expected exactly two checkboxes")
-assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false,
+assert(#s.checks == 3, "expected map, tracker and tooltip checkboxes")
+assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
+    and s.checks[3]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
 assert(original.hideTracker == true, "tracker setting not stored per character")
 assert(s.tracker:GetAlpha() == 0 and not s.tracker:IsMouseEnabled(), "tracker not hidden")
+s.checks[3]:SetChecked(true)
+s.checks[3].scripts.OnClick(s.checks[3])
+assert(original.hideQuestTooltips == true,
+    "new tooltip setting not persisted per character")
+assert(s.current.questPOI == "0" and original.enabled == true
+    and original.hideTracker == true, "tooltip checkbox must be independent")
 
 -- Blizzard tries to re-show and change opacity: secure hooks defer the fix.
 s.tracker:SetAlpha(1)
@@ -175,11 +182,13 @@ assert(s.tracker:GetAlpha() == 0, "tracker visibility not re-enforced")
 
 -- The old slash commands control only map hints, not the tracker option.
 s.command("off")
-assert(original.enabled == false and original.hideTracker == true, "slash off changed tracker option")
+assert(original.enabled == false and original.hideTracker == true and original.hideQuestTooltips == true,
+    "slash off changed independent tracker/tooltip options")
 assert(s.current.questPOI == "1", "map hints not restored")
 assert(s.tracker:GetAlpha() == 0, "tracker should stay hidden")
 s.command("on")
-assert(original.enabled == true and original.hideTracker == true, "slash on did not restore map mode")
+assert(original.enabled == true and original.hideTracker == true and original.hideQuestTooltips == true,
+    "slash on changed independent tooltip setting")
 
 -- UI toggles remain independent in both directions.
 s.checks[1]:SetChecked(false)
@@ -190,6 +199,12 @@ s.checks[2]:SetChecked(false)
 s.checks[2].scripts.OnClick(s.checks[2])
 assert(original.hideTracker == false, "tracker option not turned OFF")
 assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled(), "tracker state not restored")
+s.checks[3]:SetChecked(false)
+s.checks[3].scripts.OnClick(s.checks[3])
+assert(original.hideQuestTooltips == false and original.hideTracker == false
+    and original.enabled == false, "tooltip option changed unrelated settings")
+s.checks[3]:SetChecked(true)
+s.checks[3].scripts.OnClick(s.checks[3])
 s.command("")
 assert(not NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh should toggle the window")
 
@@ -215,13 +230,16 @@ assert(reload.current.questPOI == "1", "map setting inherited tracker state")
 reload.command("off")
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
-assert(reload.checks[2]:GetChecked() == true, "UI did not reflect loaded setting")
+assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true,
+    "UI did not reflect loaded tracker/tooltip settings")
 
 -- Different character starts without any suppression.
 local alt = session({}, shared, true, true)
 assert(alt.tracker:GetAlpha() == 0.8 and alt.tracker:IsMouseEnabled(),
     "new alt inherited objective tracker suppression")
 assert(alt.current.questPOI == "1", "new alt inherited map suppression")
+assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false,
+    "new alt inherited tooltip suppression")
 
 -- Missing Blizzard Settings API doesn't break /nqh.
 local noSettings = session({}, {}, false, true)
