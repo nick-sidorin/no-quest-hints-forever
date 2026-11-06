@@ -145,7 +145,7 @@ tests/
 .github/
 ├── release-request.txt       # Release request: changing this triggers publication
 └── workflows/
-    ├── release.yml           # Manual/test and tagged-release builds
+    ├── release.yml           # PR CI, manual test ZIP and tagged-release builds
     └── publish.yml           # Automated tag + GitHub Release publication
 CHANGELOG.md
 README.md
@@ -189,7 +189,9 @@ Please report the Forever build, version, `/nqh status` output, steps to reprodu
 
 ## Automated releases and CurseForge
 
-**Normal development:** Commits to `main` do **not** automatically run Actions. This avoids noisy failure notifications during active development. To produce a test ZIP, run **Actions → Build and release → Run workflow** manually; this runs tests and uploads the installable ZIP as an artifact but **does not publish** it to CurseForge. Pushing an explicit version tag still runs the build/release workflow.
+**Normal development (GitHub Flow):** Implement changes in a feature branch and open a **Pull Request targeting `main`**. The PR triggers all eight Lua 5.1 test suites and, if they pass, uploads a test ZIP as a GitHub Actions artifact. A newer commit in the same PR cancels its superseded run. **Ordinary pushes to `main` do not run CI.** Manual builds remain available through **Actions → Build and release → Run workflow**. Publishing to CurseForge is a separate, explicit release request after an in-game test.
+
+**Merge safety:** The repository's CI check is named `build`. An administrator should enable a branch ruleset for `main` requiring Pull Requests and this check before merge. The GitHub App connection used for automated code updates cannot change branch-protection rules directly.
 
 **Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.2.0-beta.1`. The workflow runs tests, verifies the version, creates the annotated `v1.2.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.2.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
 
