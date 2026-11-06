@@ -1,18 +1,15 @@
 # Changelog
 
-## [1.3.0] — unreleased development build
+## [1.3.0] — 2026-11-06
 
-- Combined test-only branch: introduces **Hide quest progress popups** alongside the independently developed **Hide item sell prices**. Both feature PRs remain unmerged until validated in-game. The options do not interfere with quest map guidance or item selling.
-
-- Add an independent **Hide item sell prices** option (default OFF): hide Blizzard's native `SellPrice` tooltip line outside merchant UI, preserving all item attributes, shop pricing and actual sell transactions. Use the original line rendering while a merchant is open. English and Russian translations and Lua regression coverage included. This feature is not yet verified in the live client.
-
-- Add an independent **Hide quest NPC names** setting using Blizzard's native `UnitNameFriendlySpecialNPCName` CVar. Store and restore the original account setting across character switches; leave ordinary NPC-name category CVars untouched. Blizzard groups some friendly/special NPC names with quest names, so these may also disappear.
-
-- Add an **optional per-character Hide quest hints in tooltips** checkbox, independent of map hints and objective tracker visibility. Default OFF to preserve 1.2.0 users' behavior.
-- Filter only native **creature and world-object** tooltip lines typed `QuestTitle`, `QuestObjective`, or `QuestPlayer`. Creature names, level, health and all unrelated tooltip content remain unchanged. Do not modify floating NPC names, nameplates or quest unit circles.
-- Provide Russian and English labels and include a tooltip status entry in `/nqh status`.
-- Add regression tests for delayed API initialization, reversible toggling, unrelated tooltip safety, character isolation and localization.
-- **Not yet released:** requires live Forever testing and a separate release decision; CurseForge stable remains v1.2.0.
+- Add **Hide quest hints in tooltips**: selectively suppress native quest title/objective/player lines on creature and world-object mouseover without hiding normal details.
+- Add **Hide quest NPC names**: independently override Blizzard's `UnitNameFriendlySpecialNPCName` CVar while preserving the original account value on disable or character change. Because Blizzard groups these name types, some special/friendly NPC names may also be hidden; regular hostile-name CVars are untouched.
+- Add **Hide item sell prices**: hide the native SellPrice tooltip line outside the merchant window. Original prices reappear while trading, and selling mechanics remain unchanged. Addons that draw their own price overlays are unaffected.
+- Add **Hide quest progress popups**: suppress six native quest-specific yellow objective count/completion messages, but preserve ordinary game messages and red errors. Restore pre-existing message-type settings when disabled.
+- All four new controls are **independent**, **per-character**, **off by default**, and localized in Russian and English. The full settings window now has six checkboxes.
+- Expand Lua 5.1 regression coverage to ten suites, including independent options, saved settings, safe Blizzard UI integration, deferred loading, merchant-only prices and quest-message filtering.
+- Add shared release-quality gates: all Lua syntax, all automatically discovered regression suites and manifest-verified ZIP packaging must pass in PR CI and again before a tag/release is published.
+- New controls were evaluated by the addon author in World of Warcraft: Forever before requesting the stable release. Mocked Lua tests cannot exclude every client-side compatibility issue.
 
 ## [1.2.0] — 2026-11-05
 
