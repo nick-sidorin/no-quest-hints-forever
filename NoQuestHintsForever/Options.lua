@@ -5,7 +5,7 @@ if not api then return end
 
 local L = NoQuestHintsForeverLocale or {}
 local TITLE = L.TITLE or "No Quest Hints"
-local window, mapCheck, trackerCheck, tooltipCheck, npcNamesCheck
+local window, mapCheck, trackerCheck, tooltipCheck, npcNamesCheck, pricesCheck
 
 local function addText(parent, text, font, point, relative, relativePoint, x, y)
     local label = parent:CreateFontString(nil, "OVERLAY", font)
@@ -19,6 +19,7 @@ local function refresh()
     if trackerCheck then trackerCheck:SetChecked(api.IsTrackerHidden()) end
     if tooltipCheck then tooltipCheck:SetChecked(api.IsTooltipHintsHidden()) end
     if npcNamesCheck then npcNamesCheck:SetChecked(api.IsQuestNPCNamesHidden()) end
+    if pricesCheck then pricesCheck:SetChecked(api.IsSellPriceHidden()) end
 end
 
 local function createCheck(parent, y, title, description, initialValue, onChange)
@@ -38,7 +39,7 @@ local function createWindow()
     if window then return window end
 
     window = CreateFrame("Frame", "NoQuestHintsForeverOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-    window:SetSize(545, 407)
+    window:SetSize(560, 473)
     window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     window:SetFrameStrata("DIALOG")
     window:SetClampedToScreen(true)
@@ -73,6 +74,10 @@ local function createWindow()
     npcNamesCheck = createCheck(window, -283, L.NPC_NAME_HINTS or "Hide quest NPC names",
         L.NPC_NAME_HINTS_DESC or "Also hides some special NPC names (Blizzard limitation).",
         api.IsQuestNPCNamesHidden, api.SetQuestNPCNamesHidden)
+
+    pricesCheck = createCheck(window, -349, L.SELL_PRICES or "Hide item sell prices",
+        L.SELL_PRICES_DESC or "Show vendor sell values only while a merchant window is open.",
+        api.IsSellPriceHidden, api.SetSellPriceHidden)
 
     addText(window, L.CHAR_SAVED or "Settings are saved separately for each character.",
         "GameFontDisableSmall", "BOTTOMLEFT", window, "BOTTOMLEFT", 24, 22)
