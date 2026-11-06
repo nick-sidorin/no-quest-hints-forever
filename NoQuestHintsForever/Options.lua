@@ -5,7 +5,7 @@ if not api then return end
 
 local L = NoQuestHintsForeverLocale or {}
 local TITLE = L.TITLE or "No Quest Hints"
-local window, mapCheck, trackerCheck
+local window, mapCheck, trackerCheck, tooltipCheck
 
 local function addText(parent, text, font, point, relative, relativePoint, x, y)
     local label = parent:CreateFontString(nil, "OVERLAY", font)
@@ -17,6 +17,7 @@ end
 local function refresh()
     if mapCheck then mapCheck:SetChecked(api.IsMapHidden()) end
     if trackerCheck then trackerCheck:SetChecked(api.IsTrackerHidden()) end
+    if tooltipCheck then tooltipCheck:SetChecked(api.IsTooltipHintsHidden()) end
 end
 
 local function createCheck(parent, y, title, description, initialValue, onChange)
@@ -36,7 +37,7 @@ local function createWindow()
     if window then return window end
 
     window = CreateFrame("Frame", "NoQuestHintsForeverOptionsFrame", UIParent, "BasicFrameTemplateWithInset")
-    window:SetSize(460, 265)
+    window:SetSize(510, 337)
     window:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     window:SetFrameStrata("DIALOG")
     window:SetClampedToScreen(true)
@@ -63,6 +64,10 @@ local function createWindow()
     trackerCheck = createCheck(window, -151, L.TRACKER or "Hide objective tracker",
         L.TRACKER_DESC or "The on-screen task list and its progress counters.",
         api.IsTrackerHidden, api.SetTrackerHidden)
+
+    tooltipCheck = createCheck(window, -217, L.TOOLTIP_HINTS or "Hide quest hints in tooltips",
+        L.TOOLTIP_HINTS_DESC or "Quest names and progress on NPC and object mouseover.",
+        api.IsTooltipHintsHidden, api.SetTooltipHintsHidden)
 
     addText(window, L.CHAR_SAVED or "Settings are saved separately for each character.",
         "GameFontDisableSmall", "BOTTOMLEFT", window, "BOTTOMLEFT", 24, 22)
