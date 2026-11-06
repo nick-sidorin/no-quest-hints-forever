@@ -276,10 +276,8 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     local command = (message or ""):match("^%s*(%S+)")
     command = command and command:lower() or ""
     if command == "" then
-        if type(api.OpenOptions) == "function" then
-            api.OpenOptions()
-        else
-            printMessage(L.UNAVAILABLE or "Settings window is not available.")
+        if type(api.OpenOptions) ~= "function" or api.OpenOptions() ~= true then
+            printMessage(L.UNAVAILABLE or "Addon settings are unavailable.")
         end
     elseif command == "on" then
         setMapHints(true)
