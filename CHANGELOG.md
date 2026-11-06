@@ -2,6 +2,8 @@
 
 ## [1.3.0] — unreleased development build
 
+- Add an independent **Hide item sell prices** option (default OFF): hide Blizzard's native `SellPrice` tooltip line outside merchant UI, preserving all item attributes, shop pricing and actual sell transactions. Use the original line rendering while a merchant is open. English and Russian translations and Lua regression coverage included. This feature is not yet verified in the live client.
+
 - Add an independent **Hide quest NPC names** setting using Blizzard's native `UnitNameFriendlySpecialNPCName` CVar. Store and restore the original account setting across character switches; leave ordinary NPC-name category CVars untouched. Blizzard groups some friendly/special NPC names with quest names, so these may also disappear.
 
 - Add an **optional per-character Hide quest hints in tooltips** checkbox, independent of map hints and objective tracker visibility. Default OFF to preserve 1.2.0 users' behavior.
