@@ -151,7 +151,8 @@ end
 local original = { enabled = true }
 local shared = {}
 local s = session(original, shared, true, true)
-assert(original.enabled == true and original.hideTracker == nil and original.hideQuestTooltips == nil)
+assert(original.enabled == true and original.hideTracker == nil and original.hideQuestTooltips == nil
+    and original.hideSellPrices == nil)
 assert(s.current.questPOI == "0", "existing map enabled state lost")
 assert(s.tracker:GetAlpha() == 0.8, "tracker should be untouched when option is OFF")
 assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category not registered")
@@ -159,9 +160,10 @@ assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category no
 -- /nqh opens the standalone window and keeps native-looking check buttons.
 s.command("")
 assert(NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh did not open settings")
-assert(#s.checks == 4, "expected map, tracker, tooltip and quest-name checkboxes")
+assert(#s.checks == 5, "expected map, tracker, tooltip, quest-name and sell-price checkboxes")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
-    and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false,
+    and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
+    and s.checks[5]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
@@ -178,6 +180,13 @@ assert(s.current.UnitNameFriendlySpecialNPCName == "0", "quest/special names CVa
 assert(shared.npcNameOriginal == "1", "account baseline not preserved")
 assert(s.current.UnitNameHostleNPC == "0" and s.current.UnitNameNPC == "0",
     "NPC name override changed unrelated name categories")
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
+assert(original.hideSellPrices == true and NoQuestHintsForeverAPI.IsSellPriceHidden() == true,
+    "sell price preference not enabled per character")
+assert(original.enabled == true and original.hideQuestNPCNames == true
+    and original.hideQuestTooltips == true and original.hideTracker == true,
+    "sell price option changed independent feature states")
 assert(s.current.questPOI == "0" and original.enabled == true
     and original.hideTracker == true, "tooltip checkbox must be independent")
 
@@ -193,7 +202,8 @@ assert(s.tracker:GetAlpha() == 0, "tracker visibility not re-enforced")
 -- The old slash commands control only map hints, not the tracker option.
 s.command("off")
 assert(original.enabled == false and original.hideTracker == true
-    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true,
+    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true
+    and original.hideSellPrices == true,
     "slash off changed independent settings")
 assert(s.current.UnitNameFriendlySpecialNPCName == "0",
     "map off must not restore independent NPC name setting")
@@ -201,7 +211,8 @@ assert(s.current.questPOI == "1", "map hints not restored")
 assert(s.tracker:GetAlpha() == 0, "tracker should stay hidden")
 s.command("on")
 assert(original.enabled == true and original.hideTracker == true
-    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true,
+    and original.hideQuestTooltips == true and original.hideQuestNPCNames == true
+    and original.hideSellPrices == true,
     "slash on changed independent settings")
 
 -- UI toggles remain independent in both directions.
@@ -248,6 +259,15 @@ s.checks[2]:SetChecked(false)
 s.checks[2].scripts.OnClick(s.checks[2])
 assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled())
 
+-- The price option is independent, and toggling it is reversible.
+s.checks[5]:SetChecked(false)
+s.checks[5].scripts.OnClick(s.checks[5])
+assert(original.hideSellPrices == false
+    and NoQuestHintsForeverAPI.IsSellPriceHidden() == false,
+    "turning off price concealment did not restore native behavior")
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
+
 -- Reload: stored tracker option should be reapplied, without changing map.
 original.enabled = false
 original.hideTracker = true
@@ -258,7 +278,7 @@ reload.command("off")
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
 assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
-    and reload.checks[4]:GetChecked() == true,
+    and reload.checks[4]:GetChecked() == true and reload.checks[5]:GetChecked() == true,
     "UI did not reflect loaded tracker/tooltip settings")
 
 -- Different character starts without any suppression.
@@ -267,7 +287,8 @@ assert(alt.tracker:GetAlpha() == 0.8 and alt.tracker:IsMouseEnabled(),
     "new alt inherited objective tracker suppression")
 assert(alt.current.questPOI == "1", "new alt inherited map suppression")
 assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false
-    and NoQuestHintsForeverAPI.IsQuestNPCNamesHidden() == false,
+    and NoQuestHintsForeverAPI.IsQuestNPCNamesHidden() == false
+    and NoQuestHintsForeverAPI.IsSellPriceHidden() == false,
     "new alt inherited other character settings")
 assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOriginal == nil,
     "new alt should restore original account-wide NPC name CVar")
