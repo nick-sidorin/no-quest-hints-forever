@@ -143,6 +143,9 @@ local function session(char, account, withSettings, withTracker)
     end
     print = function() end
 
+    -- Mirror the real TOC load order: localization precedes Options.lua.
+    GetLocale = function() return "enUS" end
+    assert(loadfile("NoQuestHintsForever/Localization.lua"))()
     assert(loadfile(addon))()
     assert(loadfile(ui))()
     NoQuestHintsForeverChar = char
