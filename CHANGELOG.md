@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+- Move all six configuration checkboxes directly into Blizzard's **Options → AddOns → No Quest Hints** using its native vertical Settings layout, like CatQuest.
+- Show short setting labels only; explanations now appear in the standard WoW hover tooltips rather than occupying permanent rows.
+- Make `/nqh` navigate straight to the AddOns settings category; remove the duplicate floating window and launcher button.
+- Preserve existing per-character SavedVariables, state logic, default values and independent toggles. Add native Settings integration, tooltip and slash-navigation regression coverage.
+- **Not yet released:** requires live Forever UI validation and a separate stable release request.
+
+
 ## [1.3.0] — 2026-11-06
 
 - Add **Hide quest hints in tooltips**: selectively suppress native quest title/objective/player lines on creature and world-object mouseover without hiding normal details.
