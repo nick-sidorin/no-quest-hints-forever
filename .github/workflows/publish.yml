@@ -40,6 +40,7 @@ jobs:
           lua5.1 tests/test_inline_hints.lua
           lua5.1 tests/test_navigation.lua
           lua5.1 tests/test_localization.lua
+          lua5.1 tests/test_quest_tooltips.lua
 
           version="$(tr -d '\r\n ' < .github/release-request.txt)"
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)(\.[0-9]+)?)?$ ]]; then
@@ -78,6 +79,7 @@ jobs:
             NoQuestHintsForever/QuestMarkers.lua \
             NoQuestHintsForever/QuestHintPins.xml \
             NoQuestHintsForever/QuestInlineHints.lua \
+            NoQuestHintsForever/QuestTooltips.lua \
             NoQuestHintsForever/LICENSE
           python3 - "$VERSION" <<'PY'
           import sys, zipfile
@@ -92,6 +94,7 @@ jobs:
               "NoQuestHintsForever/QuestMarkers.lua",
               "NoQuestHintsForever/QuestHintPins.xml",
               "NoQuestHintsForever/QuestInlineHints.lua",
+              "NoQuestHintsForever/QuestTooltips.lua",
               "NoQuestHintsForever/LICENSE",
           }
           with zipfile.ZipFile(path) as z:
