@@ -3,7 +3,7 @@
 local api = NoQuestHintsForeverAPI
 if not api then return end
 local L = NoQuestHintsForeverLocale
-local window, selected, shownThisSession, requested
+local window, blocker, selected, shownThisSession, requested
 local cards = {}
 -- Match the native Forever SuperDistrictButtonTemplate (260 x 530).
 -- Atlas artwork includes its own border/padding; never stretch it to the frame.
@@ -80,19 +80,49 @@ local function setSelected(card, value)
     end
 end
 
+local function hideBackgroundTooltip()
+    if GameTooltip and type(GameTooltip.Hide) == "function" then GameTooltip:Hide() end
+end
+
+local function centerButtonLabel(button)
+    local label = button:GetFontString()
+    if label then
+        label:ClearAllPoints()
+        label:SetPoint("CENTER", button, "CENTER", 0, 0)
+        label:SetJustifyH("CENTER")
+        label:SetJustifyV("MIDDLE")
+    end
+end
+
 local function createWindow()
     if window then return end
-    window = CreateFrame("Frame", "NoQuestHintsForeverWelcome", UIParent, "BackdropTemplate")
+    -- A texture can dim the screen but cannot intercept mouse input. Keep the
+    -- input shield unscaled and full-screen, with the scaled chooser above it.
+    blocker = CreateFrame("Frame", "NoQuestHintsForeverWelcomeBlocker", UIParent)
+    blocker:Hide()
+    blocker:SetAllPoints(UIParent)
+    blocker:SetFrameStrata("FULLSCREEN_DIALOG")
+    blocker:EnableMouse(true)
+    blocker:EnableMouseWheel(true)
+    if type(blocker.SetPropagateMouseClicks) == "function" then blocker:SetPropagateMouseClicks(false) end
+    if type(blocker.SetPropagateMouseMotion) == "function" then blocker:SetPropagateMouseMotion(false) end
+    blocker:SetScript("OnMouseDown", function() end)
+    blocker:SetScript("OnMouseUp", function() end)
+    blocker:SetScript("OnMouseWheel", function() end)
+    blocker:SetScript("OnEnter", hideBackgroundTooltip)
+    local dim = blocker:CreateTexture(nil, "BACKGROUND")
+    dim:SetAllPoints(blocker)
+    dim:SetColorTexture(0, 0, 0, 0.88)
+
+    window = CreateFrame("Frame", "NoQuestHintsForeverWelcome", blocker, "BackdropTemplate")
     window:Hide()
     window:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     window:SetPoint("CENTER")
-    window:SetFrameStrata("DIALOG")
+    window:SetFrameStrata("FULLSCREEN_DIALOG")
+    window:SetFrameLevel(blocker:GetFrameLevel() + 1)
     window:SetClampedToScreen(true)
     window:EnableMouse(true)
-    local dim = window:CreateTexture(nil, "BACKGROUND")
-    dim:SetPoint("TOPLEFT", UIParent, "TOPLEFT")
-    dim:SetPoint("BOTTOMRIGHT", UIParent, "BOTTOMRIGHT")
-    dim:SetColorTexture(0, 0, 0, 0.88)
+    window:SetScript("OnHide", function() blocker:Hide() end)
     local heading = text(window, L.WELCOME_TITLE, "GameFontHighlightHuge", 900,
         "TOP", window, "TOP", 0, -14)
     heading:SetHeight(32)
@@ -152,26 +182,26 @@ local function createWindow()
     window.Prompt = text(window, L.WELCOME_SELECT, "GameFontHighlight", 860,
         "TOP", window, "TOP", 0, -666)
     window.Prompt:SetHeight(24)
-    window.Apply = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
-    window.Apply:SetSize(320, 44)
+    -- Shared game-UI templates use three slices, unlike the small legacy
+    -- UIPanelButton texture stretched vertically in the previous preview.
+    window.Apply = CreateFrame("Button", nil, window, "SharedGoldRedButtonExtraLargeTemplate")
+    window.Apply:SetSize(360, 36)
     window.Apply:SetPoint("BOTTOM", window, "BOTTOM", 0, 60)
-    window.Apply:SetNormalFontObject("GameFontNormalLarge")
-    window.Apply:SetHighlightFontObject("GameFontHighlightLarge")
     window.Apply:SetText(L.WELCOME_APPLY)
+    centerButtonLabel(window.Apply)
     window.Apply:SetScript("OnClick", function()
         if selected and not inCombat() and api.ApplyPreset(selected) then window:Hide() end
     end)
-    local function secondary(label, x, callback)
-        local control = CreateFrame("Button", nil, window)
-        control:SetSize(180, 24)
-        control:SetPoint("BOTTOM", window, "BOTTOM", x, 20)
-        control:SetNormalFontObject("GameFontHighlightSmall")
-        control:SetHighlightFontObject("GameFontNormalSmall")
+    local function secondary(label, side, callback)
+        local control = CreateFrame("Button", nil, window, "SharedButtonSmallTemplate")
+        control:SetSize(174, 28)
+        control:SetPoint("TOP" .. side, window.Apply, "BOTTOM" .. side, 0, -12)
         control:SetText(label)
+        centerButtonLabel(control)
         control:SetScript("OnClick", callback)
     end
-    secondary(L.WELCOME_LATER, -110, function() window:Hide() end)
-    secondary(L.WELCOME_SETTINGS, 110, function()
+    secondary(L.WELCOME_LATER, "LEFT", function() window:Hide() end)
+    secondary(L.WELCOME_SETTINGS, "RIGHT", function()
         if not inCombat() and api.OpenOptions() then window:Hide() end
     end)
     local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
@@ -197,6 +227,8 @@ function api.ShowWelcome()
     window.Prompt:SetText(L.WELCOME_SELECT)
     window.Apply:Disable()
     fit()
+    hideBackgroundTooltip()
+    blocker:Show()
     window:Show()
     return true
 end

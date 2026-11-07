@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
+
 - Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.
 
 - Add a consent-based first-run chooser: As in Blizzard (no hiding), Immersion (five quest features), Full immersion (all six, including merchant-only prices). Native game-art cards and circular icons; no changes before confirmation.

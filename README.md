@@ -145,7 +145,7 @@ Only game textures are used; no Wowhead images are bundled. The cards use the ex
 | Immersion | `icon_treasuremap` | [Chosen treasure map](https://www.wowhead.com/icon=1064187/icon-treasuremap) |
 | Full immersion | `Achievement_Zone_ElwynnForest` | [Elwynn Forest](https://www.wowhead.com/icons?filter=na=achievement_zone_elwynnforest) |
 
-The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a large primary confirmation button above plain secondary actions. The owner reported general functionality working on the first preview; the revised rendering and text fit still require in-game review; mocked UI tests cannot establish the final rendering.
+The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a native gold/red three-slice confirmation button above two smaller native buttons aligned to its left and right edges. A full-screen mouse/wheel shield prevents background UI hover or clicks while the chooser is open; it is released when the chooser closes. The owner reported general functionality working on the first preview; the revised rendering and text fit still require in-game review; mocked UI tests cannot establish the final rendering.
 
 ### Map and navigation CVars
 
@@ -234,7 +234,8 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.
 22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all six effects are off and the original values return. Restore twice; try while in combat and finish after combat.
 23. Apply a preset, disable the addon and reload through the normal addon UI. Verify game settings remain restored without the addon. Re-enable it and verify your saved mode returns. Repeat with normal logout/relogin and switching characters. This client test is required before claiming automatic uninstall cleanup works.
-24. Confirm removed `/nqh on` and `/nqh off` only show help and `/nqh status` still prints diagnostics.
+24. With the chooser open, move/click/scroll over background action bars, quests and screen edges: no background tooltip or action should occur. Test Esc, Later, Customize settings, confirmation and combat; the background must become interactive again when the chooser closes. Check the primary button label and the aligned secondary buttons in ruRU/enUS.
+25. Confirm removed `/nqh on` and `/nqh off` only show help and `/nqh status` still prints diagnostics.
 
 Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 

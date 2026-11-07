@@ -7,7 +7,8 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
     for _, name in ipairs(mapNames) do if values[name] == nil then values[name] = "1" end end
     local frames, writes, failed = {}, {}, {}
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount, NoQuestHintsForeverAPI = nil, nil, nil
-    NoQuestHintsForeverWelcome, ObjectiveTrackerFrame, Settings = nil, nil, nil
+    NoQuestHintsForeverWelcome, NoQuestHintsForeverWelcomeBlocker, ObjectiveTrackerFrame, Settings = nil, nil, nil, nil
+    GameTooltip = { shown=true, hideCount=0, Hide=function(self) self.shown=false; self.hideCount=self.hideCount+1 end }
     SlashCmdList, UISpecialFrames = {}, {}
     C_Texture = { GetAtlasInfo = function(name)
         if withoutAtlases then return nil end
@@ -23,6 +24,7 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         function obj:SetWidth(w) self.width=w end
         function obj:SetHeight(h) self.height=h end
         function obj:SetPoint(...) self.point={...} end
+        function obj:ClearAllPoints() self.point=nil end
         function obj:SetAllPoints(target) self.target=target end
         function obj:SetText(value) self.text=value end
         function obj:SetJustifyH() end
@@ -47,9 +49,14 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         local obj = region()
         obj.kind,obj.name,obj.parent,obj.template=kind,name,parent,template
         obj.scripts,obj.events,obj.textures={}, {}, {}
-        function obj:SetFrameStrata() end
+        function obj:SetFrameStrata(value) self.strata=value end
+        function obj:SetFrameLevel(value) self.level=value end
+        function obj:GetFrameLevel() return self.level or 0 end
         function obj:SetClampedToScreen() end
-        function obj:EnableMouse() end
+        function obj:EnableMouse(value) self.mouse=value end
+        function obj:EnableMouseWheel(value) self.wheel=value end
+        function obj:SetPropagateMouseClicks(value) self.propagateClicks=value end
+        function obj:SetPropagateMouseMotion(value) self.propagateMotion=value end
         function obj:SetBackdrop(data) self.backdrop=data end
         function obj:SetBackdropColor() end
         function obj:SetBackdropBorderColor(...) self.border={...} end
@@ -64,7 +71,15 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         function obj:Enable() self.disabled=false end
         function obj:Disable() self.disabled=true end
         function obj:Show() self.shown=true end
-        function obj:Hide() self.shown=false end
+        function obj:Hide()
+            local wasShown=self.shown
+            self.shown=false
+            if wasShown and self.scripts.OnHide then self.scripts.OnHide(self) end
+        end
+        function obj:GetFontString()
+            if not self.label then self.label=region() end
+            return self.label
+        end
         function obj:CreateTexture()
             local texture=region(); self.textures[#self.textures+1]=texture; return texture
         end
@@ -129,6 +144,21 @@ local s=session(char,account)
 assert(s.api.IsOnboardingPending() and char.onboardingComplete==false)
 assert(#s.writes==0 and char.enabled==nil, "first run changed settings without consent")
 local welcome=NoQuestHintsForeverWelcome
+local shield=NoQuestHintsForeverWelcomeBlocker
+assert(shield.shown and shield.target==UIParent and shield.mouse and shield.wheel,
+    "modal shield must cover the full viewport, not just the scaled panel")
+assert(welcome.parent==shield and welcome.level>shield:GetFrameLevel())
+assert(shield.strata=="FULLSCREEN_DIALOG" and not shield.propagateClicks and not shield.propagateMotion)
+assert(not GameTooltip.shown, "an already visible background tooltip must close on modal open")
+GameTooltip.shown=true; shield.scripts.OnEnter(shield)
+assert(not GameTooltip.shown)
+local mainLabel=welcome.Apply:GetFontString()
+assert(mainLabel.point[1]=="CENTER" and mainLabel.point[2]==welcome.Apply,
+    "main label must be centered in the button")
+assert(welcome.Apply.template=="SharedGoldRedButtonExtraLargeTemplate")
+for _,label in ipairs({NoQuestHintsForeverLocale.WELCOME_LATER,NoQuestHintsForeverLocale.WELCOME_SETTINGS}) do
+    assert(s.button(label).template=="SharedButtonSmallTemplate", "secondary actions need native button states")
+end
 assert(welcome.shown and #s.cards()==3 and welcome.scale<1, "welcome must fit the viewport")
 assert(welcome.Apply.disabled, "confirm must wait for a selection")
 s.click(s.cards()[2])
@@ -143,7 +173,7 @@ assert(art[3].atlas=="Mode-Selection-Ring" and art[3].useAtlasSize,
 assert(art[2].texture=="Interface\\Icons\\icon_treasuremap" and art[2].mask,
     "immersion icon must be the chosen map, with a circular mask")
 s.click(welcome.Apply)
-assert(not welcome.shown and char.onboardingComplete==true)
+assert(not welcome.shown and not shield.shown and char.onboardingComplete==true, "confirmation must release the input shield")
 assert(char.enabled and char.hideTracker and char.hideQuestTooltips and char.hideQuestNPCNames
     and char.hideQuestProgressMessages and char.hideSellPrices==false, "quest preset must leave prices visible")
 assert(s.values.questPOI=="0" and s.values[npc]=="0")
@@ -187,11 +217,11 @@ assert(s.api.RestoreGameSettings() and next(char.original)==nil)
 local pending={}
 s=session(pending,{})
 s.click(s.button(NoQuestHintsForeverLocale.WELCOME_LATER))
-assert(s.api.IsOnboardingPending() and #s.writes==0)
+assert(s.api.IsOnboardingPending() and #s.writes==0 and not NoQuestHintsForeverWelcomeBlocker.shown)
 s=session(pending,{})
 assert(NoQuestHintsForeverWelcome.shown and s.api.IsOnboardingPending())
 s.click(s.button(NoQuestHintsForeverLocale.WELCOME_SETTINGS))
-assert(s.opened()==1 and not NoQuestHintsForeverWelcome.shown and s.api.IsOnboardingPending())
+assert(s.opened()==1 and not NoQuestHintsForeverWelcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown and s.api.IsOnboardingPending())
 s.api.CompleteOnboarding() -- the native settings setter does this on first edit
 assert(not s.api.IsOnboardingPending())
 
@@ -210,7 +240,7 @@ s.click(s.cards()[1]); s.click(NoQuestHintsForeverWelcome.Apply)
 assert(#s.writes==0 and not s.api.IsOnboardingPending(), "Blizzard first-run choice must write no CVars")
 s.api.ShowWelcome(); assert(NoQuestHintsForeverWelcome.shown)
 s.setCombat(true); s.event("PLAYER_REGEN_DISABLED")
-assert(not NoQuestHintsForeverWelcome.shown)
+assert(not NoQuestHintsForeverWelcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown)
 
 -- A write failure on logout must keep recovery data across sessions.
 local interrupted, backups={},{}
@@ -221,6 +251,15 @@ s.event("PLAYER_LOGOUT")
 assert(interrupted.original.questPOI=="1" and backups.npcNameOriginal=="1")
 s=session(interrupted,backups,s.values)
 assert(s.api.RestoreGameSettings() and s.values.questPOI=="1" and s.values[npc]=="1")
+
+-- Esc/close and explicit restore must also release the full-screen shield.
+s=session({}, {})
+NoQuestHintsForeverWelcome:Hide() -- UISpecialFrames/Esc uses the same Hide path
+assert(not NoQuestHintsForeverWelcomeBlocker.shown)
+s.api.ShowWelcome()
+assert(NoQuestHintsForeverWelcomeBlocker.shown)
+s.api.RestoreGameSettings()
+assert(not NoQuestHintsForeverWelcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown)
 
 -- Older clients keep one usable fallback frame when realm-rule atlases are
 -- unavailable. The first-run decision and restore behavior stay the same.
