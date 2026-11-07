@@ -144,7 +144,15 @@ local function registerCategory()
                 api.CompleteOnboarding()
                 setEnabled(value == true)
             end)
-        Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
+        local initializer = Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
+        if initializer and type(initializer.IsNewTagShown) == "function"
+            and type(initializer.MarkSettingAsSeen) == "function" then
+            -- Use the existing native NewFeature widget through our own row's
+            -- initializer. Never register addon IDs in Blizzard's game-version
+            -- NewSettings tables or replace global feature/Settings functions.
+            initializer.IsNewTagShown = function() return api.IsSettingNew(item[1]) == true end
+            initializer.MarkSettingAsSeen = function() api.MarkSettingSeen(item[1]) end
+        end
     end
 
     heading(L.SUPPORT_GROUP)

@@ -100,6 +100,8 @@ local function session(char, account, withSettings, withTracker, locale)
                 assert(cat == panels[1] and type(tooltip) == "string" and #tooltip > 0,
                     "each native checkbox must have a tooltip")
                 local check = { setting = setting, tooltip = tooltip, scripts = {} }
+                function check:IsNewTagShown() error("must use addon-scoped marker") end
+                function check:MarkSettingAsSeen() error("must use addon-scoped seen state") end
                 function check:SetParentInitializer(parent, predicate)
                     self.parentInitializer=parent; self.modifyPredicate=predicate
                 end
@@ -154,6 +156,7 @@ local function session(char, account, withSettings, withTracker, locale)
     -- Mirror the real TOC load order: localization precedes Options.lua.
     GetLocale = function() return locale or "enUS" end
     assert(loadfile("NoQuestHintsForever/Localization.lua"))()
+    assert(loadfile("NoQuestHintsForever/LocaleTranslations.lua"))()
     assert(loadfile(addon))()
     assert(loadfile(ui))()
     NoQuestHintsForeverChar = char
@@ -557,3 +560,20 @@ shownDefinition.OnAccept()
 assert(restores==1 and not custom.enabled and not custom.hideQuestLevels
     and not custom.hideQuestDifficulty and not custom.hideAuctionSellPrices
     and not custom.hideQuestItemHighlight)
+
+-- Native Settings initializers expose Blizzard's NewFeature widget without
+-- altering game-version feature registries; only viewed rows are marked seen.
+local markerAccount={newSettings={NQH_HIDE_QUEST_LEVELS=true,NQH_HIDE_QUEST_DIFFICULTY=true}}
+local marked=session({},markerAccount,true,false)
+assert(marked.checks[6]:IsNewTagShown() and marked.checks[7]:IsNewTagShown())
+assert(not marked.checks[1]:IsNewTagShown())
+marked.checks[6]:MarkSettingAsSeen()
+assert(not marked.checks[6]:IsNewTagShown() and marked.checks[7]:IsNewTagShown())
+assert(markerAccount.newSettings.NQH_HIDE_QUEST_LEVELS==nil)
+
+local frenchSettings=session({}, {}, true, false, "frFR")
+assert(frenchSettings.checks[1].setting.name=="Masquer les indices sur la carte")
+assert(frenchSettings.panels[1].rows[1].header=="Style de jeu et restauration")
+assert(frenchSettings.panels[1].rows[#frenchSettings.panels[1].rows].button=="Signaler un problème")
+local germanSettings=session({}, {}, true, false, "deDE")
+assert(germanSettings.checks[1].setting.name=="Questkartenhinweise ausblenden")

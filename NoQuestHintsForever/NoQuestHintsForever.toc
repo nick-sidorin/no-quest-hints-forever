@@ -6,6 +6,7 @@
 ## SavedVariables: NoQuestHintsForeverAccount
 ## SavedVariablesPerCharacter: NoQuestHintsForeverChar
 Localization.lua
+LocaleTranslations.lua
 NoQuestHintsForever.lua
 Options.lua
 Onboarding.lua

@@ -60,7 +60,7 @@ On your first visit with a new character, choose a playstyle:
 - **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
 - **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible unless you hide them separately.
 
-After a version upgrade, a one-time login message invites you to check `/nqh` for new options. Your existing settings remain intact.
+After a version upgrade, a one-time login message shows the new version. When your upgrade includes new features, it also points to `/nqh`, where newly added checkboxes carry Blizzard's **New** marker until viewed. Fix-only updates use a neutral message. Your existing settings remain intact.
 
 Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
 
@@ -88,7 +88,7 @@ The **Restore game settings** button asks for confirmation before clearing your 
 ## ℹ️ Good to Know
 
 - Designed specifically for **World of Warcraft: Forever**.
-- Supports **English and Russian**.
+- Automatically uses the client language: **English, Russian, German, French, Spanish, Italian, Brazilian Portuguese, Korean, Simplified Chinese or Traditional Chinese**. Both English and Spanish client variants are supported. Unknown locales fall back to English.
 - Uses native Blizzard quest and tooltip information.
 - Does not change quest progress, item prices or selling mechanics.
 - Some special NPC names may also be hidden by the quest-name setting because Blizzard groups them together.

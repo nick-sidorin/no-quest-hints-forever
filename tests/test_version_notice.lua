@@ -42,7 +42,7 @@ s=session(fresh,account,'1.4.0')
 assert(#s.messages==0, 'ordinary reload repeated notice')
 s=session(fresh,account,'1.5.0','ruRU')
 assert(#s.messages==1 and s.messages[1]:find('обновлён',1,true)
-    and s.messages[1]:find('1.5.0',1,true) and s.messages[1]:find('/nqh',1,true))
+    and s.messages[1]:find('1.5.0',1,true))
 s.event('PLAYER_LOGIN');s.event('PLAYER_ENTERING_WORLD');s.event('ADDON_LOADED','OtherAddon')
 assert(#s.messages==1, 'repeated lifecycle events repeated notice')
 assert(#session({},account,'1.5.0').messages==0, 'alt repeated account-wide notice')
@@ -71,3 +71,24 @@ end
 local damaged={lastSeenVersion=42}
 assert(#session({},damaged,'1.4.0').messages==0 and damaged.lastSeenVersion=='1.4.0')
 io.write('PASS: account-wide upgrade notice, metadata versions, legacy migration, no reload/alt/downgrade spam\n')
+
+-- Fix-only versions use a neutral message; skipped feature releases count.
+local patch={lastSeenVersion='1.4.0'}
+s=session({},patch,'1.4.1')
+assert(#s.messages==1 and not s.messages[1]:find('new features',1,true) and not patch.newSettings)
+local skipped={lastSeenVersion='1.3.0'}
+s=session({},skipped,'1.4.5')
+assert(#s.messages==1 and s.messages[1]:find('new features',1,true))
+assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'))
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MAP_HINTS'))
+NoQuestHintsForeverAPI.MarkSettingSeen('NQH_HIDE_QUEST_LEVELS')
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'))
+s=session({},skipped,'1.4.6')
+assert(not s.messages[1]:find('new features',1,true))
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'))
+assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_DIFFICULTY'), 'unseen feature lost across patch')
+assert(#session({},skipped,'1.4.6').messages==0)
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'), 'viewed marker returned on alt')
+local freshFeatures={}
+session({},freshFeatures,'1.4.0')
+assert(not freshFeatures.newSettings, 'first install marked everything as an upgrade')

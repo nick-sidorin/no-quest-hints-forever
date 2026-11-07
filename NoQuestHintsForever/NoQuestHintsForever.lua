@@ -93,6 +93,20 @@ local function versionParts(version)
     return {tonumber(major), tonumber(minor), tonumber(patch), stage, serial}
 end
 
+local function newerVersion(a, b)
+    for index, value in ipairs(a) do
+        if value ~= b[index] then return value > b[index] end
+    end
+    return false
+end
+
+-- Add an entry only when features ship, never for a fixes-only release. Checking
+-- the whole interval handles players who skip one or more feature versions.
+local featureReleases = {
+    {version="1.4.0", settings={"NQH_HIDE_QUEST_LEVELS", "NQH_HIDE_QUEST_DIFFICULTY",
+        "NQH_HIDE_AUCTION_SELL_PRICES", "NQH_HIDE_QUEST_ITEM_HIGHLIGHT"}},
+}
+
 local function notifyVersionUpgrade()
     if not account then return end
     local getter = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
@@ -102,22 +116,25 @@ local function notifyVersionUpgrade()
     if not current then return end
     local previous = account.lastSeenVersion
     local old = versionParts(previous)
-    local newer = false
-    if old then
-        for index, value in ipairs(current) do
-            if value ~= old[index] then newer = value > old[index]; break end
-        end
-        if not newer then return end
-    else
-        -- First tracked upgrade from an older installation: announce once.
-        -- A genuine first install already has the first-run chooser instead.
-        newer = previous == nil and existingInstallation == true
-    end
+    local upgrading = old and newerVersion(current, old)
+        or (previous == nil and existingInstallation == true)
+    if old and not upgrading then return end
     account.lastSeenVersion = version
-    if newer then
-        printMessage(string.format(L.VERSION_UPDATED or
-            "Updated to version %s! Open /nqh to explore new features in settings.", version))
+    if not upgrading then return end
+    local hasFeatures = false
+    local baseline = old or versionParts("0.0.0")
+    for _, release in ipairs(featureReleases) do
+        local introduced = versionParts(release.version)
+        if newerVersion(introduced, baseline) and not newerVersion(introduced, current) then
+            hasFeatures = true
+            if type(account.newSettings) ~= "table" then account.newSettings = {} end
+            for _, variable in ipairs(release.settings) do account.newSettings[variable] = true end
+        end
     end
+    local message = hasFeatures and (L.VERSION_FEATURES or
+        "Updated to version %s! Open /nqh to explore new features in settings.")
+        or (L.VERSION_UPDATED or "Updated to version %s.")
+    printMessage(string.format(message, version))
 end
 
 local function enforceMapHints()
@@ -439,6 +456,12 @@ api.SetQuestDifficultyHidden = setQuestDifficultyHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.IsQuestItemHighlightHidden = function() return character and character.hideQuestItemHighlight == true end
 api.SetQuestItemHighlightHidden = setQuestItemHighlightHidden
+api.IsSettingNew = function(variable)
+    return account and type(account.newSettings) == "table" and account.newSettings[variable] == true
+end
+api.MarkSettingSeen = function(variable)
+    if account and type(account.newSettings) == "table" then account.newSettings[variable] = nil end
+end
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
