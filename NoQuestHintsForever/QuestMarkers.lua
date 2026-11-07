@@ -52,23 +52,35 @@ local function installProvider()
     function candidate:OnMapChanged() self:RefreshAllData() end
     function candidate:OnCanvasSizeChanged() end
 
+    function candidate:RemoveAllData()
+        self.snapshot = nil
+        -- Unique template: never release Blizzard's own pins.
+        QuestDataProviderMixin.RemoveAllData(self)
+    end
+
     function candidate:RefreshAllData()
-        self:RemoveAllData() -- unique pin template: never removes Blizzard's pins
-        if not api.IsMapHidden or api.IsMapHidden() ~= true then return end
+        if not api.IsMapHidden or api.IsMapHidden() ~= true then
+            self:RemoveAllData()
+            return
+        end
         local map = self:GetMap()
         local mapID = map and map.GetMapID and map:GetMapID()
-        if not mapID then return end
-        local seen, count = {}, 0
+        if not mapID then self:RemoveAllData(); return end
+        local seen, entries = {}, {}
+        local function add(id, x, y, waypoint)
+            local style = POIButtonUtil and type(POIButtonUtil.GetStyle) == "function"
+                and POIButtonUtil.GetStyle(id)
+            local tracked = C_SuperTrack and type(C_SuperTrack.GetSuperTrackedQuestID) == "function"
+                and C_SuperTrack.GetSuperTrackedQuestID() == id or false
+            entries[#entries + 1] = {id=id, x=x, y=y, waypoint=waypoint, style=style, tracked=tracked}
+            seen[id] = true
+        end
         for _, list in ipairs(getMapQuestInfo(mapID)) do
             for _, info in ipairs(list) do
                 local id = info.questID
                 if permitted(id) and not seen[id]
                     and validPosition(info.x, info.y) then
-                    count = count + 1
-                    -- Native GetStyle(questID) supplies the in-progress / turn-in
-                    -- punctuation; these markers remain clickable like Blizzard's.
-                    self:AddQuest(id, info.x, info.y, count, false)
-                    seen[id] = true
+                    add(id, info.x, info.y, false)
                 end
             end
         end
@@ -81,13 +93,39 @@ local function installProvider()
                 if enabled and permitted(id) and not seen[id] then
                     local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, id, mapID)
                     if ok and validPosition(x, y) then
-                        count = count + 1
-                        self:AddQuest(id, x, y, count, true)
-                        seen[id] = true
+                        add(id, x, y, true)
                     end
                 end
             end
         end
+        -- Repeated quest events (including header expansion on hover) need not
+        -- recycle the same map pins and trigger new enter/leave transitions.
+        table.sort(entries, function(a, b) return a.id < b.id end)
+        local old = self.snapshot
+        local unchanged = old and old.mapID == mapID and #old.entries == #entries
+        if unchanged then
+            for index, entry in ipairs(entries) do
+                local previous = old.entries[index]
+                for _, key in ipairs({ "id", "x", "y", "waypoint", "style", "tracked" }) do
+                    if entry[key] ~= previous[key] then unchanged = false; break end
+                end
+                if not unchanged then break end
+            end
+        end
+        if unchanged then return end
+        self:RemoveAllData()
+        for index, entry in ipairs(entries) do
+            -- Keep the genuine native hover/click scripts and tooltip renderer.
+            local pin = self:AddQuest(entry.id, entry.x, entry.y, index, entry.waypoint)
+            if pin then
+                -- Forever assigns OnMouseEnter as the periodic tooltip callback.
+                -- That also emits MapCanvas.QuestPin.OnEnter, rebuilding/scrolling
+                -- the entire journal on every tooltip tick. Our unique pins show
+                -- fresh native tooltip content on real entry instead.
+                pin.UpdateTooltip = nil
+            end
+        end
+        self.snapshot = {mapID=mapID, entries=entries}
     end
 
     local ok = pcall(WorldMapFrame.AddDataProvider, WorldMapFrame, candidate)
@@ -109,11 +147,13 @@ events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("QUEST_LOG_UPDATE")
 events:RegisterEvent("QUEST_POI_UPDATE")
+events:RegisterEvent("SUPER_TRACKING_CHANGED")
 events:SetScript("OnEvent", function(_, event)
     if event == "ADDON_LOADED" or event == "PLAYER_LOGIN"
         or event == "PLAYER_ENTERING_WORLD" then
         installProvider()
-    elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_POI_UPDATE" then
+    elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_POI_UPDATE"
+        or event == "SUPER_TRACKING_CHANGED" then
         api.RefreshQuestMarkers()
     end
 end)

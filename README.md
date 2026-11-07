@@ -117,6 +117,8 @@ The ambiguous map-only `on`/`off` commands have been removed in this preview. Th
 
 ### Restoring settings before disabling or removing the addon
 
+The **Restore game settings** button asks for confirmation before clearing your current checkbox combination. Cancel or Escape leaves it intact. The explicit `/nqh restore` command restores immediately.
+
 Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All ten hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All ten checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
 
 At normal logout or `/reload` the addon also attempts to restore the persistent CVars, without turning off your saved preferences. At the next login with the addon enabled it reapplies those preferences. Failed writes retain their backups for a later restore; an incomplete explicit restore reports that it needs another attempt. A tracker mouse change may wait until combat ends.
@@ -150,6 +152,8 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
 - **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, ten equal-rank `Settings.RegisterProxySetting` values (seven quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
+
+Selective circular map pins keep their native real hover/click behavior. Their tooltip content refreshes on re-entry; periodic synthetic hover callbacks are disabled because Forever also rebuilds the journal through that callback. Unchanged quest events preserve existing pins, while changed permissions, position, style, selection or map refresh them.
 
 ### Quest title presentation
 

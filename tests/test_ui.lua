@@ -522,3 +522,38 @@ popup.editBox=nil;popup.EditBox=box;box.text=""
 rows[#rows].click();assert(box.text==url)
 StaticPopupDialogs=nil;StaticPopup_Show=nil
 assert(not NoQuestHintsForeverAPI.ShowProjectLink(), "missing popup API must use text fallback")
+
+-- Restoring from Settings requires explicit acceptance. Opening/cancelling the
+-- dialog, Escape and unavailable popup APIs preserve the entire custom profile.
+local custom={enabled=true,hideQuestLevels=true,hideQuestDifficulty=true,
+    hideAuctionSellPrices=true,hideQuestItemHighlight=true,onboardingComplete=true}
+local confirm=session(custom,{},true,false,"ruRU")
+local restoreAction=confirm.panels[1].rows[3]
+local saved={}; for k,v in pairs(custom) do saved[k]=v end
+local shownDefinition,restores= nil,0
+local originalRestore=NoQuestHintsForeverAPI.RestoreGameSettings
+NoQuestHintsForeverAPI.RestoreGameSettings=function()
+    restores=restores+1
+    return originalRestore()
+end
+StaticPopupDialogs={}
+StaticPopup_Show=function(name)
+    shownDefinition=StaticPopupDialogs[name]
+    assert(name=="NOQUESTHINTSFOREVER_CONFIRM_RESTORE")
+    assert(shownDefinition.hideOnEscape and shownDefinition.whileDead and shownDefinition.timeout==0)
+    assert(shownDefinition.button1=="Восстановить" and shownDefinition.button2=="Отмена")
+    return {}
+end
+restoreAction.click()
+assert(restores==0, "opening confirmation restored settings")
+for k,v in pairs(saved) do assert(custom[k]==v, "opening confirmation changed " .. k) end
+-- Native cancellation/Escape closes the dialog without invoking OnAccept.
+if shownDefinition.OnCancel then shownDefinition.OnCancel() end
+for k,v in pairs(saved) do assert(custom[k]==v) end
+StaticPopup_Show=nil
+assert(not NoQuestHintsForeverAPI.RequestRestoreGameSettings() and restores==0)
+for k,v in pairs(saved) do assert(custom[k]==v) end
+shownDefinition.OnAccept()
+assert(restores==1 and not custom.enabled and not custom.hideQuestLevels
+    and not custom.hideQuestDifficulty and not custom.hideAuctionSellPrices
+    and not custom.hideQuestItemHighlight)

@@ -2,6 +2,9 @@
 
 ## [1.4.0] — unreleased development build
 
+- Stop stationary map-pin tooltips from repeatedly dispatching hover-entry events and rebuilding the quest journal. Keep unchanged selective pins across repeated quest events; still refresh changed permissions, positions, styles, selections and maps. Tooltip content refreshes on actual re-entry.
+- Require confirmation before the Settings restore button clears a custom configuration. Cancel/Escape or unavailable confirmation UI leaves all settings intact. The explicit `/nqh restore` command remains immediate.
+
 - Add a bottom Support section with a localized Report a problem button and native copyable GitHub link dialog. Add `/nqh welcome` to reopen the playstyle chooser without changing settings until confirmation; defer opening in combat.
 
 - Move the entire Playstyle and restoration section above individual checkboxes so both actions are immediately accessible when opening Settings.

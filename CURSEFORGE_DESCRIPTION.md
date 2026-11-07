@@ -79,6 +79,8 @@ The **Item prices** section has two equal-rank checkboxes: **Hide outside tradin
 | `/nqh restore` | Turn off all features and restore saved original game settings |
 | `/nqh status` | Show current settings |
 
+The **Restore game settings** button asks for confirmation before clearing your current configuration. Cancel or Escape keeps it. The explicit `/nqh restore` command restores immediately.
+
 **Before disabling or removing the addon**, use **Restore game settings** or `/nqh restore`. This restores your saved personal settings, rather than resetting all of Blizzard’s options. If already removed and settings remain changed, reinstall with saved settings intact and run the restore command. The older map-only `on`/`off` commands have been removed.
 
 ## ℹ️ Good to Know

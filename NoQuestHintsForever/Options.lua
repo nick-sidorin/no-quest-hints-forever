@@ -69,6 +69,29 @@ function api.ShowProjectLink()
     return StaticPopup_Show(REPORT_DIALOG) ~= nil
 end
 
+function api.RequestRestoreGameSettings()
+    if type(StaticPopupDialogs) ~= "table" or type(StaticPopup_Show) ~= "function" then
+        print("|cff80c0ffNo Quest Hints|r: " .. L.RESTORE_CONFIRM_UNAVAILABLE)
+        return false
+    end
+    local name = "NOQUESTHINTSFOREVER_CONFIRM_RESTORE"
+    if not StaticPopupDialogs[name] then
+        StaticPopupDialogs[name] = {
+            text = L.RESTORE_CONFIRM_TEXT,
+            button1 = L.RESTORE_CONFIRM_ACCEPT,
+            button2 = L.RESTORE_CONFIRM_CANCEL,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            OnAccept = function()
+                local restored = api.RestoreGameSettings()
+                print("|cff80c0ffNo Quest Hints|r: " .. (restored and L.RESTORED or L.RESTORE_PENDING))
+            end,
+        }
+    end
+    return StaticPopup_Show(name) ~= nil
+end
+
 function api.RefreshOptions()
     if not category or not Settings or type(Settings.NotifyUpdate) ~= "function" then return end
     for _, item in ipairs(controls) do Settings.NotifyUpdate(item[1]) end
@@ -99,10 +122,7 @@ local function registerCategory()
     button(L.CHOOSE_PLAYSTYLE, function()
         if api.ShowWelcome then api.ShowWelcome() end
     end, L.CHOOSE_PLAYSTYLE_DESC)
-    button(L.RESTORE_BUTTON, function()
-        local restored = api.RestoreGameSettings()
-        print("|cff80c0ffNo Quest Hints|r: " .. (restored and L.RESTORED or L.RESTORE_PENDING))
-    end, L.RESTORE_DESC)
+    button(L.RESTORE_BUTTON, api.RequestRestoreGameSettings, L.RESTORE_DESC)
 
     heading(L.QUEST_HINTS_GROUP)
 

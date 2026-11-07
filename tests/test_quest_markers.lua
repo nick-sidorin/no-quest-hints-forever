@@ -2,7 +2,7 @@
 local function run(db, ready)
     NoQuestHintsForeverChar = db
     local hidden=true
-    local map={id=9,pins={},count=0}
+    local map={id=9,pins={},count=0,releases=0,enters=0,leaves=0,tooltipRenders=0}
     function map:GetMapID() return self.id end
     function map:AddDataProvider(p) self.provider=p;self.count=self.count+1;p:OnAdded(self) end
     WorldMapFrame=map
@@ -11,23 +11,38 @@ local function run(db, ready)
         GetMap=function(self) return self.map end,
     }
     CreateFromMixins=function(proto) local o={};for k,v in pairs(proto) do o[k]=v end;return o end
+    local styles={[15]="turnin"}
+    local tracked=15
+    POIButtonUtil={GetStyle=function(id) return styles[id] or "progress" end}
+    C_SuperTrack={GetSuperTrackedQuestID=function() return tracked end}
     local function native()
         return {
             -- Blizzard QuestDataProviderMixin inherits MapCanvasDataProviderMixin.
             GetMap=function(self) return self.map end,
-            RemoveAllData=function(self) self:GetMap().pins={} end,
+            RemoveAllData=function(self) self:GetMap().releases=self:GetMap().releases+1;self:GetMap().pins={} end,
             AddQuest=function(self,id,x,y,index,waypoint)
                 assert(self:GetPinTemplate()=="NQHQuestMarkerPinTemplate")
                 assert(x>=0 and x<=1 and y>=0 and y<=1)
                 local pins=self:GetMap().pins
-                pins[#pins+1]={id=id,waypoint=waypoint,style=(id==15 and "turnin" or "progress")}
+                local pin={id=id,x=x,y=y,waypoint=waypoint,style=POIButtonUtil.GetStyle(id)}
+                function pin:OnMouseEnter()
+                    -- Forever uses this same function for periodic tooltip updates;
+                    -- its registry event rebuilds and scrolls the quest journal.
+                    map.enters=map.enters+1
+                    map.tooltipRenders=map.tooltipRenders+1
+                end
+                function pin:OnMouseLeave() map.leaves=map.leaves+1 end
+                pin.UpdateTooltip=pin.OnMouseEnter
+                pins[#pins+1]=pin
+                return pin
             end,
         }
     end
     QuestDataProviderMixin=ready and native() or nil
+    local x14=.1
     GetQuestsOnMapCached=function(id)
         if id~=9 then return {} end
-        return {{questID=14,x=.1,y=.2},{questID=15,x=.7,y=.5},{questID=16,x=.4,y=.4},
+        return {{questID=14,x=x14,y=.2},{questID=15,x=.7,y=.5},{questID=16,x=.4,y=.4},
             {questID=18,x=10,y=.4}}
     end
     C_QuestLog={
@@ -54,7 +69,7 @@ local function run(db, ready)
         assert(callbacks[e]);callbacks.frame.handler(nil,e)
     end
     event("ADDON_LOADED")
-    return {map=map,api=api,event=event,unhide=function()hidden=false;api.RefreshQuestMarkers()end,
+    return {map=map,api=api,event=event,styles=styles,move=function(x) x14=x end,track=function(id) tracked=id end,unhide=function()hidden=false;api.RefreshQuestMarkers()end,
         hide=function()hidden=true;api.RefreshQuestMarkers()end,
         ready=function()QuestDataProviderMixin=native();event("ADDON_LOADED")end}
 end
@@ -66,6 +81,26 @@ assert(#s.map.pins==3 and s.map.pins[1].id==14 and s.map.pins[2].id==15
     and s.map.pins[3].id==21,"filter, duplicate or waypoint incorrect")
 assert(s.map.pins[2].style=="turnin","turn-in style lost")
 assert(s.map.pins[3].waypoint==true)
+local hovered=s.map.pins[2]
+hovered:OnMouseEnter()
+for _=1,20 do if hovered.UpdateTooltip then hovered:UpdateTooltip() end end
+assert(s.map.enters==1, "stationary map tooltip repeatedly re-entered and rebuilt journal")
+hovered:OnMouseLeave();hovered:OnMouseEnter()
+assert(s.map.enters==2 and s.map.leaves==1 and s.map.tooltipRenders==2,
+    "real hover transitions and native tooltip content must remain")
+local releases=s.map.releases
+for _=1,20 do s.event("QUEST_LOG_UPDATE");s.event("QUEST_POI_UPDATE") end
+assert(s.map.pins[2]==hovered and s.map.releases==releases,
+    "unchanged quest events recycled the hovered pin")
+s.styles[15]="progress";s.api.RefreshQuestMarkers()
+assert(s.map.pins[2]~=hovered and s.map.pins[2].style=="progress", "quest style change was ignored")
+hovered=s.map.pins[2];s.track(14);s.event("SUPER_TRACKING_CHANGED")
+assert(s.map.pins[2]~=hovered, "supertrack selection change was ignored")
+hovered=s.map.pins[2];s.move(.25);s.event("QUEST_POI_UPDATE")
+assert(s.map.pins[2]~=hovered and s.map.pins[1].x==.25, "new objective position was ignored")
+hovered=s.map.pins[2]
+s.map.provider:RemoveAllData();s.api.RefreshQuestMarkers()
+assert(#s.map.pins==3 and s.map.pins[2]~=hovered, "external removal left cached pins missing")
 s.unhide()
 assert(#s.map.pins==0,"native global mode must remove custom pins")
 s.hide()
