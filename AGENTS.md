@@ -1,77 +1,57 @@
-# Инструкции для работы с No Quest Hints Forever
+# AGENTS.md — No Quest Hints Forever
 
-## Начало работы и сохранение контекста
+Repository-wide instructions for contributors and coding agents. Before substantive work, read [README.md](README.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), and relevant Issues/PRs. Treat source code and live GitHub state as authoritative over dated context.
 
-- Общайся с владельцем по-русски. Пользовательские строки аддона поддерживают ruRU и enUS (английский — fallback).
-- В начале работы прочитай этот файл, [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), README.md и относящиеся к задаче Issues/PR.
-- Статус в PROJECT_CONTEXT.md — датированный снимок. Проверяй текущие ветки, SHA, CI и релизы в GitHub, прежде чем действовать.
-- Сохраняй устойчивые договорённости здесь, текущую работу и следующий шаг — в PROJECT_CONTEXT.md, воспроизведение ошибок — в Issues, обоснование изменений — в PR.
-- Обновляй контекст при существенном решении и перед передачей работы в другой чат. Указывай ссылки, проверенный SHA, выполненные проверки, что ещё не проверено и следующий конкретный шаг.
-- Не полагайся на историю чата как на единственное хранилище решений. Не выдавай восстановленные предположения за договорённости пользователя.
-- Не копируй в репозиторий полные личные переписки, секреты и токены.
+## Communication and documentation
 
-## Проект и поведение
+- **English is the repository language**: documentation, code comments, commits, PR titles and descriptions, changelogs, and agent-authored issue updates. Exceptions are actual `ruRU` in-game strings, locale test fixtures, verbatim diagnostics and other content whose original language matters. UI strings must be localized in **both `ruRU` and `enUS`** (English fallback).
+- Communicate with the owner in **Russian** in chat. Be concise and collaborative; summarize changes, verified checks, limitations, and what needs the owner's in-game feedback. Avoid needless explanations or ceremonial comments.
+- Preserve durable decisions here or in `PROJECT_CONTEXT.md`, bugs and reproduction evidence in Issues, and change rationale in PRs. Refresh dated context for meaningful handoffs, not after every commit. Never copy private chats, personal data, tokens, or unsupported guesses into this repository.
 
-- Целевой клиент — World of Warcraft: Forever, не Retail и не Classic Era. TOC Interface: 16001; эта цифра сама по себе не подтверждает совместимость API.
-- Код и тесты должны оставаться совместимы с Lua 5.1. Зависимости аддона отсутствуют.
-- Сохраняй шесть независимых настроек персонажа: карта/навигация, трекер, квестовые строки тултипов, имена NPC, цены продажи, жёлтый прогресс заданий. По умолчанию все выключены.
-- Сохраняй существующие SavedVariables и предпочтения пользователей: enabled означает скрытие подсказок карты; revealedQuests хранит разрешения отдельных заданий.
-- В разработке 1.4.0 по новому решению владельца остаются /nqh (настройки), /nqh restore (отключение всех шести функций и восстановление сохранённых личных значений) и /nqh status (диагностика). Команды on/off удалены; они не должны менять состояние. В опубликованной 1.3.0 они ещё существуют.
-- Разрешение подсказки задания независимо от списка отслеживания. Действие контекстного меню не должно автоматически открывать карту.
-- Используй оригинальные области, пины, значки и навигацию Blizzard. Сохраняй тексты заданий, журнал и обычное поведение, когда опция выключена.
-- Сохраняй и восстанавливай исходные CVar; учитывай общие для аккаунта значения при смене персонажа. Не меняй посторонние настройки имён NPC.
-- Для нового интерфейса настроек согласован образец CatQuest: все шесть галочек прямо на странице Blizzard Options → AddOns → No Quest Hints, короткие подписи, описания только при наведении; /nqh открывает эту категорию. Реализация начата в PR #16 и включена в заменяющий PR #18; проверяй актуальное состояние перед продолжением.
+## Product and safety invariants
 
-## Выбор стиля и восстановление (согласовано 2026-11-07)
+- Target **World of Warcraft: Forever**, not Retail/Classic Era. `Interface: 16001` is not proof of Blizzard API compatibility. Keep gameplay code and tests compatible with **Lua 5.1**; no runtime addon dependencies.
+- Goal: immersive exploration, **not a quest solver or GPS**. Preserve geographical maps, quest journal/text, actual quest progression, quest-giver exclamation marks, normal NPC interactions and voiceover addons. Do not introduce an external quest database or route planner.
+- Preserve the five quest-related controls (map/navigation hints, objective tracker, tooltip lines, quest/special NPC floating names, yellow progress popups) and per-character vendor-price preferences. Merged PR #18 has six checkboxes; approved pending PR #20 splits price hiding into two independent contexts, making seven. Do not confuse that pending design with the current main/released behavior or reset saved choices on upgrade.
+- Preserve the per-character `enabled` SavedVariable as **hide map hints**, and `revealedQuests` as the quest-ID allowlist. Revealing an individual quest uses original Blizzard blobs, map POIs, journal/tracker badges and SuperTrack where supported, without globally showing all hints, adding the quest to the watch list, or opening the map from context menus.
+- Restore **original personal CVar values**, not presumed default `1` values. Keep account-shared CVar baselines across characters, preserve backups when restoration fails, and never change unrelated NPC-name CVars.
+- Release behavior differs: stable **v1.3.0** retains map-only `/nqh on|off`; the **unreleased v1.4.0 code now on `main`** retires them and uses `/nqh` (native Settings), `/nqh restore` (all applicable hiding controls off + personal CVar restore), and `/nqh status` (diagnostics). Verify target branch before changing commands.
 
-- В настройках две группы: «Подсказки заданий» (пять функций, включая имена NPC и прогресс) и «Дополнительное погружение» (цены продажи). Галочки прямо в странице Blizzard, описания при наведении.
-- Первый запуск нового персонажа: три колонки в стиле выбора правил мира, с игровыми иконками и круглыми портретами. «Как у Blizzard» — ничего не скрывать; «Погружение» — пять квестовых функций; «Полное погружение» — все шесть.
-- Оформление колонок: родные Mode-Selection-Card-Regular и Mode-Selection-Ring без растягивания; fallback-рамка только при отсутствии atlas. Сохранять отступ текста от бордера и явную иерархию действий: родная большая кнопка подтверждения SharedGoldRedButtonExtraLargeTemplate, две меньшие SharedButtonSmallTemplate симметрично под её краями. Не растягивать малый UIPanelButtonTemplate до большой высоты.
-- Онбординг модальный: отдельный полноэкранный не масштабируемый Frame перехватывает клики, hover и колесо под масштабируемым окном. При открытии скрывать уже открытый GameTooltip; при любом закрытии, переходе в настройки или начале боя освобождать блокировщик. Не использовать глобальные хуки tooltip или OnUpdate для подавления подсказок.
-- Выбор колонки только выделяет её. Применение — по явному подтверждению. До выбора, при закрытии и переходе в отдельные настройки ничего автоматически не скрывать.
-- Завершение знакомства сохраняется отдельно на персонажа; незавершённый выбор не принимать за старую установку после /reload. Существующим пользователям не сбрасывать выбор и не показывать первый запуск после обновления.
-- /nqh restore и кнопка «Восстановить настройки игры» выключают все функции, возвращают сохранённые исходные CVar, сохраняют разрешения отдельных заданий. Это личные значения до вмешательства аддона, а не произвольные заводские defaults.
-- Не удалять неудавшиеся резервные значения: сохранять их для повторной попытки. Обновлять отображаемые native Settings после пресета/восстановления.
-- Нормальный PLAYER_LOGOUT в PR #18 пытается восстановить CVar, сохраняя режим для следующего входа. Проверять в Forever порядок сохранения, /reload, отключение аддона и смену персонажа. Не обещать очистку при аварийном выходе или уже выгруженном аддоне.
-- До удаления рекомендовать явный restore; если состояние осталось, переустановить/включить аддон с сохранёнными SavedVariables и восстановить. Удаление SavedVariables не является восстановлением.
+## Native UI and onboarding (v1.4.0 work)
 
-## Архитектура и изменения
+- Put short checkbox labels **directly** in Blizzard **Options → AddOns → No Quest Hints**, with hover descriptions. The approved PR #20 layout is five rows under **Quest hints** and two equal-rank rows under **Item prices**: **Hide outside trading** and **Hide at auction**. Both mean hiding, use the same normal font/indent, and remain editable independently. Do not restore the discarded dependent **Show at auction** child or the old **Additional immersion** heading. `/nqh` opens this category.
+- The three first-run modes are **As in Blizzard** (no restrictions), **Immersion** (five quest restrictions), and **Full immersion** (quest restrictions plus prices hidden outside trading). Selecting a card only previews a choice; **Begin adventure** applies it. Closing, Later, or Customize does not apply a preset. Keep old characters' preferences, and persist incomplete onboarding correctly across `/reload`.
+- Keep card descriptions short and prose-only: the middle card mentions quest guidance without a feature list or price commentary; the right adds price hiding outside trading. No pricing-table/tier feature comparison. In PR #20 all presets leave auction hiding OFF, as explicitly chosen by the owner; strict auction hiding is a separate manual choice.
+- Prefer native Forever card art, authored atlas dimensions, masked round icons and native button textures; do not stretch small buttons into large ones or draw duplicate fallback borders. Keep the Selected label inset inside the card above the lower border. Use the genuine large gold/red three-slice button and two smaller native buttons aligned below its edges. The chooser must block background hover/click/wheel input, dismiss stale tooltips and release its input blocker on every exit path. No global tooltip hooks or perpetual `OnUpdate` workarounds.
+- The explicit restore action preserves revealed quest permissions and failed CVar backups. Normal logout may attempt CVar cleanup without forgetting the selected playstyle. Do not claim cleanup after crash/force quit or once the addon is unloaded; verify sensitive behavior in the actual Forever client.
 
-- Localization.lua загружается первым; локализуй новые подписи и подсказки в ruRU/enUS.
-- NoQuestHintsForever.lua владеет состоянием и эффектами; Options.lua отвечает за UI и делегирует изменения существующим функциям API.
-- QuestHints.lua / QuestMarkers.lua / QuestInlineHints.lua отвечают за выборочные подсказки; QuestTooltips.lua, SellPrices.lua, QuestProgressMessages.lua — за соответствующие независимые фильтры.
-- Проверяй доступность API в Forever, учитывай позднюю загрузку Blizzard UI, бой и восстановление после /reload.
-- Не заменяй защищённые обработчики и не добавляй широкие вмешательства в UI ради устранения неподтверждённого taint. Существующие post-hook и отложенные обновления тоже требуют проверки в игре.
-- Не переписывай работающие игровые функции и не отключай их целиком без установленной причины в рамках задачи.
+## Approved price-context behavior (pending PR #20)
 
-## Проверки и сборка
+- Merchants always show the native NPC vendor sell value. Outside merchant/auction UI use only `hideSellPrices`; at an open `AuctionHouseFrame` or legacy `AuctionFrame` use only `hideAuctionSellPrices`. These are not auction-market estimates, cost prices or listing fees. Treat unloaded frames as closed; prefer `IsVisible` over `IsShown`.
+- Both price controls default OFF. Full immersion sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. Presets deliberately reapply all seven checkboxes, ordinary `/reload` preserves manual choices, and restore/native defaults turn both OFF.
+- Migrate the earlier preview's inverse/dependent `showAuctionSellPrices` to effective auction hiding (`old hideSellPrices == true AND old showAuctionSellPrices == false`), then remove the old field. Retain explicit new-format `hideAuctionSellPrices`; perform migration after detecting first-run data.
+- Keep the current native-tooltip pre-call filter and non-item isolation. Re-evaluate on the next tooltip composition/hover; do not add global tooltip redraw hooks or polling. Preserve prices drawn independently by other addons.
 
-- Из корня репозитория запускай: `bash scripts/run_ci.sh` (Python 3, lua5.1 и luac5.1).
-- Скрипт автоматически находит tests/test_*.lua, проверяет Lua-синтаксис и целостность TOC. Для исправления поведения добавляй соответствующий регрессионный тест.
-- Установочный ZIP создаёт `scripts/package_addon.py`; список runtime-файлов берётся из NoQuestHintsForever.toc плюс LICENSE. Новые Lua/XML должны быть в TOC.
-- Для сборки: `python3 scripts/package_addon.py dist/NoQuestHintsForever-vX.Y.Z.zip`, где X.Y.Z совпадает с TOC. Пакет проверяется побайтово.
-- Служебную документацию исключай из CurseForge-пакета через .pkgmeta.
-- Зелёные mock-тесты не доказывают отсутствие ADDON_ACTION_BLOCKED. Изменения Blizzard UI и игровые исправления требуют отдельной проверки владельцем в Forever.
-- Сообщай, какие проверки действительно выполнены, на каком коде и какие ограничения остались.
-- Для тестовых сборок сразу давай прямую ссылку на скачивание одного ZIP с папкой NoQuestHintsForever внутри, без ZIP внутри ZIP. GitHub artifact сам является ZIP: загружай в него распакованное проверенное содержимое для PR/manual, сохраняя canonical ZIP для release jobs.
+## Architecture, tests and packaging
 
-## GitHub и публикация
+- `Localization.lua` loads first; `NoQuestHintsForever.lua` owns state/effects; `Options.lua` owns settings UI. `Onboarding.lua` was introduced in unreleased v1.4.0 code by PR #18. Selective map/inline guidance is in `QuestHints.lua`, `QuestMarkers.lua`, `QuestInlineHints.lua`; other filters in `QuestTooltips.lua`, `SellPrices.lua`, `QuestProgressMessages.lua`.
+- Account for late Blizzard UI initialization, combat lockdown, `/reload`, native settings changes and competing addons. Avoid invasive protected-frame hooks or silently removing working features to cover up unproven taint.
+- Run **`bash scripts/run_ci.sh`** from repo root (Python 3, `lua5.1`, `luac5.1`). It finds `tests/test_*.lua`, validates Lua syntax and checks TOC/package integrity. Add a focused regression test for a confirmed behavior fix.
+- Use **`scripts/package_addon.py`** for installable ZIPs; the `.toc` plus LICENSE defines files. Keep new runtime modules in the `.toc` and internal docs out of CurseForge packages via `.pkgmeta`. Mock tests cannot prove visual correctness or freedom from protected-action taint.
+- For PR/manual previews, give the owner a direct link to **one usable ZIP** with `NoQuestHintsForever/` immediately inside. GitHub's artifact is already a ZIP; avoid a ZIP inside a ZIP. Tagged releases may use their separate canonical packaged ZIP.
 
-- Любые изменения main — через отдельную ветку и PR. Используй только Squash and merge, включая документацию и релизные PR.
-- Перед слиянием проверь успешный build для актуального кода. После обновления ветки проверь новые результаты; не обходи проверки.
-- Запуск CI и обязательность CI в ruleset — разные факты. Проверяй правила через GitHub; экран All checks have passed не подтверждает защиту от слияния с красным CI.
-- Обычные push в main сейчас не запускают CI; для проверки main существует ручной Actions → Build and release.
-- Не считай публикацию частью обычной реализации функции. Сохраняй тестируемые изменения отдельно от запроса стабильного релиза.
-- До стабильного релиза нужны зелёный CI итогового кода и подтверждённый игровой smoke test. Не сливай PR, явно помеченный как ожидающий проверки владельцем, до этой проверки.
-- Изменение .github/release-request.txt запускает публикацию. Меняй его только в рамках запроса на релиз после подготовки TOC и CHANGELOG.md.
-- publish.yml повторяет проверки, создаёт тег и GitHub Release. Не обходи этот путь ручным тегом при обычном релизе.
-- CurseForge использует существующий GitHub webhook и собственную упаковку/модерацию. Не добавляй второй загрузчик или авторские токены.
-- Обновляй CURSEFORGE_DESCRIPTION.md при изменении пользовательских возможностей и включай актуальный короткий/полный текст в передачу релиза. Pipeline не обновляет описание проекта автоматически.
-- Проверяй GitHub Release и публикацию CurseForge раздельно; наличие GitHub-тега не доказывает доступность файла на CurseForge.
+## GitHub, reviews and releases
 
-## Незакрытая ошибка защищённого действия
+- Branch + PR for every change to protected `main`; **Squash and merge only**. Never directly commit, force-push or bypass protections on `main`; do not merge PRs waiting for explicit owner playtesting.
+- Verify the latest PR head passes **`build`**, and independently verify branch protection really **requires** that check. CI passing and CI being mandatory are different facts.
+- Keep unrelated changes out of PRs. Do not create tags, bump versions, publish, or change `.github/release-request.txt` without a release request. Use existing `publish.yml` and CurseForge webhook; do not add another uploader or credentials.
+- Release only after green final-code CI and a real Forever smoke test. Update `CHANGELOG.md` and `CURSEFORGE_DESCRIPTION.md` for user-facing changes; include refreshed short/full CurseForge listing text in the release handoff. GitHub Release success does not establish CurseForge publication.
 
-- [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3) хранит сообщения ADDON_ACTION_BLOCKED при работе карты/журнала; первопричина пока не установлена.
-- Не называй кандидатов из Issue подтверждённой причиной. Для диагностики нужны действие перед ошибкой, состояние боя и taint.log.
-- Сценарий из Issue: /console taintLog 1 → /reload → воспроизведение → выход из игры для записи лога; после диагностики /console taintLog 0.
-- Не закрывай Issue только из-за зелёных unit-тестов или временного отсутствия симптомов.
+## Unresolved protected-action error
+
+- [Issue #3 — `ADDON_ACTION_BLOCKED`](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3) remains open. The map/journal is involved in reports, but no specific hook is proven guilty. Collect the action before the warning, combat status and `taint.log`; avoid broad changes based only on guesses. Do not close because mock tests passed.
+
+## Keeping context usable
+
+- When parallel PRs touch these files, reconcile both branches before merging. Keep the English contributor rules and latest approved decisions; a gameplay PR must not reintroduce obsolete Russian documentation or the rejected price hierarchy.
+- `PROJECT_CONTEXT.md` records product rationale, decisions, caveats and a clearly dated handoff—not an ever-growing task transcript. Before a new session, verify open PRs, releases, branch rules and CI. Keep stable 1.3.0 distinct from the 1.4.0 preview until a new stable release actually ships.

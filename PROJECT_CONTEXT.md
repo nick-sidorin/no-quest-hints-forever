@@ -1,90 +1,111 @@
-# Контекст проекта и передача работы
+# No Quest Hints Forever — Product Context and Decision Record
 
-Проверено: 2026-11-07 (Europe/Moscow). Этот документ восстановлен из README, GitHub Issues/PR и предоставленного пользователем фрагмента переписки. Полная история прежнего чата недоступна; отсутствующие решения не восстановлены.
+> **Reviewed: 2026-11-07.** This is a durable record of product intent and verified development decisions recovered from earlier chats and the repository. It does **not** supersede [README.md](README.md), [CHANGELOG.md](CHANGELOG.md), [AGENTS.md](AGENTS.md), source code or current GitHub issues/PRs. The handoff at the end is a dated snapshot, not a live status feed.
 
-## С чего начать новый чат
+## Why this addon exists
 
-Прочитать AGENTS.md, этот файл и README.md, затем обновить сведения по связанным PR/Issues. В новом чате достаточно дать ссылку на репозиторий и попросить прочитать эти документы.
+**Read the quest. Explore the world. Find your own way.**
 
-## Проверенное состояние
+The project began as a small quality-of-life addon for the immersive **World of Warcraft: Forever** experience. The owner wanted the world map to be **geography, not quest GPS**: read the quest, look for landmarks, travel naturally and ask other players for directions rather than following objective blobs, markers and arrows.
 
-- Репозиторий: https://github.com/nick-sidorin/no-quest-hints-forever
-- main после squash PR #17: 10c061f2d1d7d9ca3f34eac19a830efa0f00f24b. AGENTS.md и этот контекст теперь в основной ветке.
-- Последний опубликованный GitHub Release: [v1.3.0](https://github.com/nick-sidorin/no-quest-hints-forever/releases/tag/v1.3.0).
-- Основные игровые возможности и независимые настройки описаны в README; история версий — CHANGELOG.md.
-- [PR #15](https://github.com/nick-sidorin/no-quest-hints-forever/pull/15) уже слит: источник описания CurseForge и правило squash. Это не выпуск новой версии.
-- Публикация файла v1.3.0 на CurseForge в этом чате независимо не проверялась.
+The goal is **removing spoilers, not removing the game**. Keep the quest journal and descriptions, real quest progress, the world map itself, quest-giver exclamation marks, ordinary NPC interactions and compatibility with voiceover addons. No automated pathfinding, external quest databases or replacement quest objectives.
 
-## Активная задача: восстановление и три стиля игры
+A later decision deliberately softened the all-or-nothing approach: when stuck, the player can selectively **Show hint** for a specific quest, revealing Blizzard's native blue area, POI/turn-in marker, journal or tracker badge and possible SuperTrack navigation. Multiple quest IDs can be allowed. Doing this must not turn on hints for unrelated quests, add quests to the right-side tracked list, or pop open the map from a context-menu action.
 
-[PR #18](https://github.com/nick-sidorin/no-quest-hints-forever/pull/18) — новый draft на main, включает всю переделку native Settings из #16. Ветка feat/immersion-onboarding. Первый функционально проверенный preview: 3e0b09ebeb7aad5f1dde9b3ff9b588b0ad9ce8c3. Визуальная версия e8b554163f98d9583b6d84460782d4b85a97e64f; single-ZIP упаковка aabf56a01161cc1f25a04d7a4df3661de18793eb (CI 42370148207 прошёл). TOC 1.4.0, релиз не запрошен.
+## Feature boundaries — published v1.3.0
 
-Согласовано владельцем 2026-11-07:
-- Три колонки первого запуска в стиле выбора правил мира: «Как у Blizzard» — ничего; «Погружение» — пять квестовых функций; «Полное погружение» — все шесть, включая цены.
-- Две группы галочек в native Settings: «Подсказки заданий» и «Дополнительное погружение». Цены — во второй.
-- Оставить /nqh, /nqh restore, /nqh status; удалить неоднозначные on/off.
-- Восстанавливать личные исходные настройки перед отключением/удалением, а не общие заводские значения.
+Six independent per-character options are available. They should not affect one another.
 
-Реализовано в #18:
-- Выбор карточки без применения до подтверждения; Later/закрытие/настройки не применяют режим. Существующие пользователи не получают новый первый запуск. Незавершённое знакомство сохраняется отдельно.
-- Кнопки повторного выбора и восстановления внутри Settings; обновление native checkbox после пресетов.
-- Restore всех шести функций, сохранение разрешений заданий и неудавшихся CVar backups для повторной попытки.
-- Попытка очистки CVar на штатном PLAYER_LOGOUT без сброса выбранных функций; защита от повторного enforcement при завершении.
-- После визуального ревью карточки используют точный игровой atlas Mode-Selection-Card-Regular в родном размере, без параллельной backdrop-рамки. Иконки 64px с CircleMask и объёмным Mode-Selection-Ring; Glue-only шаблоны не используются. Native макет карточки 260×530, текстовая область 180px.
-- Иконки: INV_Misc_Map_01, выбранная владельцем icon_treasuremap, Achievement_Zone_ElwynnForest. Изображения с Wowhead не входят в аддон.
-- README, changelog и черновик описания CurseForge обновлены; опубликованная стабильная версия по-прежнему 1.3.0.
+| Setting | User-facing intent and limits |
+| --- | --- |
+| Hide quest map hints | Hide supported Blizzard world-map/minimap quest areas, markers and navigation. Allow individually approved quest hints; restore the player's own CVar values on disable. |
+| Hide objective tracker | Conceal the right-side task list cosmetically without deleting quest data, changing tracked quests or hiding the journal. |
+| Hide quest hints in tooltips | Hide objective titles/progress in native unit and world-object mouseover lines, not normal unit/object information. |
+| Hide quest NPC names | Override only `UnitNameFriendlySpecialNPCName`. Blizzard's shared category may hide other special/friendly NPC names too: this is not precise quest-NPC filtering. |
+| Hide item sell prices | Hide native sell-price tooltip lines **until a merchant is open**, without changing actual vendor values or other addons' overlays. |
+| Hide quest progress popups | Suppress the relevant native yellow quest objective notifications, not ordinary information or red UI/combat errors. |
 
-Локально на переданном коде прошли 11 наборов Lua 5.1.5, синтаксис, TOC, побайтовая проверка ZIP из 13 файлов и git diff --check. GitHub CI на этом SHA: https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42367625914 — build success, github-release skipped. Artifact addon-1.4.0 (ID 13571933636) готов; перед установкой проверить актуальный SHA. Владелец установил этот preview и сообщил: «функционально я всё проверил, вроде работает». Отдельных результатов по каждому сценарию (в частности logout/disable/restore) не перечислил; не считать это доказательством устранения Issue #3.
+Prefer supported, original Blizzard UI over custom replacements. In particular, selective revealed quests use native providers/pins/badges; original interactive quest markers should remain functional. `C_SuperTrack` can point to a revealed quest without adding it to the watch list, and navigation must remain hidden for unrevealed targets. Some CVars are absent in Forever and some quests lack navigable destinations, so avoid claiming universal support.
 
-## Визуальная доработка после проверки владельцем (2026-11-07)
+### Persistence and the restoration lesson
 
-Владелец прислал игровой скриншот и запросил убрать внешнюю прямоугольную рамку, исправить сжатые пропорции внутренних рамок, сделать родные объёмные кольца иконок, увеличить поля текста, упорядочить шапку и выделить основную кнопку.
+- Options are saved per character. The legacy `NoQuestHintsForeverChar.enabled` means **map suppression**, and `revealedQuests` holds individually allowed quest IDs. Do not reset these on an upgrade.
+- Some affected game CVars are account-scoped. Back up the user's **actual prior values**, reapply only the active character's selected behavior, and restore saved baselines when the relevant feature is disabled. Do not modify other NPC name categories.
+- The **1.1.0 bug** captured SavedVariables too early and could fail to restore map settings after `/reload`. **v1.1.1** fixed initialization on `ADDON_LOADED`; older affected installations sometimes needed manual recovery. This is why tests need to reflect Blizzard load/save ordering and character changes.
+- Green standalone Lua tests do not prove which Blizzard CVar values persist through `/reload`, logout, disabling an addon or competing addons. Test those in the real Forever client.
 
-В текущей доработке #18:
-- Используются точные atlas из Forever SuperDistrict.xml: Mode-Selection-Card-Regular, Mode-Selection-Card-Regular-yellow-glow, Mode-Selection-Ring и CircleMask. SetAtlas(..., true) сохраняет авторские размеры, вместо растягивания текстуры.
-- Fallback-backdrop рисуется только при отсутствии игрового atlas. Иконки 64px, единые позиции и текст шириной 180px; описания сокращены без изменения состава режимов.
-- В шапке два уровня текста; инструкция перенесена под карточки. Изначально главная кнопка была 320×44, а вторичные действия текстовыми. По следующему ревью владельца это заменено родными игровыми кнопками (см. ниже).
-- После выбора отображается название выбранного режима и явная инструкция к подтверждению. Применение по-прежнему только после подтверждения.
-- Ветка включает документацию уже слитого #17. Прежняя сборка по ссылке выше относится к первому preview; для визуальной проверки брать самый новый artifact #18.
+## UX decisions — unreleased v1.4.0 on `main`
 
-### Второе визуальное ревью и исправления
+The owner rejected the extra standalone addon settings dialog. Settings should work like **CatQuest**: six checkboxes directly inside Blizzard **Options → AddOns → No Quest Hints** with compact labels and hover-only descriptions. PR #18 initially grouped them into **Quest hints** and **Additional immersion**. The owner subsequently approved **Quest hints** plus **Item prices**, with two equal-rank price controls in pending PR #20 (see below); that change is not yet in main. `/nqh` opens this standard category.
 
-Владелец положительно оценил обновлённые карточки («визуально стало прям круто»), но на скриншоте виден tooltip способности из заднего UI. Запросил настоящую модальность, исправление растянутой большой кнопки/вертикального положения текста и явные, симметрично расположенные вторичные кнопки.
+### Three first-run playstyles
 
-Реализовано в текущей доработке:
-- NoQuestHintsForeverWelcomeBlocker — отдельный Frame на весь UIParent, FULLSCREEN_DIALOG, перехватывает мышь и колесо без propagate. Масштабируется только дочернее окно, поэтому даже на краях экрана не должно быть сквозного hover/click.
-- Скрывается уже открытый GameTooltip при показе/входе на фон. Нет глобальных хуков тултипа и нет постоянного OnUpdate. Блокировщик скрывается через OnHide окна на всех путях, включая Esc, выбор, Later, настройки, restore и бой.
-- Основное действие — SharedGoldRedButtonExtraLargeTemplate, 360×36, с настоящими трёхчастными текстурами Blizzard и центрированным FontString. Шаблон проверен в Forever SharedXML.
-- Вторичные действия — SharedButtonSmallTemplate по 174×28 с hover/pressed states, 12px между ними. Они привязаны к левому и правому краям основной кнопки.
-- Все существующие подписи по-прежнему ruRU/enUS. Владелец подтвердил ожидание, что локализация делается сразу без напоминаний.
+New characters choose one of three realm-rule-style cards:
 
-Локально после этой доработки прошли 11 наборов Lua 5.1.5, синтаксис/TOC, ZIP из 13 файлов и git diff --check. Дополнены проверки открытия/освобождения modal shield, скрытия предыдущего tooltip и центрирования подписи.
+- **As in Blizzard:** no restrictions; keep normal game behavior.
+- **Immersion:** all five quest-related concealment options; vendor prices unaffected.
+- **Full immersion:** quest concealment plus hidden prices outside trading. Pending PR #20 deliberately keeps auction prices visible by default, following the owner's explicit choice; strict auction hiding is a separate manual option.
 
-Владелец проверил modal/native-button preview a9676b8aac7e7a236a7ea28965cc645071ae6295, прислал игровой скриншот и одобрил результат. 2026-11-07 явно попросил поднять «Выбрано» внутрь карточки и затем слить layout PR #18. Отступ выбранной подписи от нижней точки карточки увеличен с 24 до 60px. Слияние разрешено после финального зелёного CI; публикация стабильного релиза не запрошена.
+**No change before confirmation.** Clicking a card only selects it; **Begin adventure** applies it. Closing the chooser, choosing Later or Customize does not select a playstyle. An unfinished chooser must not be mistaken for a completed first run after `/reload`. Existing characters preserve their preferences on upgrade rather than being shown onboarding or force-switched to a preset. Players may subsequently customize individual controls or choose another playstyle. Completion is recorded by `onboardingComplete`, not by whether all checkboxes happen to be OFF. Restoring settings does not make an existing character a new install. Deleting the addon folder does not delete its SavedVariables; modifying save files while the game runs can be overwritten from memory.
 
-Следующая отдельная задача после слияния #18: добавить под настройкой скрытия цен галочку «Показывать на аукционе» / «Show at auction». Она разрешает показывать именно цену продажи торговцу при открытом аукционе; не считает рыночную цену. Исключение должно отключаться для RP, храниться на персонажа и работать с AuctionHouseFrame/legacy AuctionFrame. Сделать отдельный PR, не включать ценовые изменения в layout PR #18.
+### Native appearance and interaction lessons
 
-#16 закрыт и заменён #18; #17 уже слит в main через squash. Текущая работа остаётся в #18, стабильная версия 1.3.0.
+Use Forever's **native** realm-rule imagery rather than generic invented cards or downloaded artwork. The unreleased v1.4.0 implementation (merged via PR #18) uses `Mode-Selection-Card-Regular`, its glow, `Mode-Selection-Ring`, `CircleMask`, and Blizzard icon assets `INV_Misc_Map_01`, `icon_treasuremap` and `Achievement_Zone_ElwynnForest`. Preserve the authored atlas proportions, genuine circular masked portraits, inner text padding, short localized descriptions and a genuine `SharedGoldRedButtonExtraLargeTemplate` primary confirmation button with two `SharedButtonSmallTemplate` actions aligned symmetrically below its left/right edges. The Selected label belongs inside the card, clear of its bottom border. Do not stretch a small template to impersonate a larger native button, or draw a rectangular backup border behind an existing native border.
 
-## Открытый технический долг
+The first visual iteration needed multiple corrections: external rectangle, squashed border proportions, flat portrait rings, cramped text, unclear confirmation hierarchy and a lingering background ability tooltip. The current preview includes an unscaled fullscreen mouse/wheel **modal blocker** behind the scaled chooser, hides a pre-existing GameTooltip, and releases the shield on all close paths including Esc, Customize, restore and combat. Do not introduce global tooltip hooks or a continuous `OnUpdate` to mask the problem. The owner reviewed the functional preview and subsequent in-game visual screenshots, approved the final modal/native-button layout, and explicitly requested merging #18 after moving Selected inside the lower border (60px inset). That request was fulfilled. This approval is not evidence that every logout/restore scenario was independently verified or that Issue #3 is fixed.
 
-[Issue #3: ADDON_ACTION_BLOCKED](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+### Explicit restoration before removal
 
-Повторная ошибка называла NoQuestHintsForever при открытой карте/журнале. Неизвестно, какое предшествующее действие вызывает её. Есть список кандидатов для аудита, но нет подтверждённой первопричины. Нужны точные шаги и taint.log. Зелёный Lua CI эту проблему не исключает.
+The unreleased v1.4.0 code includes `/nqh`, `/nqh status`, and **`/nqh restore`**; the older, ambiguous map-only `on/off` commands are retired **in v1.4.0 only**. Restore game settings disables all six restrictions and returns persistent CVars to saved **personal** values, not arbitrary factory defaults. It retains individual revealed-quest permissions and backups for failed restores. The normal logout path attempts CVar cleanup without clearing the player's configured playstyle; the next login may reapply the chosen settings.
 
-## Защита main: наблюдаемое расхождение
+An addon that is disabled/uninstalled cannot clean up afterward, and crashes/forced exits may skip restoration. The owner should explicitly restore **while still running the addon**, with SavedVariables intact. Deleting saved data is not a restoration method. The exact CVar-save ordering and addon-off recovery still need validation in Forever.
 
-- [Ruleset Protect main — PR + CI](https://github.com/nick-sidorin/no-quest-hints-forever/rules/26724884) активен для default branch.
-- Требуется PR, только squash, линейная история, разрешённые обсуждения; force push и удаление запрещены; bypass actors отсутствуют.
-- Пользователь сообщает, что обязательные проверки уже настраивали.
-- Однако повторный GET rulesets/26724884 в этом чате вернул required_status_checks: [] при включённом strict_required_status_checks_policy.
-- Скриншот PR подтверждает успешный запуск build, но не его обязательность.
-- Не считать расхождение устранённым без новой проверки конкретного списка checks в ruleset. Не проверять защиту пробным прямым push в main.
+## Approved follow-up — independent item-price controls (PR #20, pending)
 
-## Скачивание тестовых сборок
+The owner rejected the first auction preview's **Show at auction** child checkbox: its positive meaning conflicted with the parent's negative meaning, and the small indented/disabled row looked subordinate. The final approved model is two independently editable, equal-rank checkboxes under **Item prices**, both phrased as hiding:
 
-Владелец попросил сразу давать прямую ссылку на один обычный установочный ZIP, без вложенного ZIP. В workflow release.yml для PR/manual содержимое проверенного установочного архива распаковывается в dist/installable/ и загружается в artifact NoQuestHintsForever-v1.4.0 как папка. Сам GitHub создаёт скачиваемый ZIP; внутри должна быть сразу NoQuestHintsForever/. Tagged release jobs по-прежнему получают canonical ZIP через прежний addon-* artifact.
+| Context | Controlling setting | Default |
+| --- | --- | --- |
+| Neither merchant nor auction UI is open | Hide outside trading (`hideSellPrices`) | OFF |
+| Modern or legacy auction UI is open | Hide at auction (`hideAuctionSellPrices`) | OFF |
+| A merchant is open | Native vendor sell values are always visible | No hiding override |
 
-## Что сохранять дальше
+This is the native NPC vendor sell amount, **not** a market estimate, acquisition cost, auction deposit or suggested listing price. Showing it at auction is convenient; hiding it is available for stricter roleplay. The owner explicitly chose **auction values visible when selecting Full immersion**. Thus Full sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. A preset reapplies the full seven-checkbox configuration, `/reload` preserves manual choices, and restore/native defaults turn all restrictions OFF.
 
-Обновляй этот файл при смене активной задачи, проверенного SHA, результатов CI/игрового теста, слиянии и релизе. Убирай устаревший текущий статус; существенные решения и причины оставляй в связанных Issues/PR. Устойчивые правила меняй в AGENTS.md, а не только в чате.
+The earlier preview stored an inverse dependent permission. Migrate it to effective independent hiding: `hideAuctionSellPrices = old hideSellPrices == true AND old showAuctionSellPrices == false`, unless a new-format value already exists; then remove the obsolete field. Migrate only after first-run detection. This preserves effective price visibility, rather than an inactive old permission. Do not reintroduce a parent dependency or small-font child control.
+
+Native window visibility is checked at tooltip composition, including late-loaded `AuctionHouseFrame` and legacy `AuctionFrame`; `IsVisible` takes priority over `IsShown`. Re-hover to rebuild a tooltip after a change. Keep non-item tooltip isolation and other addons' price overlays intact; no global hooks or polling are needed.
+
+### Concise playstyle copy
+
+The owner rejected both long feature enumerations and a pricing-tier comparison layout. Keep the existing three native cards with short prose. The middle describes only quest guidance (no price commentary), and the right adds hidden item sell values outside trading. The approved English copy in #20 is:
+
+- **Immersion:** Hide quest guidance. Read the quests and find your own way.
+- **Full immersion:** Everything in Immersion, plus hidden item sell prices outside trading.
+
+Localize both immediately in `enUS` and `ruRU`; do not remove the Russian UI when translating repository documentation to English.
+
+## Engineering, tests and release expectations
+
+- **Client:** WoW Forever, TOC Interface 16001. Not Retail or Classic Era; check API availability and combat restrictions instead of assuming Retail APIs. Runtime and tests target **Lua 5.1**.
+- **Architecture:** `Localization.lua` before gameplay modules; `NoQuestHintsForever.lua` for persistence/state/CVars, `Options.lua` for Blizzard settings, and `Onboarding.lua` added in PR #18. Selective hint code lives in the `QuestHints`, `QuestMarkers` and `QuestInlineHints` modules; other filters are isolated by concern.
+- **CI:** `bash scripts/run_ci.sh` runs all discovered Lua regression suites, syntax validation and TOC/package integrity. The shared packager is `scripts/package_addon.py`, with runtime file list from `.toc` plus LICENSE. For game-UI changes, add tests **and** request real-client validation; mock testing cannot detect `ADDON_ACTION_BLOCKED`.
+- **Preview builds:** owner wants a direct download link to **one installation-ready ZIP** containing `NoQuestHintsForever/` immediately within it. The GitHub Actions artifact already downloads as ZIP, so do not nest another package ZIP inside that artifact. Tagged release jobs still use the canonical packaged ZIP.
+- **Workflow:** branch + PR, **Squash and merge only**, required passing CI, and a separate explicit release decision. There are existing CurseForge users; never ship a preview automatically. `.github/release-request.txt` triggers the established publish process. `CURSEFORGE_DESCRIPTION.md` is the editable English project-page source; hand over updated short/full copy for a release. CurseForge availability and GitHub Release creation are different things.
+- **Languages:** all project documentation, comments, PRs and commit descriptions are in **English**; direct owner chat is **Russian**; actual addon UI/fixture strings continue to support **ruRU/enUS**.
+
+## Dated handoff — checked 2026-11-07
+
+- Repo: https://github.com/nick-sidorin/no-quest-hints-forever. `main` head at review: `10a063159c08c6b3f1511b4f2101670aa62cbc10`. Latest verified GitHub release: [v1.3.0](https://github.com/nick-sidorin/no-quest-hints-forever/releases/tag/v1.3.0). CurseForge listing/upload status was **not independently rechecked**.
+- **[PR #18](https://github.com/nick-sidorin/no-quest-hints-forever/pull/18)** was **squash-merged into `main`** on 2026-11-07 (`10a063159c08c6b3f1511b4f2101670aa62cbc10`). It introduced native settings (superseding #16), explicit restoration, first-run playstyles, native visual refinements and modal input shielding. The owner tested the functional preview and successive visual revisions, approved the final layout and explicitly requested this merge after insetting the Selected label. Comprehensive individual logout/restore/character-change results were not recorded; do not infer that Issue #3 was resolved. **v1.4.0 is not a published stable release:** test the current merged code in Forever before publishing.
+- **[PR #20](https://github.com/nick-sidorin/no-quest-hints-forever/pull/20)** remains an open gameplay draft, separate from this documentation PR. Its latest gameplay head at this review is `d8e6e292e64f7f55a50bdff985fc35a5726de313`, with green [build CI](https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42375048248). It implements the independent price contexts, migration and short localized copy described above. Final in-game verification of that latest revision is pending; do not describe those changes as already merged or released.
+- **[Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3)** reports recurrent `ADDON_ACTION_BLOCKED` naming NoQuestHintsForever around the map/quest journal. The triggering interaction and root cause remain unconfirmed; collect preceding action, combat status and `taint.log` before changing hooks. No mock test proves the error resolved.
+- **[Main protection ruleset](https://github.com/nick-sidorin/no-quest-hints-forever/rules/26724884)** is active and specifies PRs, squash merges, linear history and no bypass; however, its `required_status_checks` list was **empty** at review time even though PRs run a `build` job. Confirm/configure the actual mandatory check separately; do not mistake a green job for an enforced merge gate.
+
+### Next integration step
+
+After merging this English documentation PR, reconcile #20 with the new main before any gameplay merge. Keep these English documents and their durable rationale, rather than overwriting them with #20's older Russian files. Re-run build CI after integration. Test #20's two equal-rank price rows, all four toggle combinations in the world/auction/merchant, migration, reload and Full immersion's auction-OFF setting in Forever. The next release still requires a separate request; merging documentation does not publish anything.
+
+## Maintenance policy
+
+This document should remain a **decision record with a short, dated handoff**, not a transcript, running debug log or endless list of intermediate artifacts and SHAs. Keep precise bug evidence in Issues, implementation/change discussions in PRs, user instructions in README, version history in CHANGELOG, and enforceable contributor rules in AGENTS. Update this file only when product intent, a material trade-off or the handoff state truly changes.
