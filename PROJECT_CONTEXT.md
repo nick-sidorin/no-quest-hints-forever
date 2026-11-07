@@ -117,6 +117,10 @@ These additions expand pending #20 to nine equal-rank controls: seven under Ques
 - `CURSEFORGE_DESCRIPTION.md` contains the final copy-ready short/full Markdown. Give both to the owner; the GitHub publisher does not edit the CurseForge description. The existing tag webhook requests CurseForge packaging; CurseForge approval/availability must be checked separately. Do not add a second uploader.
 - Screenshot plan: English three-card chooser (`/nqh welcome`) with Full immersion selected; Settings top and lower sections if needed; identical map views without hints and with one selectively revealed quest; an immersive world scene with readable quest text. Skip bag screenshots with independent Baganator borders.
 
+## CurseForge presentation decision
+
+After the 1.4.0 release, the owner corrected an overly broad rewrite of the listing. Preserve the live page's established scan-first structure: compact feature bullets near the top, then details for readers who want them. Retain the Explore Azeroth tagline, emoji section headings, prominent Source Code & Bug Reports repository link, separate Issue #3 link and closing Read the quest tagline. Update old feature counts, prices, commands and locales in place; do not move a long introduction or playstyle explanation ahead of the feature summary. The short description remains the existing live text. CURSEFORGE_DESCRIPTION.md is the canonical revised Markdown; the owner copies it to CurseForge manually. This is a documentation-only correction, without a new addon release.
+
 ## Maintenance policy
 
 This document should remain a **decision record with a short, dated handoff**, not a transcript, running debug log or endless list of intermediate artifacts and SHAs. Keep precise bug evidence in Issues, implementation/change discussions in PRs, user instructions in README, version history in CHANGELOG, and enforceable contributor rules in AGENTS. Update this file only when product intent, a material trade-off or the handoff state truly changes.
