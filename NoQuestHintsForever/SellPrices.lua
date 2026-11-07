@@ -1,4 +1,4 @@
--- Hide vendor sell values away from merchants, with an optional auction exception.
+-- Independently hide vendor values outside trading and at the auction house.
 -- Blizzard's SellPrice tooltip line generates both text and coin widgets.
 -- Consuming it before rendering removes the entire price without affecting
 -- item descriptions, stats, rarity, stacks, or vendor transactions.
@@ -13,11 +13,6 @@ local function frameIsOpen(frame)
     return type(frame.IsShown) == "function" and frame:IsShown() == true
 end
 
-local function auctionPricesAllowed()
-    return type(api.IsAuctionSellPriceShown) == "function"
-        and api.IsAuctionSellPriceShown() == true
-        and (frameIsOpen(AuctionHouseFrame) or frameIsOpen(AuctionFrame))
-end
 
 local function isItemTooltip(tooltip)
     if not tooltip then return false end
@@ -33,11 +28,10 @@ local function isItemTooltip(tooltip)
 end
 
 local function hideSellPrice(tooltip)
-    if type(api.IsSellPriceHidden) == "function"
-        and api.IsSellPriceHidden() == true
-        and not frameIsOpen(MerchantFrame)
-        and not auctionPricesAllowed()
-        and isItemTooltip(tooltip) then
+    if not isItemTooltip(tooltip) or frameIsOpen(MerchantFrame) then return end
+    local auction = frameIsOpen(AuctionHouseFrame) or frameIsOpen(AuctionFrame)
+    local getter = auction and api.IsAuctionSellPriceHidden or api.IsSellPriceHidden
+    if type(getter) == "function" and getter() == true then
         -- Skip the original SellPrice line and its Blizzard money widget.
         return true
     end

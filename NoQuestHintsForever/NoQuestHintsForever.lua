@@ -54,9 +54,14 @@ local function initialize()
     if character.onboardingComplete == nil then
         character.onboardingComplete = next(character) ~= nil
     end
-    -- A permissive sub-option of price hiding, not another hiding feature.
-    -- Add this only AFTER detecting first-run/legacy data above.
-    if character.showAuctionSellPrices == nil then character.showAuctionSellPrices = true end
+    -- Migrate the preview's inverse, dependent auction exception to an
+    -- independent hide flag, preserving the currently effective behavior.
+    -- Do this AFTER first-run detection so new defaults don't look like old data.
+    if character.hideAuctionSellPrices == nil then
+        character.hideAuctionSellPrices = character.hideSellPrices == true
+            and character.showAuctionSellPrices == false
+    end
+    character.showAuctionSellPrices = nil
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
     -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
@@ -216,9 +221,9 @@ local function setSellPriceHidden(hidden)
     -- TooltipDataProcessor reads this dynamically; vendor UI remains native.
 end
 
-local function setAuctionSellPriceShown(shown)
+local function setAuctionSellPriceHidden(hidden)
     if not character then return end
-    character.showAuctionSellPrices = shown == true
+    character.hideAuctionSellPrices = hidden == true
 end
 
 local function setQuestProgressHidden(hidden)
@@ -270,14 +275,14 @@ api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
-api.IsAuctionSellPriceShown = function() return not character or character.showAuctionSellPrices ~= false end
+api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end
 api.IsQuestProgressHidden = function() return character and character.hideQuestProgressMessages == true end
 api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.SetTooltipHintsHidden = setTooltipHintsHidden
 api.SetSellPriceHidden = setSellPriceHidden
-api.SetAuctionSellPriceShown = setAuctionSellPriceShown
+api.SetAuctionSellPriceHidden = setAuctionSellPriceHidden
 api.SetQuestProgressHidden = setQuestProgressHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
@@ -313,6 +318,7 @@ function api.RestoreGameSettings()
     setTooltipHintsHidden(false)
     setQuestNPCNamesHidden(false)
     setSellPriceHidden(false)
+    setAuctionSellPriceHidden(false)
     setQuestProgressHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
@@ -332,6 +338,8 @@ function api.ApplyPreset(preset)
     setQuestNPCNamesHidden(hide)
     setQuestProgressHidden(hide)
     setSellPriceHidden(preset == "full")
+    -- All presets keep auction values visible; strict RP is a separate choice.
+    setAuctionSellPriceHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -358,7 +366,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
         printMessage((L.SELL_PRICE_STATUS or "Hide item sell prices: ") .. (character.hideSellPrices == true and statusOn or statusOff))
-        printMessage((L.AUCTION_PRICE_STATUS or "Show vendor prices at auction: ") .. (api.IsAuctionSellPriceShown() and statusOn or statusOff))
+        printMessage((L.AUCTION_PRICE_STATUS or "Hide vendor prices at auction: ") .. (api.IsAuctionSellPriceHidden() and statusOn or statusOff))
         printMessage((L.PROGRESS_STATUS or "Hide quest progress popups: ") .. (character.hideQuestProgressMessages == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)

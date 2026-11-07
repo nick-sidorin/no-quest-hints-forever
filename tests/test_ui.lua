@@ -88,7 +88,7 @@ local function session(char, account, withSettings, withTracker, locale)
                 return cat, { AddInitializer = function(_, init) cat.rows[#cat.rows + 1] = init end }
             end,
             RegisterProxySetting = function(cat, variable, varType, name, defaultValue, getter, setter)
-                assert(cat == panels[1] and varType == "boolean" and defaultValue == (variable == "NQH_SHOW_AUCTION_SELL_PRICES"))
+                assert(cat == panels[1] and varType == "boolean" and defaultValue == false)
                 assert(type(getter) == "function" and type(setter) == "function")
                 local setting = { variable = variable, name = name, defaultValue = defaultValue }
                 function setting:GetValue() return getter() end
@@ -392,7 +392,7 @@ io.write("PASS: native vertical Settings controls/tooltips, independent options,
 
 local category = localized.panels[1]
 assert(category.rows[1].header == "Подсказки заданий")
-assert(category.rows[2].header == "Дополнительное погружение")
+assert(category.rows[2].header == "Цены предметов")
 assert(category.rows[3].header == "Стиль игры и восстановление")
 assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
 assert(localized.checks[6].setting.variable == "NQH_HIDE_SELL_PRICES")
@@ -412,27 +412,42 @@ assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSett
 local count=0; for _ in pairs(notifications) do count=count+1 end
 assert(count==7, "preset/restore must refresh every native checkbox")
 
--- Auction visibility is an enabled-by-default child of price hiding, and its
--- explicit RP choice must survive reload, preset changes and restore.
+-- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
 local auctionUI = session(priceChar, {}, true, false)
 local auctionCheck = auctionUI.checks[7]
-assert(auctionCheck.setting.variable == "NQH_SHOW_AUCTION_SELL_PRICES")
-assert(auctionCheck.setting.defaultValue and auctionCheck:GetChecked())
-assert(auctionCheck.parentInitializer == auctionUI.checks[6] and not auctionCheck.modifyPredicate())
-auctionUI.checks[6]:SetChecked(true); auctionUI.checks[6].scripts.OnClick(auctionUI.checks[6])
-assert(auctionCheck.modifyPredicate())
-auctionCheck:SetChecked(false); auctionCheck.scripts.OnClick(auctionCheck)
-assert(priceChar.showAuctionSellPrices == false and NoQuestHintsForeverAPI.IsSellPriceHidden())
+assert(auctionCheck.setting.variable == "NQH_HIDE_AUCTION_SELL_PRICES")
+assert(auctionCheck.setting.defaultValue == false and not auctionCheck:GetChecked())
+assert(not auctionCheck.parentInitializer and not auctionCheck.modifyPredicate,
+    "price controls must not be nested or dependent")
+auctionCheck:SetChecked(true); auctionCheck.scripts.OnClick(auctionCheck)
+assert(priceChar.hideAuctionSellPrices and not NoQuestHintsForeverAPI.IsSellPriceHidden(),
+    "auction hiding must work with outside-trading hiding OFF")
 auctionUI = session(priceChar, {}, true, false)
-assert(not auctionUI.checks[7]:GetChecked(), "RP auction opt-out was lost on reload")
+assert(auctionUI.checks[7]:GetChecked(), "independent auction choice lost on reload")
 NoQuestHintsForeverAPI.ApplyPreset("full")
-assert(not NoQuestHintsForeverAPI.IsAuctionSellPriceShown(), "preset overwrote the auction preference")
+assert(NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
+    "Full immersion must keep auction values visible as requested")
+NoQuestHintsForeverAPI.SetAuctionSellPriceHidden(true)
 NoQuestHintsForeverAPI.RestoreGameSettings()
-assert(not NoQuestHintsForeverAPI.IsSellPriceHidden() and not auctionUI.checks[7].modifyPredicate())
-assert(priceChar.showAuctionSellPrices == false, "restore should preserve the inactive auction preference")
-auctionUI.checks[7].setting:SetValue(auctionUI.checks[7].setting.defaultValue)
-assert(NoQuestHintsForeverAPI.IsAuctionSellPriceShown(), "native defaults should restore the auction exception")
-
+assert(not NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
+    "restore must clear both independent hiding contexts")
 local auctionAlt = session({}, {}, true, false)
-assert(auctionAlt.checks[7]:GetChecked(), "another character must keep its own default auction preference")
+assert(not auctionAlt.checks[7]:GetChecked(), "new alt must not inherit another character's hiding")
+
+-- Preview migration preserves effective price visibility and removes the old
+-- positive/dependent field; it must not override a new-format explicit choice.
+for _, case in ipairs({
+    { oldHide=true, oldShow=false, expected=true },
+    { oldHide=true, oldShow=true, expected=false },
+    { oldHide=false, oldShow=false, expected=false },
+    { oldHide=false, oldShow=true, expected=false },
+    { oldHide=true, expected=false },
+}) do
+    local legacy = { hideSellPrices=case.oldHide, showAuctionSellPrices=case.oldShow }
+    session(legacy, {}, true, false)
+    assert(legacy.hideAuctionSellPrices == case.expected and legacy.showAuctionSellPrices == nil)
+end
+local currentFormat = { hideAuctionSellPrices=true, showAuctionSellPrices=true }
+session(currentFormat, {}, true, false)
+assert(currentFormat.hideAuctionSellPrices and currentFormat.showAuctionSellPrices == nil)

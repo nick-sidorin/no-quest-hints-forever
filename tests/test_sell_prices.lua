@@ -4,7 +4,7 @@ local addon = "NoQuestHintsForever/SellPrices.lua"
 
 local function session(initialHidden, delayed)
     local hidden = initialHidden
-    local showAtAuction, auctionVisible = true, false
+    local hideAtAuction, auctionVisible = false, false
     local handlers, registrations, eventFrame = {}, 0, nil
     local merchantVisible, merchantStyle = false, "visible"
 
@@ -14,7 +14,7 @@ local function session(initialHidden, delayed)
     }
     NoQuestHintsForeverAPI = {
         IsSellPriceHidden = function() return hidden end,
-        IsAuctionSellPriceShown = function() return showAtAuction end,
+        IsAuctionSellPriceHidden = function() return hideAtAuction end,
     }
 
     if delayed then
@@ -70,7 +70,7 @@ local function session(initialHidden, delayed)
         hidden=function(v) hidden=v end,
         merchant=function(v) merchantVisible=v end,
         auction=function(v) auctionVisible=v end,
-        showAtAuction=function(v) showAtAuction=v end,
+        hideAtAuction=function(v) hideAtAuction=v end,
         auctionFrame=function(frame) AuctionHouseFrame=frame end,
         merchantFrame=function(v) MerchantFrame=v end,
         ready=function()
@@ -116,20 +116,20 @@ assert(s.hover(0)=="Item name|Item attributes","missing MerchantFrame should cou
 
 s.auction(true)
 assert(s.hover(0):find("Sell Price: 1g"), "open auction should show vendor price by default")
-s.showAtAuction(false)
+s.hideAtAuction(true)
 assert(s.hover(0)=="Item name|Item attributes", "RP option must hide vendor prices even at auction")
 s.merchantFrame({IsVisible=function() return true end})
 assert(s.hover(0):find("Sell Price: 1g"), "auction preference must not hide merchant prices")
 s.merchantFrame(nil)
-s.showAtAuction(true); s.auction(false)
+s.hideAtAuction(false); s.auction(false)
 assert(s.hover(0)=="Item name|Item attributes", "closing auction must hide prices again")
 s.auctionFrame(nil)
 assert(s.hover(0)=="Item name|Item attributes", "unloaded auction frame must count as closed")
 AuctionFrame={IsShown=function() return true end}
 assert(s.hover(0,true):find("Sell Price: 1g"), "legacy auction frame should allow native item prices")
-s.showAtAuction(false)
+s.hideAtAuction(true)
 assert(s.hover(0)=="Item name|Item attributes", "legacy auction exception must respect RP choice")
-AuctionFrame=nil; s.showAtAuction(true)
+AuctionFrame=nil; s.hideAtAuction(false)
 s.auctionFrame({IsVisible=function() return false end, IsShown=function() return true end})
 assert(s.hover(0)=="Item name|Item attributes", "shown child of a hidden parent is not an open auction")
 s.auctionFrame({IsVisible=function() return true end})
@@ -152,4 +152,18 @@ assert(late.registrationCount()==1,"duplicate pre-hook on repeated load")
 local alt=session(false,false)
 assert(alt.hover(0):find("Sell Price: 1g"),"fresh character should show prices by default")
 
-io.write("PASS: vendor prices at merchants, optional modern/legacy auction exception, RP opt-out, dynamic toggles and late loading\n")
+-- Both context toggles must work independently, including auction hiding
+-- while the outside-trading toggle is OFF. Merchants override both.
+for _, worldHidden in ipairs({false,true}) do
+    for _, auctionHidden in ipairs({false,true}) do
+        local matrix=session(worldHidden,false)
+        matrix.hideAtAuction(auctionHidden)
+        assert((matrix.hover(0):find("Sell Price: 1g") == nil) == worldHidden)
+        matrix.auction(true)
+        assert((matrix.hover(0):find("Sell Price: 1g") == nil) == auctionHidden)
+        matrix.merchant(true)
+        assert(matrix.hover(0):find("Sell Price: 1g"), "merchant must always expose native values")
+    end
+end
+
+io.write("PASS: vendor prices at merchants, independent world/modern/legacy auction hiding, dynamic toggles and late loading\n")

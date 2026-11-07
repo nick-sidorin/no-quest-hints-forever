@@ -22,8 +22,8 @@ local controls = {
       "IsSellPriceHidden", "SetSellPriceHidden" },
     { "NQH_HIDE_QUEST_PROGRESS", "PROGRESS_HINTS", "PROGRESS_HINTS_DESC",
       "IsQuestProgressHidden", "SetQuestProgressHidden" },
-    { "NQH_SHOW_AUCTION_SELL_PRICES", "AUCTION_PRICES", "AUCTION_PRICES_DESC",
-      "IsAuctionSellPriceShown", "SetAuctionSellPriceShown", true },
+    { "NQH_HIDE_AUCTION_SELL_PRICES", "AUCTION_PRICES", "AUCTION_PRICES_DESC",
+      "IsAuctionSellPriceHidden", "SetAuctionSellPriceHidden" },
 }
 
 function api.RefreshOptions()
@@ -56,7 +56,6 @@ local function registerCategory()
 
     -- Keep quest options together; vendor prices are additional immersion.
     local order = { 1, 2, 3, 4, 6, 5, 7 }
-    local pricesInitializer
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end
@@ -66,20 +65,13 @@ local function registerCategory()
         local isEnabled, setEnabled = api[item[4]], api[item[5]]
         local setting = Settings.RegisterProxySetting(
             newCategory, item[1], Settings.VarType.Boolean,
-            L[item[2]] or item[2], item[6] == true,
+            L[item[2]] or item[2], false,
             function() return isEnabled() == true end,
             function(value)
                 api.CompleteOnboarding()
                 setEnabled(value == true)
             end)
-        local initializer = Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
-        if index == 5 then
-            pricesInitializer = initializer
-        elseif index == 7 and pricesInitializer and initializer
-            and type(initializer.SetParentInitializer) == "function" then
-            -- Native indentation and disabled state when price hiding is OFF.
-            initializer:SetParentInitializer(pricesInitializer, api.IsSellPriceHidden)
-        end
+        Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
     end
 
     heading(L.MANAGE_GROUP)

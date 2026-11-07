@@ -2,7 +2,7 @@
 
 ## [1.4.0] — unreleased development build
 
-- Add a per-character **Show at auction** sub-option under item price hiding (default ON). Native vendor sell values are visible while a modern or legacy auction window is open; switch it OFF for stricter roleplay. Merchant prices remain visible. This is not an auction valuation. Preserve the preference across reloads, presets and restoration; add regression coverage for visibility, legacy frames and saved choices.
+- Add two equal-rank **Item prices** controls: Hide outside trading and Hide at auction. Both are independent and default OFF; merchants always show native vendor sell values. Preserve effective behavior when migrating the earlier dependent Show at auction preview. Full immersion hides outside trading but keeps auction values visible. Shorten onboarding descriptions without lists or price commentary in the middle card.
 
 - Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
 
