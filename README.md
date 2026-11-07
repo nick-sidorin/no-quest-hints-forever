@@ -12,7 +12,7 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-> **Development preview:** The onboarding, restoration and grouped native settings below belong to unreleased **v1.4.0**. Stable **v1.3.0** still uses the original separate settings window until a new release is tested and published.
+> **Version 1.4.0:** Native settings, three playstyles, restoration, all official client locales and upgrade notifications. Existing characters keep their preferences.
 
 **Independent, per-character** options:
 
@@ -63,7 +63,7 @@ World of Warcraft/
 
 Restart the game or use `/reload` if you're updating an existing installation. Ensure you do not have an extra nested addon folder.
 
-### First run and playstyles (1.4.0 preview)
+### First run and playstyles (1.4.0)
 
 A new character sees three realm-rule-style cards, with native game icons and circular portraits:
 
@@ -118,7 +118,7 @@ The final **Support → Report a problem** button opens a selected, copyable Git
 | `/nqh restore` | Turn off all ten hiding controls and restore saved pre-addon game settings. |
 | `/nqh status` | Display all ten checkbox states and targeted CVars. |
 
-The ambiguous map-only `on`/`off` commands have been removed in this preview. They now show command help without changing anything.
+The ambiguous map-only `on`/`off` commands have been removed in 1.4.0. They now show command help without changing anything.
 
 ### Restoring settings before disabling or removing the addon
 
@@ -176,7 +176,7 @@ Only game textures are used; no Wowhead images are bundled. The cards use the ex
 | Immersion | `icon_treasuremap` | [Chosen treasure map](https://www.wowhead.com/icon=1064187/icon-treasuremap) |
 | Full immersion | `Achievement_Zone_ElwynnForest` | [Elwynn Forest](https://www.wowhead.com/icons?filter=na=achievement_zone_elwynnforest) |
 
-The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a native gold/red three-slice confirmation button above two smaller native buttons aligned to its left and right edges. A full-screen mouse/wheel shield prevents background UI hover or clicks while the chooser is open; it is released when the chooser closes. The owner reported general functionality working on the first preview; the revised rendering and text fit still require in-game review; mocked UI tests cannot establish the final rendering.
+The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a native gold/red three-slice confirmation button above two smaller native buttons aligned to its left and right edges. A full-screen mouse/wheel shield prevents background UI hover or clicks while the chooser is open; it is released when the chooser closes. The owner reviewed and approved the final native layout in Forever before requesting release. Further client/locale testing remains useful; mocked UI tests cannot establish rendering in every language.
 
 ### Map and navigation CVars
 
@@ -243,7 +243,7 @@ bash scripts/run_ci.sh
 
 Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. The native NPC-name override tests preserve and restore the original account CVar and check that unrelated name CVars remain untouched. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
 
-## Validation checklist for Forever 1.4.0 preview
+## Validation checklist for Forever 1.4.0
 
 1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing seven quest checkboxes, two equal-rank item price checkboxes and one bag checkbox (no floating window).
 2. Open the same category manually from the AddOns list: all ten controls must appear directly in the page; hover each to see its explanation without a permanent description line.
@@ -262,7 +262,7 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 15. Toggle **Hide quest hints in tooltips** and **Hide quest NPC names**; normal combat information should remain.
 16. Test all four combinations of Hide outside trading / Hide at auction: away from trading only the first applies, at auction only the second applies, and at a merchant prices are always visible. Close each window and re-hover. Test reload, another character and migration from the previous Show at auction preview. Both checkbox rows must have equal rank/size and remain editable.
 17. Toggle **Hide quest progress popups**; quest counts disappear but ordinary warnings and status messages remain.
-18. Change characters and reload to check the six independent settings.
+18. Change characters and reload to check the ten independent settings.
 19. On a fresh character, verify three cards, round icons, readable ruRU/enUS text and layout at different UI scales. Selecting a card or closing the window must not change settings. No default card is selected.
 20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them outside trading while keeping the auction control OFF. Then enable Hide at auction manually to check strict RP. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
 21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.

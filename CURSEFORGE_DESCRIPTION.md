@@ -1,12 +1,10 @@
 # CurseForge — No Quest Hints
 
-> **Development draft for unreleased 1.4.0. Do not publish this description before the version is verified and released.**
-
-> **Maintainer note (not part of the public description):** This is the source of truth for the CurseForge project page. Copy the **Short description** and **Full description** sections into the corresponding CurseForge fields when releasing. Update this file in the release PR whenever user-facing features or compatibility notes change. The file is documentation, not part of the installed addon.
+> **Maintainer note:** Copy the Short description and Full description content into the corresponding CurseForge fields. The release workflow does not update the project description automatically.
 
 ## Short description
 
-Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups and sell prices. Reveal Blizzard's original quest hints only when needed.
+Choose your immersion in WoW: Forever. Hide quest guidance and distractions, then reveal Blizzard's original hints one quest at a time.
 
 ---
 
@@ -14,90 +12,66 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 # No Quest Hints
 
-**Explore Azeroth. Not your quest markers.**
+**Read the quest. Explore the world. Find your own way.**
 
-Take control of how much the game tells you. **No Quest Hints** removes unwanted quest guidance and distractions in **World of Warcraft: Forever**, while letting you bring back Blizzard's original hints whenever you need help.
+Rediscover Azeroth through quest descriptions, landmarks and exploration. **No Quest Hints** lets you choose how much guidance to hide in **World of Warcraft: Forever**, with independent options saved for each character.
 
-## ✨ Features at a Glance
+## Choose your adventure
 
-Seven quest controls and two independent item-price controls:
+- **As in Blizzard:** keep your current game settings; nothing is hidden.
+- **Immersion:** hide quest map hints, the objective tracker, quest tooltip hints, quest NPC names and quest progress popups.
+- **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible.
 
-- 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
-- 📜 **Hide Objective Tracker** — Clear the on-screen quest list without losing your journal or quest progress.
-- 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters when hovering over creatures and objects.
-- 🎯 **Hide Quest NPC Names** — Stop floating NPC names from revealing which creatures are quest targets.
-- 💰 **Hide Item Sell Prices** — Choose independently whether to hide vendor sell values outside trading and at the auction house.
-- **Hide Quest Levels** — Remove numeric level prefixes from quest journal and tracker titles.
-- **Hide Difficulty Colors** — Use normal yellow quest titles instead of difficulty colors; optional and enabled only manually.
-- 🔕 **Hide Quest Progress Popups** — Remove yellow objective counters and completion messages without hiding other game notifications.
+Select a card and confirm to begin. Nothing changes before confirmation. You can customize every option afterward, and existing characters keep their saved choices when updating.
 
-**The controls are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
+## Customize your immersion
 
-## 🧭 Need Help? Reveal Just One Quest.
+Ten independent controls let you hide:
 
-You don't have to choose between having every quest marked and having no guidance at all.
+- Quest markers, blue objective areas and navigation guidance.
+- The on-screen objective tracker, while keeping the quest journal and quest progress.
+- Quest names and progress in NPC and world-object tooltips.
+- Floating quest NPC names.
+- Yellow quest progress popups.
+- Numeric quest levels in journal and tracker titles.
+- Difficulty colors, using ordinary yellow quest titles instead.
+- Native vendor sell values outside trading.
+- Native vendor sell values while the auction house is open.
+- Yellow quest-item borders in Blizzard's bags.
 
-1. Hide the default quest guidance.
-2. Read your quest journal and explore the world.
-3. If you're stuck, select **Show hint** for that quest in your journal or its right-click menu.
+Difficulty-color hiding and bag-border hiding are optional and stay OFF in every playstyle. Merchants always show vendor sell values. Bag-border hiding preserves quality colors, new-item highlights and quest-start exclamation marks.
 
-The game restores its original quest guidance for the selected quest, where available:
+## Need a hint? Reveal one quest
 
-- Blue highlighted objective areas
-- Native interactive quest markers
-- In-world navigation and distance
-- Native quest indicators in the journal and objective tracker
+Select **Show hint** in the quest journal or a quest's right-click menu to reveal Blizzard's original guidance for that quest, where available: blue objective areas, interactive map markers, journal/tracker indicators and in-world navigation.
 
-Select **Hide hint** when you no longer need help. You can reveal multiple quests independently.
+Reveal multiple quests independently, then use **Hide hint** when you no longer need help. The geographical map, quest text and actual progression remain intact.
 
-**No external quest database. No replacement markers. Just Blizzard's own guidance, under your control.**
+## Settings and commands
 
-## 🌍 Choose Your Adventure
-
-On your first visit with a new character, choose a playstyle:
-
-- **As in Blizzard:** keep your game settings; nothing is hidden.
-- **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
-- **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible unless you hide them separately.
-
-After a version upgrade, a one-time login message shows the new version. When your upgrade includes new features, it also points to `/nqh`, where newly added checkboxes carry Blizzard's **New** marker until viewed. Fix-only updates use a neutral message. Your existing settings remain intact.
-
-Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
-
-## ⚙️ Settings
-
-Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints**, **Item prices** and **Bags**, with explanations on hover.
-
-The **Playstyle and restoration** buttons appear first. At the bottom, **Support → Report a problem** provides a copyable GitHub project link; open it in your browser and choose **Issues → New issue** for reports or suggestions.
-
-The optional **Bags → Hide quest item borders** control hides yellow quest-item borders in native carried bags. Quality borders, new-item highlights and quest-start exclamation marks remain. It is OFF in every playstyle and must be enabled manually. Custom bag addons may draw independent borders.
-
-The **Item prices** section has two equal-rank checkboxes: **Hide outside trading** and **Hide at auction**. Both mean hiding and work independently. Merchants always show prices; the auction checkbox affects the existing **NPC vendor sell value**, not an auction market estimate. Both default OFF, while Full immersion enables only hiding outside trading.
+All options live directly in **Options → AddOns → No Quest Hints**. Playstyle and restoration are at the top; explanations appear when you hover over an option.
 
 | Command | Action |
-|---|---|
-| `/nqh` | Open addon settings |
+| --- | --- |
+| `/nqh` | Open settings |
 | `/nqh welcome` | Reopen the playstyle chooser |
-| `/nqh restore` | Turn off all features and restore saved original game settings |
-| `/nqh status` | Show current settings |
+| `/nqh restore` | Immediately turn off all restrictions and restore saved original game settings |
+| `/nqh status` | Show diagnostic settings information |
 
-The **Restore game settings** button asks for confirmation before clearing your current configuration. Cancel or Escape keeps it. The explicit `/nqh restore` command restores immediately.
+The **Restore game settings** button asks for confirmation. Cancel or Escape preserves your current configuration. **Use restoration before disabling or removing the addon.** It restores your saved personal values; it does not reset all Blizzard settings. Cleanup cannot be guaranteed after a crash or once the addon is unloaded.
 
-**Before disabling or removing the addon**, use **Restore game settings** or `/nqh restore`. This restores your saved personal settings, rather than resetting all of Blizzard’s options. If already removed and settings remain changed, reinstall with saved settings intact and run the restore command. The older map-only `on`/`off` commands have been removed.
+A one-time login message announces upgrades. Updates that include new features point you to Settings, where newly added checkboxes carry Blizzard's native **New** marker until viewed. Fix-only updates use a neutral message.
 
-## ℹ️ Good to Know
+## Languages and compatibility
 
-- Designed specifically for **World of Warcraft: Forever**.
-- Automatically uses the client language: **English, Russian, German, French, Spanish, Italian, Brazilian Portuguese, Korean, Simplified Chinese or Traditional Chinese**. Both English and Spanish client variants are supported. Unknown locales fall back to English.
-- Uses native Blizzard quest and tooltip information.
-- Does not change quest progress, item prices or selling mechanics.
-- Some special NPC names may also be hidden by the quest-name setting because Blizzard groups them together.
-- Prices displayed by other inventory addons may require configuring those addons separately.
+The addon automatically follows your client language: **English, Russian, German, French, Spanish, Italian, Brazilian Portuguese, Korean, Simplified Chinese or Traditional Chinese**. Both English and Spanish client variants are supported, with English fallback.
 
-**Known issue:** An intermittent Blizzard protected-action warning has been reported and is under investigation. See [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+Built specifically for **WoW: Forever**. No external quest database or route planner is required. Quest progress, selling mechanics and quest-giver exclamation marks are preserved.
 
-**[Source Code & Bug Reports](https://github.com/nick-sidorin/no-quest-hints-forever)**
+Some special NPC names may also be hidden because Blizzard groups them with quest NPC names. The price controls affect native vendor sell values, not auction-market estimates. Custom bag borders and price overlays from other addons remain under those addons' control.
 
----
+**Known issue:** An intermittent protected-action warning is being investigated in [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
-*Read the quest. Explore the world. Find your own way.*
+## Feedback
+
+Use **Support → Report a problem** in settings to copy the project link, or visit [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues). Include your Forever build, addon version and steps to reproduce the problem. Suggestions and translation feedback are welcome.

@@ -1,46 +1,21 @@
 # Changelog
 
-## [1.4.0] — unreleased development build
+## [1.4.0] — 2026-11-07
 
-- Localize all UI text for every official WoW client locale, including both English/Spanish variants. Add complete German, French, Spanish, Italian, Brazilian Portuguese, Korean and Simplified/Traditional Chinese dictionaries, selected by GetLocale with English fallback.
-- Distinguish fix-only update notices from upgrades spanning feature releases, including skipped versions. Mark newly added checkbox rows with Blizzard's native New widget through addon-owned initializers; persist unseen/viewed state per account without modifying Blizzard's feature registries.
-
-- Announce a version upgrade once per account at login, inviting players to explore new settings with `/nqh`. Read actual addon metadata, preserve preferences, avoid repeat notices on reload/alts/downgrades, and keep first installs silent. Existing installations without a version baseline receive one notice. Localized in ruRU/enUS.
-
-- Stop stationary map-pin tooltips from repeatedly dispatching hover-entry events and rebuilding the quest journal. Keep unchanged selective pins across repeated quest events; still refresh changed permissions, positions, styles, selections and maps. Tooltip content refreshes on actual re-entry.
-- Require confirmation before the Settings restore button clears a custom configuration. Cancel/Escape or unavailable confirmation UI leaves all settings intact. The explicit `/nqh restore` command remains immediate.
-
-- Add a bottom Support section with a localized Report a problem button and native copyable GitHub link dialog. Add `/nqh welcome` to reopen the playstyle chooser without changing settings until confirmation; defer opening in combat.
-
-- Move the entire Playstyle and restoration section above individual checkboxes so both actions are immediately accessible when opening Settings.
-
-- Add an optional **Bags → Hide quest item borders** checkbox, localized in ruRU/enUS, saved per character and OFF in every preset. Hide only native carried-bag quest borders; preserve quest-start markers, quality/new-item overlays and Blizzard visibility. Restore original alpha on disable/restore or slot reuse, defer in combat and cover pooled/late-loaded bags. Custom bag overlays are outside this initial integration.
-
-- Keep difficulty-color concealment active during hover in the large quest journal by appending handlers to actual pooled row scripts; XML-bound function references can bypass global-name hooks. Cover enter/leave, new rows, single registration and native behavior after disabling.
-
-- Fix ghost tracker hover/click areas by disabling input on tracker descendants as well as its root, including newly pooled blocks. Restore original click/motion/wheel flags individually, release detached children and defer protected writes until combat ends.
-- Add independent numeric quest-level and difficulty-color controls for native journal/tracker titles. Preserve actual title content and party counts, defer post-hook updates, and restore native text/colors. Full immersion hides numeric levels but leaves difficulty colors and auction values visible; other playstyles leave both presentation controls OFF.
-- Consolidate English contributor/product documentation with merged PR #19; retain ruRU/enUS UI localization and all current owner decisions. Expand regression coverage to thirteen suites.
-
-- Add two equal-rank **Item prices** controls: Hide outside trading and Hide at auction. Both are independent and default OFF; merchants always show native vendor sell values. Preserve effective behavior when migrating the earlier dependent Show at auction preview. Full immersion hides outside trading but keeps auction values visible. Shorten onboarding descriptions without lists or price commentary in the middle card.
-
-- Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
-
-- Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.
-
-- Add a consent-based first-run chooser: As in Blizzard (no hiding), Immersion (five quest features), Full immersion (all six, including merchant-only prices). Native game-art cards and circular icons; no changes before confirmation.
-- Preserve existing users' preferences; unfinished onboarding persists separately per character and can be reopened from Settings.
-- Group native Settings into Quest hints and Additional immersion; explanations remain hover-only. Add playstyle and restoration buttons.
-- Add `/nqh restore` for all six features, restoring saved personal CVars and retaining failed backups for retry. Keep `/nqh` and `/nqh status`; remove the ambiguous map-only `on`/`off` commands (now help only).
-- Attempt CVar restoration on normal logout/reload without resetting saved preferences; guard against re-enforcement during shutdown. Requires live Forever verification of shutdown/save ordering, combat and character switching; no crash cleanup guarantee.
-- Expand Lua 5.1 regression coverage to eleven suites, including preset consent, upgrades, pending onboarding, restoration retry and shutdown/reload.
-
-- Move all six configuration checkboxes directly into Blizzard's **Options → AddOns → No Quest Hints** using its native vertical Settings layout, like CatQuest.
-- Show short setting labels only; explanations now appear in the standard WoW hover tooltips rather than occupying permanent rows.
-- Make `/nqh` navigate straight to the AddOns settings category; remove the duplicate floating window and launcher button.
-- Preserve existing per-character SavedVariables, state logic, default values and independent toggles. Add native Settings integration, tooltip and slash-navigation regression coverage.
-- **Not yet released:** requires live Forever UI validation and a separate stable release request.
-
+- Choose **As in Blizzard**, **Immersion** or **Full immersion** in a native three-card onboarding window. Changes apply only after confirmation; existing characters keep their preferences. Reopen it with `/nqh welcome`.
+- Move settings into Blizzard **Options → AddOns → No Quest Hints**, opened by `/nqh`. Playstyle and restoration come first, followed by seven quest controls, two item-price controls, optional bag borders and support access.
+- Add independent **Hide quest levels** and **Hide difficulty colors** options for journal/tracker titles. Full immersion hides numeric levels but preserves difficulty colors. All other presets leave both OFF.
+- Split native vendor-value hiding into **Hide outside trading** and **Hide at auction**. Merchants always show prices; Full immersion keeps auction values visible. Preserve effective visibility when migrating the older preview's auction option.
+- Add manual-only **Hide quest item borders** for native carried bags. Preserve quality/new-item highlights and quest-start exclamation marks. Custom bag overlays, including Baganator, remain under their own addons' control.
+- Add a confirmation for the Settings restore button. `/nqh restore` immediately turns all ten restrictions off and restores saved personal game settings, retaining failed CVar backups for retry. Use before disabling or removing the addon. Normal logout/reload attempts CVar cleanup without forgetting saved preferences; forced termination cannot guarantee cleanup.
+- Add **Support → Report a problem** with a copyable GitHub repository link and issue-report instructions. Retire the old map-only `/nqh on|off` commands; keep `/nqh status` for diagnostics.
+- Automatically localize for all official WoW client locales, including both English/Spanish variants, with English fallback. New translation wording and layout can be refined with player feedback.
+- Announce upgrades once per account. Fix-only updates use neutral text; upgrades spanning feature releases invite players to inspect Settings. New checkbox rows use Blizzard's native **New** marker until viewed. Preserve unseen markers across patches/reloads and dismiss viewed markers across characters.
+- Fix invisible tracker rows still receiving mouse input/tooltips. Restore exact original input flags, handle pooled/reparented rows and retry protected changes after combat.
+- Fix difficulty-color concealment being lost on journal hover. Stop stationary selective-map tooltips from repeatedly rebuilding the journal; retain unchanged pins and refresh real map/quest changes. Native tooltip content updates on actual re-entry.
+- Refine native onboarding cards, round icons, spacing and buttons. Block background hover/click/wheel input while the chooser is open and release it on every exit path.
+- Validate with **15 Lua 5.1 regression suites**, syntax/TOC checks and a byte-verified **16-file** installable ZIP. The owner confirmed the final preview in Forever and explicitly requested this stable release.
+- **Known issue:** intermittent `ADDON_ACTION_BLOCKED` reports remain under investigation in [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 ## [1.3.0] — 2026-11-06
 
