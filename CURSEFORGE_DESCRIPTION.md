@@ -20,16 +20,18 @@ Take control of how much the game tells you. **No Quest Hints** removes unwanted
 
 ## ✨ Features at a Glance
 
-Six independent, optional settings:
+Seven quest controls and two independent item-price controls:
 
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list without losing your journal or quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters when hovering over creatures and objects.
 - 🎯 **Hide Quest NPC Names** — Stop floating NPC names from revealing which creatures are quest targets.
-- 💰 **Hide Item Sell Prices** — Discover what your loot is worth only when you visit a merchant.
+- 💰 **Hide Item Sell Prices** — Choose independently whether to hide vendor sell values outside trading and at the auction house.
+- **Hide Quest Levels** — Remove numeric level prefixes from quest journal and tracker titles.
+- **Hide Difficulty Colors** — Use normal yellow quest titles instead of difficulty colors; optional and enabled only manually.
 - 🔕 **Hide Quest Progress Popups** — Remove yellow objective counters and completion messages without hiding other game notifications.
 
-**All settings are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
+**The controls are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
 
 ## 🧭 Need Help? Reveal Just One Quest.
 
@@ -56,13 +58,15 @@ On your first visit with a new character, choose a playstyle:
 
 - **As in Blizzard:** keep your game settings; nothing is hidden.
 - **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
-- **Full immersion:** hide quest guidance and discover item sell prices only at a merchant.
+- **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible unless you hide them separately.
 
 Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
 
 ## ⚙️ Settings
 
-Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints** and **Additional immersion**, with explanations on hover.
+Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints** and **Item prices**, with explanations on hover.
+
+The **Item prices** section has two equal-rank checkboxes: **Hide outside trading** and **Hide at auction**. Both mean hiding and work independently. Merchants always show prices; the auction checkbox affects the existing **NPC vendor sell value**, not an auction market estimate. Both default OFF, while Full immersion enables only hiding outside trading.
 
 | Command | Action |
 |---|---|

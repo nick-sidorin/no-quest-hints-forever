@@ -20,7 +20,9 @@ Six **independent, per-character** options:
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
 - **Hide quest NPC names:** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
-- **Hide item sell prices:** Suppress the native SellPrice line in item tooltips until a merchant window is open. The actual prices, item stats and NPC trading are unchanged; prices become visible while interacting with a vendor. Does not remove price overlays generated separately by other addons.
+- **Item prices:** Two independent controls hide the native vendor SellPrice line **outside trading** and **at auction**. Merchants always show prices. These controls do not change actual prices, stats, trading mechanics or separate price overlays from other addons.
+- **Hide quest levels:** Remove the native numeric `[level]` prefix from quest titles in the journal and tracker, preserving real quest names and party-member counts.
+- **Hide difficulty colors:** Use normal yellow quest titles instead of difficulty-based green/orange/red. Independent of numeric levels; enabled only manually.
 - **Hide quest progress popups:** Suppress the six native yellow quest objective progress/completion messages while preserving ordinary status messages and red combat/UI errors. Uses Blizzard `UIErrorsFrame:SetMessageTypeEnabled` and original visibility restoration instead of parsing translated strings.
 - **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
@@ -49,7 +51,8 @@ World of Warcraft/
                 ├── QuestMarkers.lua
                 ├── QuestHintPins.xml
                 ├── QuestInlineHints.lua
-                ├── QuestTooltips.lua
+                ├── QuestPresentation.lua     # Numeric title levels and difficulty-color filtering
+├── QuestTooltips.lua
                 ├── SellPrices.lua
                 ├── QuestProgressMessages.lua
                 └── LICENSE
@@ -64,19 +67,19 @@ A new character sees three realm-rule-style cards, with native game icons and ci
 | Playstyle | Features enabled |
 | --- | --- |
 | **As in Blizzard** | None; keep your personal game settings |
-| **Immersion** | All five quest options: map/navigation, tracker, tooltip hints, quest NPC names and progress popups |
-| **Full immersion** | Immersion plus item sell prices hidden outside a merchant |
+| **Immersion** | Original five quest concealment options; numeric levels and difficulty colors remain unchanged |
+| **Full immersion** | Immersion plus hidden numeric quest levels and prices outside trading; difficulty colors and auction prices remain visible |
 
 Clicking a card only selects it. **Begin adventure** confirms the choice. Closing the window, choosing **Later**, or opening **Customize settings…** applies no preset. An unfinished first run reappears on the next login; editing a checkbox completes setup. Existing characters keep their saved choices and do not see onboarding after upgrading.
 
-Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces all six toggles; manual choices remain available independently. This choice is per character.
+Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the nine checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Choices are saved per character.
 
 ### Open settings
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
-- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All six checkboxes live directly on that page; no separate popup window.
+- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All nine checkboxes live directly on that page; no separate popup window.
 
-The native Blizzard settings category groups five checkboxes under **Quest hints** and vendor prices under **Additional immersion**. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
+The native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
@@ -84,8 +87,15 @@ The native Blizzard settings category groups five checkboxes under **Quest hints
 | Hide objective tracker | Hide the on-screen right-side task list | Off |
 | Hide quest hints in tooltips | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
 | Hide quest NPC names | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
-| Hide item sell prices | Hide vendor sell values in item tooltips until the merchant window is open | Off |
+| Hide outside trading | Hide native vendor sell values when neither a merchant nor auction house is open | Off |
+| Hide quest levels | Remove numeric level decoration in native journal/tracker titles | Off |
+| Hide difficulty colors | Render quest titles in normal yellow instead of difficulty colors | Off |
+| Hide at auction | Hide native vendor sell values while the auction house is open | Off |
 | Hide quest progress popups | Hide yellow objective updates, preserving other notifications | Off |
+
+**Hide at auction** concerns the NPC vendor sell value, not an auction market estimate, cost price, deposit or suggested listing price. Both controls default OFF. The former preview's positive/dependent Show at auction preference is migrated to preserve effective visibility: only an active old price-hiding setting combined with Show at auction OFF becomes Hide at auction ON. Old fields are then removed; explicit new-format choices are retained. Both modern and legacy auction frames are supported. Changes take effect on the next native tooltip composition/hover.
+
+The merchant always shows native values. Elsewhere, the active context selects the relevant checkbox: at auction only Hide at auction matters; away from both windows only Hide outside trading matters. `/nqh restore` and native defaults turn both OFF. Presets reset them to their documented values, and ordinary `/reload` preserves the current pair.
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
@@ -94,14 +104,14 @@ The second option is independent of the first: you can keep the task list while 
 | Command | What it does |
 | --- | --- |
 | `/nqh` | Open the native Blizzard AddOns settings category. |
-| `/nqh restore` | Turn off all six features and restore saved pre-addon game settings. |
-| `/nqh status` | Display all six option states and the values of targeted CVars. |
+| `/nqh restore` | Turn off all nine hiding controls and restore saved pre-addon game settings. |
+| `/nqh status` | Display all nine checkbox states and targeted CVars. |
 
 The ambiguous map-only `on`/`off` commands have been removed in this preview. They now show command help without changing anything.
 
 ### Restoring settings before disabling or removing the addon
 
-Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All six features turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. The standard native checkbox defaults are all OFF; choosing the immersion preset is an explicit first-run decision.
+Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All nine hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All nine checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
 
 At normal logout or `/reload` the addon also attempts to restore the persistent CVars, without turning off your saved preferences. At the next login with the addon enabled it reapplies those preferences. Failed writes retain their backups for a later restore; an incomplete explicit restore reports that it needs another attempt. A tracker mouse change may wait until combat ends.
 
@@ -109,7 +119,7 @@ At normal logout or `/reload` the addon also attempts to restore the persistent 
 
 ## Per-character settings and persistence
 
-- Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. All five additional options default to **false**, preserving existing users' choices.
+- Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. New hiding options default to **false**, preserving existing users' choices. Existing Full immersion users must explicitly reselect that preset or enable Hide quest levels to adopt its new numeric-level restriction.
 - CVar baselines are saved before the addon modifies them. A separate `NoQuestHintsForeverAccount` SavedVariable tracks original values for CVars treated as shared across characters.
 - While map hint suppression is enabled, relevant `CVAR_UPDATE` events trigger re-enforcement. When disabled, the addon restores the saved baselines and stops enforcing.
 - Individual quest permissions are stored in the character's `revealedQuests` table, keyed by quest ID. A separate native `QuestPOIFrame` uses Blizzard's `QuestBlobPinMixin` and calls `DrawBlob(questID, true)` for allowed quests. The original blue blobs work in Forever with `questPOI=0`. A second provider uses a unique XML template inherited from Blizzard's `QuestPinTemplate` and `QuestDataProviderMixin:AddQuest()` for the clickable map POIs; both areas and POIs have been confirmed in an in-game test.
@@ -117,7 +127,7 @@ At normal logout or `/reload` the addon also attempts to restore the persistent 
 - `Show hint` changes the native `C_SuperTrack` quest target, **not** the Blizzard watch list, so it can drive the world-space diamond while leaving the right-side list independently hidden. While the global Hide Quest Map Hints option is ON, `showInGameNavigation` is allowed only when the active super-tracked quest is itself permitted; it is otherwise suppressed. The original account/character CVar value is restored when the global option is turned OFF. Navigation cannot be guaranteed for quests lacking a valid destination in the Forever client.
 - The optional NPC name suppression uses only `UnitNameFriendlySpecialNPCName`. It never changes `UnitNameHostleNPC`, `UnitNameInteractiveNPC`, `UnitNameNPC` or `ShowQuestUnitCircles`. The original shared CVar is kept in `NoQuestHintsForeverAccount.npcNameOriginal` while suppression is enabled, restored when disabled or on the next character if they have the option turned off. Blizzard's NPC names dropdown may display an adjusted category while this override is active. Use Blizzard's own menu to control other name categories.
 - When global hint suppression is OFF, the addon draws no extra map pins and Blizzard handles the normal map. Its journal/tracker badge hooks likewise stay passive.
-- The tracker option is cosmetic: the addon changes the Blizzard `ObjectiveTrackerFrame` alpha to zero, and disables its mouse input when allowed. It retains that frame's previous alpha/mouse values in memory for restoration when unchecked.
+- The tracker keeps its quest data/layout but becomes transparent and non-interactive. Its root **and descendants** have click, motion and wheel input disabled outside combat. Each original input flag is preserved separately, including mixed click/motion states; newly pooled headers are handled after native updates, and detached children regain input. Existing tooltips owned by the hidden subtree are dismissed without hiding unrelated tooltips. Protected input changes and restoration wait for combat to end; failed writes retain recovery state.
 - Blizzard can update the tracker itself. The addon watches its `Show` and `SetAlpha` methods, then **defers** its own update rather than mutating Blizzard frames inside a secure hook. There is no continuous `OnUpdate` loop.
 - If the tracker frame is not loaded, the addon waits until it appears instead of raising an error.
 
@@ -132,8 +142,14 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, six `Settings.RegisterProxySetting` values and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, nine equal-rank `Settings.RegisterProxySetting` values (seven quest controls and two independent price contexts) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
+
+### Quest title presentation
+
+Forever's Camelot `GetQuestTitlePrefix` adds numeric levels even when the native show-level CVar is OFF. This addon therefore filters only known quest-title FontStrings after deferred native journal/tracker updates. It identifies the real title and numeric level from quest metadata, preserving party counts, actual title content and quest data. Difficulty color concealment applies ordinary yellow to those titles and removes an outer native difficulty-color wrapper. It does not recolor objectives, zones, NPCs, item rarity, or other UI.
+
+The module does not replace Blizzard return-value functions or hook every FontString. Disabling/restoring recovers recorded native text/colors; recycled quest rows are checked by quest ID. Visual mutations and restoration defer in combat. Broader client/addon compatibility still requires the in-game smoke test.
 
 ### Onboarding art
 
@@ -173,7 +189,7 @@ NoQuestHintsForever/
 ├── QuestHintPins.xml         # XML templates inheriting native Blizzard map widgets
 ├── QuestInlineHints.lua      # Per-quest journal and objective-tracker POI badges
 ├── QuestTooltips.lua         # Opt-in quest line suppression on unit/object hover
-├── SellPrices.lua            # Hide native item vendor values outside merchant UI
+├── SellPrices.lua            # Filter native vendor values with merchant/auction exceptions
 ├── QuestProgressMessages.lua # Hide only native quest progress message categories
 └── LICENSE                   # MIT license in the installation archive
 tests/
@@ -184,8 +200,10 @@ tests/
 ├── test_inline_hints.lua     # Journal/tracker title badges, secure/deferred layout
 ├── test_navigation.lua       # Selective in-world diamond and CVar restoration
 ├── test_localization.lua     # Russian and English UI translations
+├── test_quest_presentation.lua # Quest title metadata, prefixes, color and restoration
+├── test_tracker_input.lua    # Descendant mouse input and combat recovery
 ├── test_quest_tooltips.lua   # Tooltip callback, late load and isolation
-├── test_sell_prices.lua      # Vendor-only item price tooltip filtering
+├── test_sell_prices.lua      # Merchant/auction tooltip price filtering
 └── test_quest_progress.lua   # Native quest progress message type filtering
 scripts/
 ├── run_ci.sh                 # Shared regression, Lua syntax and manifest validation
@@ -211,8 +229,8 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 
 ## Validation checklist for Forever 1.4.0 preview
 
-1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing six checkboxes (no floating window).
-2. Open the same category manually from the AddOns list: all six controls must appear directly in the page; hover each to see its explanation without a permanent description line.
+1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing seven quest checkboxes and two equal-rank item price checkboxes (no floating window).
+2. Open the same category manually from the AddOns list: all nine controls must appear directly in the page; hover each to see its explanation without a permanent description line.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
 5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
@@ -226,16 +244,18 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 13. Confirm that the journal button is horizontally aligned with Blizzard's **Back** button and does not overlap CatQuest's **Read** button. Check both detail layouts.
 14. If possible, check in combat and Edit Mode. Note any blocked-action error, click-blocking invisible region or conflict with other UI addons.
 15. Toggle **Hide quest hints in tooltips** and **Hide quest NPC names**; normal combat information should remain.
-16. Toggle **Hide item sell prices**; bag hover prices disappear outside a merchant and return while trading.
+16. Test all four combinations of Hide outside trading / Hide at auction: away from trading only the first applies, at auction only the second applies, and at a merchant prices are always visible. Close each window and re-hover. Test reload, another character and migration from the previous Show at auction preview. Both checkbox rows must have equal rank/size and remain editable.
 17. Toggle **Hide quest progress popups**; quest counts disappear but ordinary warnings and status messages remain.
 18. Change characters and reload to check the six independent settings.
 19. On a fresh character, verify three cards, round icons, readable ruRU/enUS text and layout at different UI scales. Selecting a card or closing the window must not change settings. No default card is selected.
-20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them only outside merchants. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
+20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them outside trading while keeping the auction control OFF. Then enable Hide at auction manually to check strict RP. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
 21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.
-22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all six effects are off and the original values return. Restore twice; try while in combat and finish after combat.
+22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all nine checkbox effects are off and the original values return. Restore twice; try while in combat and finish after combat.
 23. Apply a preset, disable the addon and reload through the normal addon UI. Verify game settings remain restored without the addon. Re-enable it and verify your saved mode returns. Repeat with normal logout/relogin and switching characters. This client test is required before claiming automatic uninstall cleanup works.
 24. With the chooser open, move/click/scroll over background action bars, quests and screen edges: no background tooltip or action should occur. Test Esc, Later, Customize settings, confirmation and combat; the background must become interactive again when the chooser closes. Check the primary button label and the aligned secondary buttons in ruRU/enUS.
-25. Confirm removed `/nqh on` and `/nqh off` only show help and `/nqh status` still prints diagnostics.
+25. Hide the tracker and hover/click/scroll across its former quest rows; no quest tooltip or quest action should fire. Add/track another quest while hidden, then restore the tracker and verify interaction returns. Test mixed input states, combat and existing tooltip dismissal.
+26. Toggle Hide quest levels and Hide difficulty colors separately in the journal and visible tracker. Verify `[level]` disappears but group counts and numbers in actual names remain. Hover/unhover, reload, change quests and restore. Full immersion must enable only numeric concealment; colors remain normal unless explicitly hidden.
+27. Confirm removed `/nqh on` and `/nqh off` only show help and `/nqh status` still prints diagnostics.
 
 Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 

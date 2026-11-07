@@ -54,6 +54,14 @@ local function initialize()
     if character.onboardingComplete == nil then
         character.onboardingComplete = next(character) ~= nil
     end
+    -- Migrate the preview's inverse, dependent auction exception to an
+    -- independent hide flag, preserving the currently effective behavior.
+    -- Do this AFTER first-run detection so new defaults don't look like old data.
+    if character.hideAuctionSellPrices == nil then
+        character.hideAuctionSellPrices = character.hideSellPrices == true
+            and character.showAuctionSellPrices == false
+    end
+    character.showAuctionSellPrices = nil
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
     -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
@@ -112,7 +120,8 @@ end
 -- ObjectiveTrackerFrame is Blizzard-owned. Do not Hide() it in secure
 -- update paths. Alpha avoids disturbing Blizzard's layout/visibility state.
 -- Defer reapplication from Show/SetAlpha hooks to avoid taint.
-local trackerFrame, trackerAlpha, trackerMouse
+local trackerFrame, trackerAlpha
+local trackerInputs = setmetatable({}, { __mode = "k" })
 local trackerHooked, trackerApplying, trackerQueued = false, false, false
 
 local function inCombat()
@@ -136,7 +145,7 @@ local function trackFrame()
     local frame = ObjectiveTrackerFrame
     if not frame or type(frame.SetAlpha) ~= "function" then return nil end
     if trackerFrame ~= frame then
-        trackerFrame, trackerAlpha, trackerMouse = frame, nil, nil
+        trackerFrame, trackerAlpha = frame, nil
         trackerHooked = false
     end
     if not trackerHooked and type(hooksecurefunc) == "function" then
@@ -152,9 +161,90 @@ local function trackFrame()
                 queueTrackerUpdate()
             end
         end)
+        if type(frame.Update) == "function" then
+            pcall(hooksecurefunc, frame, "Update", function()
+                if character and character.hideTracker and not trackerApplying then queueTrackerUpdate() end
+            end)
+        end
         trackerHooked = successShow or successAlpha
     end
     return frame
+end
+
+local function readInput(node, getter)
+    if type(node[getter]) ~= "function" then return nil end
+    local ok, value = pcall(node[getter], node)
+    if ok and type(value) == "boolean" then return value end
+end
+
+local inputProperties = {
+    { "click", "IsMouseClickEnabled", "SetMouseClickEnabled" },
+    { "motion", "IsMouseMotionEnabled", "SetMouseMotionEnabled" },
+    { "wheel", "IsMouseWheelEnabled", "EnableMouseWheel" },
+}
+
+local function captureInput(node)
+    local state = trackerInputs[node]
+    if state then return state end
+    state = {}
+    if type(node.SetMouseClickEnabled) == "function" and type(node.SetMouseMotionEnabled) == "function" then
+        for _, property in ipairs(inputProperties) do
+            if type(node[property[3]]) == "function" then state[property[1]] = readInput(node, property[2]) end
+        end
+    elseif type(node.EnableMouse) == "function" then
+        state.mouse = readInput(node, "IsMouseEnabled")
+        if type(node.EnableMouseWheel) == "function" then state.wheel = readInput(node, "IsMouseWheelEnabled") end
+    end
+    if next(state) then trackerInputs[node] = state; return state end
+end
+
+local function applyInput(node, state, restoring)
+    -- Input changes on protected children may be forbidden during combat.
+    -- Keep exact original flags for retry after PLAYER_REGEN_ENABLED.
+    if inCombat() then return end
+    if state.mouse ~= nil and type(node.EnableMouse) == "function" then
+        local target = restoring and state.mouse or false
+        local ok = readInput(node, "IsMouseEnabled") == target or pcall(node.EnableMouse, node, target)
+        if restoring and ok then state.mouse = nil end
+    end
+    for _, property in ipairs(inputProperties) do
+        local key, getter, setter = unpack(property)
+        if state[key] ~= nil and type(node[setter]) == "function" then
+            local target = restoring and state[key] or false
+            local ok = readInput(node, getter) == target or pcall(node[setter], node, target)
+            if restoring and ok then state[key] = nil end
+        end
+    end
+    if restoring and not next(state) then trackerInputs[node] = nil end
+end
+
+local function updateTrackerInput(root, hidden)
+    local active = {}
+    local function visit(node)
+        if not node or active[node] then return end
+        if type(node.IsForbidden) == "function" then
+            local ok, forbidden = pcall(node.IsForbidden, node)
+            if not ok or forbidden then return end
+        end
+        active[node] = true
+        if hidden then
+            local state = captureInput(node)
+            if state then applyInput(node, state, false) end
+        end
+        if type(node.GetChildren) == "function" then
+            local children = { pcall(node.GetChildren, node) }
+            if children[1] then for index = 2, #children do visit(children[index]) end end
+        end
+    end
+    if hidden then visit(root) end
+    -- Restore detached/reparented pooled children too; never leave them inert.
+    for node, state in pairs(trackerInputs) do
+        if not hidden or not active[node] then applyInput(node, state, true) end
+    end
+    if hidden and GameTooltip and type(GameTooltip.GetOwner) == "function" then
+        local ok, owner = pcall(GameTooltip.GetOwner, GameTooltip)
+        if ok and active[owner] and type(GameTooltip.Hide) == "function" then pcall(GameTooltip.Hide, GameTooltip) end
+    end
 end
 
 updateTracker = function()
@@ -167,10 +257,6 @@ updateTracker = function()
             local ok, value = pcall(frame.GetAlpha, frame)
             if ok then trackerAlpha = value end
         end
-        if trackerMouse == nil and type(frame.IsMouseEnabled) == "function" then
-            local ok, value = pcall(frame.IsMouseEnabled, frame)
-            if ok then trackerMouse = value end
-        end
         -- Changing alpha is cosmetic and does not untrack quests.
         if type(frame.GetAlpha) == "function" then
             local ok, current = pcall(frame.GetAlpha, frame)
@@ -178,19 +264,13 @@ updateTracker = function()
         else
             pcall(frame.SetAlpha, frame, 0)
         end
-        if not inCombat() and type(frame.EnableMouse) == "function" then
-            pcall(frame.EnableMouse, frame, false)
-        end
     else
         if trackerAlpha ~= nil then
             pcall(frame.SetAlpha, frame, trackerAlpha)
             trackerAlpha = nil
         end
-        if trackerMouse ~= nil and not inCombat() and type(frame.EnableMouse) == "function" then
-            pcall(frame.EnableMouse, frame, trackerMouse)
-            trackerMouse = nil
-        end
     end
+    updateTrackerInput(frame, character.hideTracker == true)
     trackerApplying = false
 end
 
@@ -211,6 +291,29 @@ local function setSellPriceHidden(hidden)
     if not character then return end
     character.hideSellPrices = hidden == true
     -- TooltipDataProcessor reads this dynamically; vendor UI remains native.
+end
+
+local function setAuctionSellPriceHidden(hidden)
+    if not character then return end
+    character.hideAuctionSellPrices = hidden == true
+end
+
+local function refreshQuestPresentation()
+    if NoQuestHintsForeverAPI and NoQuestHintsForeverAPI.RefreshQuestPresentation then
+        NoQuestHintsForeverAPI.RefreshQuestPresentation()
+    end
+end
+
+local function setQuestLevelsHidden(hidden)
+    if not character then return end
+    character.hideQuestLevels = hidden == true
+    refreshQuestPresentation()
+end
+
+local function setQuestDifficultyHidden(hidden)
+    if not character then return end
+    character.hideQuestDifficulty = hidden == true
+    refreshQuestPresentation()
 end
 
 local function setQuestProgressHidden(hidden)
@@ -262,13 +365,19 @@ api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
+api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end
+api.IsQuestLevelsHidden = function() return character and character.hideQuestLevels == true end
+api.IsQuestDifficultyHidden = function() return character and character.hideQuestDifficulty == true end
 api.IsQuestProgressHidden = function() return character and character.hideQuestProgressMessages == true end
 api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.SetTooltipHintsHidden = setTooltipHintsHidden
 api.SetSellPriceHidden = setSellPriceHidden
+api.SetAuctionSellPriceHidden = setAuctionSellPriceHidden
 api.SetQuestProgressHidden = setQuestProgressHidden
+api.SetQuestLevelsHidden = setQuestLevelsHidden
+api.SetQuestDifficultyHidden = setQuestDifficultyHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
@@ -303,11 +412,15 @@ function api.RestoreGameSettings()
     setTooltipHintsHidden(false)
     setQuestNPCNamesHidden(false)
     setSellPriceHidden(false)
+    setAuctionSellPriceHidden(false)
     setQuestProgressHidden(false)
+    setQuestLevelsHidden(false)
+    setQuestDifficultyHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
-    return next(character.original) == nil and next(account.original) == nil
-        and account.npcNameOriginal == nil and trackerMouse == nil
+    local presentationRestored = not api.RestoreQuestPresentation or api.RestoreQuestPresentation()
+    return presentationRestored and next(character.original) == nil and next(account.original) == nil
+        and account.npcNameOriginal == nil and next(trackerInputs) == nil
 end
 
 function api.ApplyPreset(preset)
@@ -322,6 +435,10 @@ function api.ApplyPreset(preset)
     setQuestNPCNamesHidden(hide)
     setQuestProgressHidden(hide)
     setSellPriceHidden(preset == "full")
+    -- All presets keep auction values visible; strict RP is a separate choice.
+    setAuctionSellPriceHidden(false)
+    setQuestLevelsHidden(preset == "full")
+    setQuestDifficultyHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -348,6 +465,9 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
         printMessage((L.SELL_PRICE_STATUS or "Hide item sell prices: ") .. (character.hideSellPrices == true and statusOn or statusOff))
+        printMessage((L.AUCTION_PRICE_STATUS or "Hide vendor prices at auction: ") .. (api.IsAuctionSellPriceHidden() and statusOn or statusOff))
+        printMessage((L.LEVELS_STATUS or "Hide quest levels: ") .. (api.IsQuestLevelsHidden() and statusOn or statusOff))
+        printMessage((L.DIFFICULTY_STATUS or "Hide quest difficulty colors: ") .. (api.IsQuestDifficultyHidden() and statusOn or statusOff))
         printMessage((L.PROGRESS_STATUS or "Hide quest progress popups: ") .. (character.hideQuestProgressMessages == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
@@ -366,6 +486,8 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CVAR_UPDATE")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("SUPER_TRACKING_CHANGED")
+frame:RegisterEvent("QUEST_LOG_UPDATE")
+frame:RegisterEvent("QUEST_WATCH_LIST_CHANGED")
 frame:SetScript("OnEvent", function(_, event, changed)
     if event == "PLAYER_LOGOUT" then
         loggingOut = true
@@ -402,6 +524,8 @@ frame:SetScript("OnEvent", function(_, event, changed)
             and changed:lower() == QUEST_NPC_NAME_CVAR:lower() then
             updateQuestNPCNames()
         end
+    elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_WATCH_LIST_CHANGED" then
+        if character and character.hideTracker then queueTrackerUpdate() end
     elseif event == "SUPER_TRACKING_CHANGED" then
         -- Never reveal navigation toward a non-permitted quest.
         enforceMapHints()

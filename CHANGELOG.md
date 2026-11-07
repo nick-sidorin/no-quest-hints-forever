@@ -2,6 +2,14 @@
 
 ## [1.4.0] — unreleased development build
 
+- Keep difficulty-color concealment active during hover in the large quest journal by appending handlers to actual pooled row scripts; XML-bound function references can bypass global-name hooks. Cover enter/leave, new rows, single registration and native behavior after disabling.
+
+- Fix ghost tracker hover/click areas by disabling input on tracker descendants as well as its root, including newly pooled blocks. Restore original click/motion/wheel flags individually, release detached children and defer protected writes until combat ends.
+- Add independent numeric quest-level and difficulty-color controls for native journal/tracker titles. Preserve actual title content and party counts, defer post-hook updates, and restore native text/colors. Full immersion hides numeric levels but leaves difficulty colors and auction values visible; other playstyles leave both presentation controls OFF.
+- Consolidate English contributor/product documentation with merged PR #19; retain ruRU/enUS UI localization and all current owner decisions. Expand regression coverage to thirteen suites.
+
+- Add two equal-rank **Item prices** controls: Hide outside trading and Hide at auction. Both are independent and default OFF; merchants always show native vendor sell values. Preserve effective behavior when migrating the earlier dependent Show at auction preview. Full immersion hides outside trading but keeps auction values visible. Shorten onboarding descriptions without lists or price commentary in the middle card.
+
 - Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
 
 - Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.

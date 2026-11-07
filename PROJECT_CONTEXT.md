@@ -70,7 +70,7 @@ The owner rejected the first auction preview's **Show at auction** child checkbo
 | Modern or legacy auction UI is open | Hide at auction (`hideAuctionSellPrices`) | OFF |
 | A merchant is open | Native vendor sell values are always visible | No hiding override |
 
-This is the native NPC vendor sell amount, **not** a market estimate, acquisition cost, auction deposit or suggested listing price. Showing it at auction is convenient; hiding it is available for stricter roleplay. The owner explicitly chose **auction values visible when selecting Full immersion**. Thus Full sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. A preset reapplies the full seven-checkbox configuration, `/reload` preserves manual choices, and restore/native defaults turn all restrictions OFF.
+This is the native NPC vendor sell amount, **not** a market estimate, acquisition cost, auction deposit or suggested listing price. Showing it at auction is convenient; hiding it is available for stricter roleplay. The owner explicitly chose **auction values visible when selecting Full immersion**. Thus Full sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. A preset reapplies the full nine-checkbox configuration, `/reload` preserves manual choices, and restore/native defaults turn all restrictions OFF.
 
 The earlier preview stored an inverse dependent permission. Migrate it to effective independent hiding: `hideAuctionSellPrices = old hideSellPrices == true AND old showAuctionSellPrices == false`, unless a new-format value already exists; then remove the obsolete field. Migrate only after first-run detection. This preserves effective price visibility, rather than an inactive old permission. Do not reintroduce a parent dependency or small-font child control.
 
@@ -81,9 +81,21 @@ Native window visibility is checked at tooltip composition, including late-loade
 The owner rejected both long feature enumerations and a pricing-tier comparison layout. Keep the existing three native cards with short prose. The middle describes only quest guidance (no price commentary), and the right adds hidden item sell values outside trading. The approved English copy in #20 is:
 
 - **Immersion:** Hide quest guidance. Read the quests and find your own way.
-- **Full immersion:** Everything in Immersion, plus hidden item sell prices outside trading.
+- **Full immersion:** Everything in Immersion, plus hidden quest levels and item sell prices outside trading.
 
 Localize both immediately in `enUS` and `ruRU`; do not remove the Russian UI when translating repository documentation to English.
+
+## Tracker ghost input and quest-title controls (owner follow-up)
+
+The owner reported that the hidden objective tracker still displayed quest tooltips when hovering its former rows. Source review confirmed the parent was made transparent and its own mouse input disabled, but descendant header buttons remained interactive. The pending fix suppresses root and descendants' click/motion/wheel input, preserves exact original flags, handles newly pooled blocks and restores detached children. It defers protected input changes during combat and retries failed restoration. Only an existing tooltip owned by that subtree is hidden; no global tooltip hooks or world-blocking tracker overlay.
+
+The owner also requested two separate controls for native journal/tracker titles:
+- **Hide quest levels** removes numeric `[level]` decoration. **Full immersion enables this**, while other presets leave it OFF.
+- **Hide difficulty colors** uses normal yellow quest titles instead of level-based green/orange/red. **Every preset leaves it OFF**; it is manual-only for players seeking stricter concealment.
+
+The native Forever/Camelot `QuestUtilsOverrides.GetQuestTitlePrefix` returns a numeric prefix unconditionally, explaining why the default map menu checkbox may not remove it. `QuestPresentation.lua` filters only known title regions after deferred native updates, using raw quest title/level metadata. Preserve party counts, numbers inside real titles, tags, underlying quest data and unrelated UI. The color filter handles outer native difficulty wrappers and hover updates, not NPC/item/objective coloring. Disable/restore uses per-quest snapshots and checks pooled reuse. No global formatter replacements or continuous polling.
+
+These additions expand pending #20 to nine equal-rank controls: seven under Quest hints and two under Item prices. Existing users' new presentation flags remain OFF until explicitly changed or a preset is selected again. Restore/defaults turn all nine OFF. The functionality is implemented and regression-tested in the combined preview, but has not yet been verified by the owner in Forever.
 
 ## Engineering, tests and release expectations
 
@@ -98,13 +110,21 @@ Localize both immediately in `enUS` and `ruRU`; do not remove the Russian UI whe
 
 - Repo: https://github.com/nick-sidorin/no-quest-hints-forever. `main` head at review: `10a063159c08c6b3f1511b4f2101670aa62cbc10`. Latest verified GitHub release: [v1.3.0](https://github.com/nick-sidorin/no-quest-hints-forever/releases/tag/v1.3.0). CurseForge listing/upload status was **not independently rechecked**.
 - **[PR #18](https://github.com/nick-sidorin/no-quest-hints-forever/pull/18)** was **squash-merged into `main`** on 2026-11-07 (`10a063159c08c6b3f1511b4f2101670aa62cbc10`). It introduced native settings (superseding #16), explicit restoration, first-run playstyles, native visual refinements and modal input shielding. The owner tested the functional preview and successive visual revisions, approved the final layout and explicitly requested this merge after insetting the Selected label. Comprehensive individual logout/restore/character-change results were not recorded; do not infer that Issue #3 was resolved. **v1.4.0 is not a published stable release:** test the current merged code in Forever before publishing.
-- **[PR #20](https://github.com/nick-sidorin/no-quest-hints-forever/pull/20)** remains an open gameplay draft, separate from this documentation PR. Its latest gameplay head at this review is `d8e6e292e64f7f55a50bdff985fc35a5726de313`, with green [build CI](https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42375048248). It implements the independent price contexts, migration and short localized copy described above. Final in-game verification of that latest revision is pending; do not describe those changes as already merged or released.
+- **[PR #20](https://github.com/nick-sidorin/no-quest-hints-forever/pull/20)** remains an open gameplay draft, separate from the merged English documentation PR #19. Its latest gameplay head at this review is `d8e6e292e64f7f55a50bdff985fc35a5726de313`, with green [build CI](https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42375048248). It implements the independent price contexts, migration and short localized copy described above. Final in-game verification of that latest revision is pending; do not describe those changes as already merged or released.
 - **[Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3)** reports recurrent `ADDON_ACTION_BLOCKED` naming NoQuestHintsForever around the map/quest journal. The triggering interaction and root cause remain unconfirmed; collect preceding action, combat status and `taint.log` before changing hooks. No mock test proves the error resolved.
 - **[Main protection ruleset](https://github.com/nick-sidorin/no-quest-hints-forever/rules/26724884)** is active and specifies PRs, squash merges, linear history and no bypass; however, its `required_status_checks` list was **empty** at review time even though PRs run a `build` job. Confirm/configure the actual mandatory check separately; do not mistake a green job for an enforced merge gate.
 
-### Next integration step
+### Journal hover regression
 
-After merging this English documentation PR, reconcile #20 with the new main before any gameplay merge. Keep these English documents and their durable rationale, rather than overwriting them with #20's older Russian files. Re-run build CI after integration. Test #20's two equal-rank price rows, all four toggle combinations in the world/auction/merchant, migration, reload and Full immersion's auction-OFF setting in Forever. The next release still requires a separate request; merging documentation does not publish anything.
+The owner tested the combined preview and reported that difficulty color reappeared specifically on hover in the large quest journal; the tracker was unaffected. The regression fixture now binds enter/leave references before hook installation, matching XML row creation, and reproduced the leak missed by direct-global-call tests. Actual pooled journal rows now receive idempotent HookScript enter/leave callbacks that queue the existing presentation refresh. Newly acquired rows are covered; native hover/colors return after the option is disabled. This is a journal-only change, without global FontString hooks or tracker modifications. Verify hover/leave and new quest rows in the client.
+
+### Current integration handoff
+
+English documentation **PR #19 was reviewed, reconciled with the owner's recent decisions and squash-merged** at `9488685c0661f73f04691aa49899f92e83c7c9a2`, after green final-head CI. This branch includes those canonical English files and the above tracker/title follow-ups; it must not restore older Russian documentation.
+
+The current gameplay target remains #20. Earlier head `d8e6e292e64f7f55a50bdff985fc35a5726de313` is the price-only preview, not the new combined build. The local combined code passes 13 Lua 5.1 regression suites, syntax/TOC validation and a byte-verified 14-file installable ZIP. Verify the latest head/CI before downloading or merging.
+
+Next: in Forever, test the invisible tracker area for hover/click/wheel, new quest blocks and exact restoration; test numeric levels and difficulty colors independently in journal/tracker, hover and reload, group counts and reused rows; verify Full immersion hides numbers only. Recheck the existing independent price controls and preserved layout. Provide the latest direct single-ZIP artifact link. The documentation merge is complete; the updated gameplay preview and a stable release are separate steps requiring their own validation/request. Issue #3 remains unresolved.
 
 ## Maintenance policy
 
