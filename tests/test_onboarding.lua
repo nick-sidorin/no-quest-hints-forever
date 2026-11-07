@@ -2,10 +2,19 @@
 local mapNames = { "questPOI", "showQuestObjectivesOnMap", "questPOILocalStory",
     "minimapShowQuestBlobs", "showInGameNavigation" }
 local npc = "UnitNameFriendlySpecialNPCName"
-local function session(char, account, suppliedValues, combat, locale, withoutAtlases)
+local function session(char, account, suppliedValues, combat, locale, withoutAtlases, pauseBeforeWorld)
     local values = suppliedValues or { [npc] = "1" }
     for _, name in ipairs(mapNames) do if values[name] == nil then values[name] = "1" end end
     local frames, writes, failed = {}, {}, {}
+    local deferred={}
+    C_Timer={After=function(delay,fn) assert(delay==0);deferred[#deferred+1]=fn end}
+    local function flush()
+        local count=0
+        while #deferred>0 do
+            count=count+1;assert(count<50,"deferred startup loop")
+            table.remove(deferred,1)()
+        end
+    end
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount, NoQuestHintsForeverAPI = nil, nil, nil
     NoQuestHintsForeverWelcome, NoQuestHintsForeverWelcomeBlocker, ObjectiveTrackerFrame, Settings = nil, nil, nil, nil
     GameTooltip = { shown=true, hideCount=0, Hide=function(self) self.shown=false; self.hideCount=self.hideCount+1 end }
@@ -113,14 +122,19 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
     api.OpenOptions=function() opened=opened+1; return true end
     assert(loadfile("NoQuestHintsForever/Onboarding.lua"))()
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount=char,account
-    local function event(event, detail)
+    local function event(event, detail, withoutFlush)
         -- Call only registered handlers, as the client does.
         local current={}; for i,f in ipairs(frames) do current[i]=f end
         for _,f in ipairs(current) do
             if f.events[event] then f.scripts.OnEvent(f,event,detail) end
         end
+        if not withoutFlush then flush() end
     end
     event("ADDON_LOADED","NoQuestHintsForever"); event("PLAYER_LOGIN")
+    if not pauseBeforeWorld then
+        event("PLAYER_ENTERING_WORLD")
+        event("LOADING_SCREEN_DISABLED")
+    end
     local function findButton(label)
         for _,f in ipairs(frames) do if f.kind=="Button" and f.text==label then return f end end
         error("button not found: "..label)
@@ -136,7 +150,7 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         return result
     end
     return { api=api,values=values,writes=writes,failed=failed,event=event,cards=cards,click=click,button=findButton,
-        opened=function() return opened end, setCombat=function(value) combat=value end }
+        opened=function() return opened end, setCombat=function(value) combat=value end, flush=flush }
 end
 
 local char, account={},{}
@@ -161,7 +175,11 @@ for _,label in ipairs({NoQuestHintsForeverLocale.WELCOME_LATER,NoQuestHintsForev
 end
 assert(welcome.shown and #s.cards()==3 and welcome.scale<1, "welcome must fit the viewport")
 assert(welcome.Apply.disabled, "confirm must wait for a selection")
+local instruction=welcome.Prompt.text
+assert(instruction==NoQuestHintsForeverLocale.WELCOME_SELECT)
 s.click(s.cards()[2])
+assert(welcome.Prompt.text==instruction, "selection replaced the static instruction with a status")
+assert(s.cards()[2].Choice.text==NoQuestHintsForeverLocale.WELCOME_SELECTED)
 assert(#s.writes==0 and not welcome.Apply.disabled, "selection applied before confirmation")
 local art=s.cards()[2].textures
 assert(art[1].atlas=="Mode-Selection-Card-Regular" and art[1].useAtlasSize
@@ -283,3 +301,43 @@ SlashCmdList.NOQUESTHINTSFOREVER("welcome")
 assert(not NoQuestHintsForeverWelcome.shown)
 s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
 assert(NoQuestHintsForeverWelcome.shown and welcomeChar.hideQuestLevels)
+
+-- Exact owner request: explicitly reset a configured character, save through
+-- normal logout/reload, and reopen automatically without losing any preferences.
+local resetProfile={onboardingComplete=true,hideQuestLevels=true,hideAuctionSellPrices=true}
+local resetAccount={}
+s=session(resetProfile,resetAccount)
+assert(not NoQuestHintsForeverWelcome and not s.api.IsOnboardingPending())
+resetProfile.onboardingComplete=false
+s.event("PLAYER_LOGOUT")
+assert(resetProfile.onboardingComplete==false, "logout overwrote the explicit reset")
+s=session(resetProfile,resetAccount,s.values)
+assert(s.api.IsOnboardingPending() and NoQuestHintsForeverWelcome.shown,
+    "explicit false flag did not survive saved-variable initialization")
+assert(resetProfile.hideQuestLevels and resetProfile.hideAuctionSellPrices,
+    "onboarding reset changed the custom profile")
+
+-- Regression: pending remains true after full login, but early PLAYER_LOGIN
+-- presentation can be lost during loading. Wait for loading completion and a
+-- deferred callback; ordinary world transitions must not reopen a dismissed UI.
+local lateProfile={onboardingComplete=false,hideQuestLevels=true}
+s=session(lateProfile,{},nil,false,"enUS",false,true)
+assert(s.api.IsOnboardingPending() and not NoQuestHintsForeverWelcome,
+    "first-run modal was created during PLAYER_LOGIN before loading completed")
+s.event("PLAYER_ENTERING_WORLD")
+assert(not NoQuestHintsForeverWelcome, "modal opened before LOADING_SCREEN_DISABLED")
+s.event("LOADING_SCREEN_DISABLED",nil,true)
+assert(not NoQuestHintsForeverWelcome, "modal opened inside loading-screen event")
+s.flush()
+assert(NoQuestHintsForeverWelcome.shown and NoQuestHintsForeverWelcomeBlocker.shown)
+assert(lateProfile.hideQuestLevels and lateProfile.onboardingComplete==false)
+s.click(s.button(NoQuestHintsForeverLocale.WELCOME_LATER))
+s.event("LOADING_SCREEN_ENABLED");s.event("PLAYER_ENTERING_WORLD");s.event("LOADING_SCREEN_DISABLED")
+assert(not NoQuestHintsForeverWelcome.shown, "zoning repeated a dismissed first-run modal")
+-- If another loading screen starts before the queued open, defer until it ends.
+s=session({onboardingComplete=false},{},nil,false,"enUS",false,true)
+s.event("LOADING_SCREEN_DISABLED",nil,true)
+s.event("LOADING_SCREEN_ENABLED")
+assert(not NoQuestHintsForeverWelcome, "queued popup escaped a new loading screen")
+s.event("LOADING_SCREEN_DISABLED")
+assert(NoQuestHintsForeverWelcome.shown)

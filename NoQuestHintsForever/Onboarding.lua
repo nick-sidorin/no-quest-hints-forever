@@ -173,7 +173,6 @@ local function createWindow()
         card:SetScript("OnClick", function()
             selected = preset.id
             for _, other in ipairs(cards) do setSelected(other, other == card) end
-            window.Prompt:SetText(string.format(L.WELCOME_READY, L[preset.title]))
             window.Apply:Enable()
         end)
         cards[index] = card

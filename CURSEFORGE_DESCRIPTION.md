@@ -49,7 +49,7 @@ Select **Hide hint** when you no longer need help. You can reveal multiple quest
 
 ## 🌍 Choose Your Adventure
 
-Choose a playstyle on first setup, or reopen the chooser with `/nqh welcome`:
+After the loading screen finishes, choose a playstyle on first setup, or reopen the chooser with `/nqh welcome`:
 
 - **As in Blizzard:** keep your current game settings; nothing is hidden.
 - **Immersion:** hide the five forms of quest guidance.
@@ -70,7 +70,7 @@ Open **Options → AddOns → No Quest Hints** with `/nqh`. All controls appear 
 
 The **Restore game settings** button asks for confirmation. Cancel or Escape keeps your configuration. **Use restoration before disabling or removing the addon.** It restores your saved personal values; cleanup cannot be guaranteed after a crash or once the addon is unloaded.
 
-Upgrade messages distinguish new features from fixes. Newly added checkboxes carry Blizzard's native **New** marker until viewed.
+Upgrade messages appear after loading and distinguish new features from fixes. Newly added checkboxes carry Blizzard's native **New** marker until viewed.
 
 ## ℹ️ Good to Know
 
