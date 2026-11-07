@@ -1,9 +1,14 @@
 -- Upgrade notices use actual TOC metadata and the real SavedVariables lifecycle.
-local function session(char, account, version, locale, mode)
+local function session(char, account, version, locale, mode, pauseBeforeWorld)
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount = nil, nil
     NoQuestHintsForeverAPI, ObjectiveTrackerFrame = nil, nil
     SlashCmdList = {}
     local messages, frames = {}, {}
+    local deferred={}
+    C_Timer={After=function(delay,fn) assert(delay==0);deferred[#deferred+1]=fn end}
+    local function flush()
+        while #deferred>0 do table.remove(deferred,1)() end
+    end
     print = function(message) messages[#messages+1]=message end
     GetLocale = function() return locale or 'enUS' end
     assert(loadfile('NoQuestHintsForever/Localization.lua'))()
@@ -26,13 +31,19 @@ local function session(char, account, version, locale, mode)
     assert(loadfile('NoQuestHintsForever/NoQuestHintsForever.lua'))()
     assert(NoQuestHintsForeverChar==nil and NoQuestHintsForeverAccount==nil)
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount=char,account
-    local function event(e,detail)
+    local function event(e,detail,withoutFlush)
         for _,f in ipairs(frames) do if f.events[e] then f.onEvent(f,e,detail) end end
+        if not withoutFlush then flush() end
     end
     event('ADDON_LOADED','NoQuestHintsForever')
     assert(#messages==0, 'upgrade notice emitted before login')
     event('PLAYER_LOGIN')
-    return {messages=messages,event=event}
+    assert(#messages==0, 'upgrade notice emitted during login before loading completed')
+    if not pauseBeforeWorld then
+        event('PLAYER_ENTERING_WORLD')
+        event('LOADING_SCREEN_DISABLED')
+    end
+    return {messages=messages,event=event,flush=flush}
 end
 local fresh,account={},{}
 local s=session(fresh,account,'1.4.0')
@@ -92,3 +103,29 @@ assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'), 'viewed
 local freshFeatures={}
 session({},freshFeatures,'1.4.0')
 assert(not freshFeatures.newSettings, 'first install marked everything as an upgrade')
+
+-- Delivery and the seen-version baseline both wait until loading has finished.
+local delayed={lastSeenVersion='1.3.0'}
+s=session({},delayed,'1.4.0','enUS',nil,true)
+assert(#s.messages==0 and delayed.lastSeenVersion=='1.3.0' and not delayed.newSettings)
+s.event('PLAYER_ENTERING_WORLD')
+assert(#s.messages==0 and delayed.lastSeenVersion=='1.3.0')
+s.event('LOADING_SCREEN_DISABLED',nil,true)
+assert(#s.messages==0 and delayed.lastSeenVersion=='1.3.0', 'notice not deferred out of loading event')
+s.flush()
+assert(#s.messages==1 and delayed.lastSeenVersion=='1.4.0' and delayed.newSettings)
+s.event('LOADING_SCREEN_ENABLED');s.event('PLAYER_ENTERING_WORLD');s.event('LOADING_SCREEN_DISABLED')
+s.event('PLAYER_REGEN_ENABLED')
+assert(#s.messages==1, 'zone/combat events repeated upgrade notice')
+-- A new loading transition invalidates the queued delivery without consuming it.
+local interrupted={lastSeenVersion='1.3.0'}
+s=session({},interrupted,'1.4.0','enUS',nil,true)
+s.event('LOADING_SCREEN_DISABLED',nil,true);s.event('LOADING_SCREEN_ENABLED')
+assert(#s.messages==0 and interrupted.lastSeenVersion=='1.3.0')
+s.event('LOADING_SCREEN_DISABLED')
+assert(#s.messages==1 and interrupted.lastSeenVersion=='1.4.0')
+-- Logging out before delivery must not mark an unseen notice as delivered.
+local logoutEarly={lastSeenVersion='1.3.0'}
+s=session({},logoutEarly,'1.4.0','enUS',nil,true)
+s.event('LOADING_SCREEN_DISABLED',nil,true);s.event('PLAYER_LOGOUT')
+assert(#s.messages==0 and logoutEarly.lastSeenVersion=='1.3.0')

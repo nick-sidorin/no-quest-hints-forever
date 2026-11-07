@@ -568,16 +568,18 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
 end
 
 -- PLAYER_LOGIN precedes the loading screen finishing and startup UI cleanup.
--- Present the automatic chooser only after that transition, outside the native
--- event stack. Keep the saved pending flag independent from session visibility.
-local worldLoaded, welcomeQueued = false, false
-local function queueWelcome()
-    if welcomeQueued or loggingOut then return end
-    welcomeQueued = true
+-- Deliver upgrade notices and present the automatic chooser after that
+-- transition, outside the native event stack. Do not consume a version notice
+-- while it is still hidden behind a loading screen.
+local worldLoaded, afterLoadQueued = false, false
+local function queueAfterLoad()
+    if afterLoadQueued or loggingOut then return end
+    afterLoadQueued = true
     local function showAfterLoad()
-        welcomeQueued = false
-        if not loggingOut and worldLoaded and type(api.MaybeShowWelcome) == "function" then
-            api.MaybeShowWelcome()
+        afterLoadQueued = false
+        if not loggingOut and worldLoaded then
+            notifyVersionUpgrade()
+            if type(api.MaybeShowWelcome) == "function" then api.MaybeShowWelcome() end
         end
     end
     if C_Timer and type(C_Timer.After) == "function" then
@@ -612,7 +614,6 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
         if not character then initialize() end
-        notifyVersionUpgrade()
         if character.enabled == true then
             enforceMapHints()
         else
@@ -625,7 +626,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         worldLoaded = false
     elseif event == "LOADING_SCREEN_DISABLED" then
         worldLoaded = true
-        queueWelcome()
+        queueAfterLoad()
     elseif event == "PLAYER_ENTERING_WORLD" then
         enforceMapHints()
         updateTracker()
@@ -647,6 +648,6 @@ frame:SetScript("OnEvent", function(_, event, changed)
         enforceMapHints()
     elseif event == "PLAYER_REGEN_ENABLED" then
         updateTracker()
-        if worldLoaded then queueWelcome() end
+        if worldLoaded then queueAfterLoad() end
     end
 end)
