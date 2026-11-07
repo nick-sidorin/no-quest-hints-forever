@@ -7,7 +7,7 @@ local cvarNames = {
     "minimapShowQuestBlobs", "showInGameNavigation",
 }
 
-local function session(char, account, withSettings, withTracker)
+local function session(char, account, withSettings, withTracker, locale)
     NoQuestHintsForeverChar = nil
     NoQuestHintsForeverAccount = nil
     NoQuestHintsForeverAPI = nil
@@ -20,6 +20,7 @@ local function session(char, account, withSettings, withTracker)
     current.UnitNameHostleNPC = "0"
     current.UnitNameNPC = "0"
     local deferred, checks, panels, combat = {}, {}, {}, false
+    local openedCategories, proxySettings = {}, {}
     local eventFrame
 
     local function frame(kind, name, parent, template)
@@ -71,15 +72,52 @@ local function session(char, account, withSettings, withTracker)
     UIParent = frame("Frame", "UIParent")
     -- Core's event frame has no parent, whereas UI frames do.
     CreateFrame = frame
+    CreateSettingsListSectionHeaderInitializer = function(name) return { header = name } end
+    CreateSettingsButtonInitializer = function(name, label, callback, tooltip, search)
+        assert(search == true)
+        return { button = label, click = callback, tooltip = tooltip }
+    end
     Settings = nil
     if withSettings then
         Settings = {
-            RegisterCanvasLayoutCategory = function(panel, name)
-                local cat = { name = name, panel = panel }
+            VarType = { Boolean = "boolean" },
+            RegisterVerticalLayoutCategory = function(name)
+                local cat = { name = name, id = 42, rows = {} }
+                function cat:GetID() return self.id end
                 panels[#panels + 1] = cat
-                return cat
+                return cat, { AddInitializer = function(_, init) cat.rows[#cat.rows + 1] = init end }
+            end,
+            RegisterProxySetting = function(cat, variable, varType, name, defaultValue, getter, setter)
+                assert(cat == panels[1] and varType == "boolean" and defaultValue == false)
+                assert(type(getter) == "function" and type(setter) == "function")
+                local setting = { variable = variable, name = name }
+                function setting:GetValue() return getter() end
+                function setting:SetValue(value) setter(value) end
+                proxySettings[#proxySettings + 1] = setting
+                return setting
+            end,
+            CreateCheckbox = function(cat, setting, tooltip)
+                assert(cat == panels[1] and type(tooltip) == "string" and #tooltip > 0,
+                    "each native checkbox must have a tooltip")
+                local check = { setting = setting, tooltip = tooltip, scripts = {} }
+                function check:SetChecked(value) self.pending = value end
+                function check:GetChecked()
+                    if self.pending ~= nil then return self.pending end
+                    return self.setting:GetValue()
+                end
+                check.scripts.OnClick = function(self)
+                    local value = self:GetChecked()
+                    self.pending = nil
+                    self.setting:SetValue(value)
+                end
+                checks[#checks + 1] = check
+                return check
             end,
             RegisterAddOnCategory = function(cat) cat.registered = true end,
+            OpenToCategory = function(id)
+                assert(id == panels[1].id and panels[1].registered, "invalid native settings category")
+                openedCategories[#openedCategories + 1] = id
+            end,
         }
     end
     C_CVar = {
@@ -110,6 +148,9 @@ local function session(char, account, withSettings, withTracker)
     end
     print = function() end
 
+    -- Mirror the real TOC load order: localization precedes Options.lua.
+    GetLocale = function() return locale or "enUS" end
+    assert(loadfile("NoQuestHintsForever/Localization.lua"))()
     assert(loadfile(addon))()
     assert(loadfile(ui))()
     NoQuestHintsForeverChar = char
@@ -143,6 +184,7 @@ local function session(char, account, withSettings, withTracker)
     return {
         command = command, event = event, flush = flush, current = current,
         tracker = tracker, checks = checks, panels = panels,
+        opened = openedCategories, proxySettings = proxySettings,
         setCombat = function(value) combat = value end,
         newFrame = frame
     }
@@ -157,13 +199,21 @@ assert(s.current.questPOI == "0", "existing map enabled state lost")
 assert(s.tracker:GetAlpha() == 0.8, "tracker should be untouched when option is OFF")
 assert(#s.panels == 1 and s.panels[1].registered, "Blizzard settings category not registered")
 
--- /nqh opens the standalone window and keeps native-looking check buttons.
+-- /nqh opens the real Blizzard settings category, not a standalone frame.
 s.command("")
-assert(NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh did not open settings")
+assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
+    "/nqh did not navigate to native Settings category")
+assert(NoQuestHintsForeverOptionsFrame == nil,
+    "legacy floating settings window must never be created")
+assert(#s.proxySettings == 6, "each option needs a native proxy setting")
+for _, control in ipairs(s.checks) do
+    assert(type(control.tooltip) == "string" and #control.tooltip > 0,
+        "native checkbox description must be shown in tooltip")
+end
 assert(#s.checks == 6, "expected six independent quest and immersion checkboxes")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
-    and s.checks[5]:GetChecked() == false and s.checks[6]:GetChecked() == false,
+    and s.checks[6]:GetChecked() == false and s.checks[5]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
@@ -180,12 +230,12 @@ assert(s.current.UnitNameFriendlySpecialNPCName == "0", "quest/special names CVa
 assert(shared.npcNameOriginal == "1", "account baseline not preserved")
 assert(s.current.UnitNameHostleNPC == "0" and s.current.UnitNameNPC == "0",
     "NPC name override changed unrelated name categories")
-s.checks[5]:SetChecked(true)
-s.checks[5].scripts.OnClick(s.checks[5])
-assert(original.hideSellPrices == true and NoQuestHintsForeverAPI.IsSellPriceHidden() == true,
-    "sell price preference not enabled per character")
 s.checks[6]:SetChecked(true)
 s.checks[6].scripts.OnClick(s.checks[6])
+assert(original.hideSellPrices == true and NoQuestHintsForeverAPI.IsSellPriceHidden() == true,
+    "sell price preference not enabled per character")
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
 assert(original.hideQuestProgressMessages == true
     and NoQuestHintsForeverAPI.IsQuestProgressHidden() == true,
     "quest progress messages preference not enabled independently")
@@ -204,21 +254,21 @@ s.tracker:Show()
 s.flush()
 assert(s.tracker:GetAlpha() == 0, "tracker visibility not re-enforced")
 
--- The old slash commands control only map hints, not the tracker option.
-s.command("off")
+-- Map accessors affect only map hints, not the tracker option.
+NoQuestHintsForeverAPI.SetMapHidden(false)
 assert(original.enabled == false and original.hideTracker == true
     and original.hideQuestTooltips == true and original.hideQuestNPCNames == true
     and original.hideSellPrices == true and original.hideQuestProgressMessages == true,
-    "slash off changed independent settings")
+    "map accessor changed independent settings")
 assert(s.current.UnitNameFriendlySpecialNPCName == "0",
     "map off must not restore independent NPC name setting")
 assert(s.current.questPOI == "1", "map hints not restored")
 assert(s.tracker:GetAlpha() == 0, "tracker should stay hidden")
-s.command("on")
+NoQuestHintsForeverAPI.SetMapHidden(true)
 assert(original.enabled == true and original.hideTracker == true
     and original.hideQuestTooltips == true and original.hideQuestNPCNames == true
     and original.hideSellPrices == true and original.hideQuestProgressMessages == true,
-    "slash on changed independent settings")
+    "map accessor changed independent settings")
 
 -- UI toggles remain independent in both directions.
 s.checks[1]:SetChecked(false)
@@ -249,11 +299,12 @@ s.checks[4].scripts.OnClick(s.checks[4])
 s.checks[3]:SetChecked(true)
 s.checks[3].scripts.OnClick(s.checks[3])
 s.command("")
-assert(not NoQuestHintsForeverOptionsFrame:IsShown(), "/nqh should toggle the window")
+assert(#s.opened == 2, "/nqh should navigate to the category again")
 
 -- Enter combat: cosmetic alpha still changes; mouse state is recovered after combat.
 s.setCombat(true)
 s.command("")
+assert(#s.opened == 3, "native Settings should remain accessible")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
 assert(s.tracker:GetAlpha() == 0 and s.tracker:IsMouseEnabled(), "combat tracker alpha should be hidden")
@@ -265,21 +316,21 @@ s.checks[2].scripts.OnClick(s.checks[2])
 assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled())
 
 -- The price option is independent, and toggling it is reversible.
-s.checks[5]:SetChecked(false)
-s.checks[5].scripts.OnClick(s.checks[5])
+s.checks[6]:SetChecked(false)
+s.checks[6].scripts.OnClick(s.checks[6])
 assert(original.hideSellPrices == false
     and NoQuestHintsForeverAPI.IsSellPriceHidden() == false,
     "turning off price concealment did not restore native behavior")
-s.checks[5]:SetChecked(true)
-s.checks[5].scripts.OnClick(s.checks[5])
-
-s.checks[6]:SetChecked(false)
+s.checks[6]:SetChecked(true)
 s.checks[6].scripts.OnClick(s.checks[6])
+
+s.checks[5]:SetChecked(false)
+s.checks[5].scripts.OnClick(s.checks[5])
 assert(original.hideQuestProgressMessages == false
     and not NoQuestHintsForeverAPI.IsQuestProgressHidden(),
     "popup suppression did not restore native behavior")
-s.checks[6]:SetChecked(true)
-s.checks[6].scripts.OnClick(s.checks[6])
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
 
 -- Reload: stored tracker option should be reapplied, without changing map.
 original.enabled = false
@@ -287,12 +338,13 @@ original.hideTracker = true
 local reload = session(original, shared, true, true)
 assert(reload.tracker:GetAlpha() == 0, "tracker hide did not persist through reload")
 assert(reload.current.questPOI == "1", "map setting inherited tracker state")
-reload.command("off")
+NoQuestHintsForeverAPI.SetMapHidden(false)
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
+assert(#reload.opened == 1, "/nqh must open native settings after reload")
 assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
-    and reload.checks[4]:GetChecked() == true and reload.checks[5]:GetChecked() == true
-    and reload.checks[6]:GetChecked() == true,
+    and reload.checks[4]:GetChecked() == true and reload.checks[6]:GetChecked() == true
+    and reload.checks[5]:GetChecked() == true,
     "UI did not reflect loaded tracker/tooltip settings")
 
 -- Different character starts without any suppression.
@@ -308,10 +360,22 @@ assert(NoQuestHintsForeverAPI.IsTooltipHintsHidden() == false
 assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOriginal == nil,
     "new alt should restore original account-wide NPC name CVar")
 
--- Missing Blizzard Settings API doesn't break /nqh.
+-- The native Settings page must use localized labels and tooltip explanations.
+local localized = session({}, {}, true, false, "ruRU")
+assert(localized.checks[1].setting.name == "Скрывать подсказки на карте",
+    "native controls ignored the selected WoW locale")
+assert(localized.checks[4].tooltip:find("Blizzard", 1, true) ~= nil,
+    "Russian NPC name tooltip lost the Blizzard limitation warning")
+localized.command("")
+assert(#localized.opened == 1, "/nqh did not open Russian native settings")
+
+-- Missing Blizzard Settings API does not create a floating fallback or break commands.
 local noSettings = session({}, {}, false, true)
 noSettings.command("")
-assert(NoQuestHintsForeverOptionsFrame:IsShown(), "standalone UI requires Settings API")
+assert(#noSettings.opened == 0 and NoQuestHintsForeverOptionsFrame == nil,
+    "missing native settings must not spawn a custom popup")
+NoQuestHintsForeverAPI.SetMapHidden(true)
+assert(noSettings.current.questPOI == "0", "missing Settings API broke core slash toggles")
 
 -- Late creation of the objective tracker after our addon has loaded.
 local lateChar = {hideTracker = true}
@@ -321,4 +385,26 @@ lateFrame.alpha = 1
 late.event("ADDON_LOADED", "Blizzard_ObjectiveTracker")
 assert(lateFrame:GetAlpha() == 0, "late objective tracker not hidden")
 
-io.write("PASS: independent UI checkboxes, settings launcher, tracker hooks, combat, reload and alts\n")
+io.write("PASS: native vertical Settings controls/tooltips, independent options, tracker hooks, reload and alts\n")
+
+local category = localized.panels[1]
+assert(category.rows[1].header == "Подсказки заданий")
+assert(category.rows[2].header == "Дополнительное погружение")
+assert(category.rows[3].header == "Стиль игры и восстановление")
+assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
+assert(localized.checks[6].setting.variable == "NQH_HIDE_SELL_PRICES")
+assert(type(category.rows[4].click) == "function" and type(category.rows[5].click) == "function")
+
+local reset = session({}, {}, true, true)
+local notifications = {}
+Settings.NotifyUpdate = function(variable) notifications[variable] = true end
+assert(NoQuestHintsForeverAPI.ApplyPreset("full"))
+assert(reset.tracker:GetAlpha() == 0 and reset.current.UnitNameFriendlySpecialNPCName == "0")
+assert(not NoQuestHintsForeverAPI.IsOnboardingPending())
+reset.setCombat(true)
+assert(not NoQuestHintsForeverAPI.RestoreGameSettings(), "mouse restoration should wait for combat end")
+assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
+reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
+assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
+local count=0; for _ in pairs(notifications) do count=count+1 end
+assert(count==6, "preset/restore must refresh every native checkbox")

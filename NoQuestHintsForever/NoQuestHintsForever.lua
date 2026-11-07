@@ -43,11 +43,17 @@ end
 -- Do not capture SavedVariables until ADDON_LOADED: WoW loads them after Lua.
 local character, account
 local enforcing = false
+local loggingOut = false
 
 local function initialize()
     if type(NoQuestHintsForeverChar) ~= "table" then NoQuestHintsForeverChar = {} end
     if type(NoQuestHintsForeverAccount) ~= "table" then NoQuestHintsForeverAccount = {} end
     character, account = NoQuestHintsForeverChar, NoQuestHintsForeverAccount
+    -- Inspect the saved table BEFORE adding bookkeeping keys. An existing
+    -- installation (even all options OFF) must not be treated as a new player.
+    if character.onboardingComplete == nil then
+        character.onboardingComplete = next(character) ~= nil
+    end
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
     -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
@@ -57,7 +63,7 @@ local function initialize()
 end
 
 local function enforceMapHints()
-    if not character or character.enabled ~= true or enforcing then return end
+    if loggingOut or not character or character.enabled ~= true or enforcing then return end
     enforcing = true
     for _, name in ipairs(cvars) do
         local value = getCVar(name)
@@ -152,7 +158,7 @@ local function trackFrame()
 end
 
 updateTracker = function()
-    if not character or trackerApplying then return end
+    if loggingOut or not character or trackerApplying then return end
     local frame = trackFrame()
     if not frame then return end
     trackerApplying = true
@@ -222,7 +228,7 @@ end
 local QUEST_NPC_NAME_CVAR = "UnitNameFriendlySpecialNPCName"
 local npcNamesApplying = false
 local function updateQuestNPCNames()
-    if not character or not account or npcNamesApplying then return end
+    if loggingOut or not character or not account or npcNamesApplying then return end
     npcNamesApplying = true
     local current = getCVar(QUEST_NPC_NAME_CVAR)
     if character.hideQuestNPCNames == true then
@@ -267,6 +273,59 @@ api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
+function api.CompleteOnboarding()
+    if character then character.onboardingComplete = true end
+end
+
+function api.IsOnboardingPending()
+    return character ~= nil and character.onboardingComplete ~= true
+end
+
+-- Do not erase quest permissions or the player's choices during shutdown.
+-- Restore only successful writes; failed/unavailable CVars keep their backup.
+local function restorePersistentValues()
+    restoreMapValues(character and character.original)
+    restoreMapValues(account and account.original)
+    if account and account.npcNameOriginal ~= nil then
+        local previous = account.npcNameOriginal
+        local current = getCVar(QUEST_NPC_NAME_CVAR)
+        if current == previous or (current ~= nil and setCVar(QUEST_NPC_NAME_CVAR, previous)) then
+            account.npcNameOriginal = nil
+        end
+    end
+end
+
+function api.RestoreGameSettings()
+    if not character then return false end
+    api.CompleteOnboarding()
+    setMapHints(false)
+    setTrackerHidden(false)
+    setTooltipHintsHidden(false)
+    setQuestNPCNamesHidden(false)
+    setSellPriceHidden(false)
+    setQuestProgressHidden(false)
+    if api.RefreshOptions then api.RefreshOptions() end
+    if api.HideWelcome then api.HideWelcome() end
+    return next(character.original) == nil and next(account.original) == nil
+        and account.npcNameOriginal == nil and trackerMouse == nil
+end
+
+function api.ApplyPreset(preset)
+    if not character or (preset ~= "blizzard" and preset ~= "immersion" and preset ~= "full") then
+        return false
+    end
+    api.CompleteOnboarding()
+    local hide = preset ~= "blizzard"
+    setMapHints(hide)
+    setTrackerHidden(hide)
+    setTooltipHintsHidden(hide)
+    setQuestNPCNamesHidden(hide)
+    setQuestProgressHidden(hide)
+    setSellPriceHidden(preset == "full")
+    if api.RefreshOptions then api.RefreshOptions() end
+    return true
+end
+
 SLASH_NOQUESTHINTSFOREVER1 = "/nqh"
 SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     if not character then
@@ -276,17 +335,12 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     local command = (message or ""):match("^%s*(%S+)")
     command = command and command:lower() or ""
     if command == "" then
-        if type(api.OpenOptions) == "function" then
-            api.OpenOptions()
-        else
-            printMessage(L.UNAVAILABLE or "Settings window is not available.")
+        if type(api.OpenOptions) ~= "function" or api.OpenOptions() ~= true then
+            printMessage(L.UNAVAILABLE or "Addon settings are unavailable.")
         end
-    elseif command == "on" then
-        setMapHints(true)
-        printMessage(L.MAP_ON or "Map hints: ON (hidden).")
-    elseif command == "off" then
-        setMapHints(false)
-        printMessage(L.MAP_OFF or "Map hints: OFF (visible).")
+    elseif command == "restore" then
+        local restored = api.RestoreGameSettings()
+        printMessage(restored and (L.RESTORED or "Saved game settings restored.") or (L.RESTORE_PENDING or "Restore incomplete; saved backups retained. Retry /nqh restore."))
     elseif command == "status" then
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
@@ -300,18 +354,25 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
         end
     else
-        printMessage(L.COMMANDS or "Commands: /nqh, /nqh on, /nqh off, /nqh status")
+        printMessage(L.COMMANDS or "Commands: /nqh, /nqh restore, /nqh status")
     end
 end
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("PLAYER_LOGOUT")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("CVAR_UPDATE")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("SUPER_TRACKING_CHANGED")
 frame:SetScript("OnEvent", function(_, event, changed)
+    if event == "PLAYER_LOGOUT" then
+        loggingOut = true
+        restorePersistentValues()
+        return
+    end
+    if loggingOut then return end
     if event == "ADDON_LOADED" then
         if changed == ADDON_NAME then initialize() end
         -- ObjectiveTrackerFrame can be loaded after our addon.
@@ -326,6 +387,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         end
         updateTracker()
         updateQuestNPCNames()
+        if type(api.MaybeShowWelcome) == "function" then api.MaybeShowWelcome() end
     elseif event == "PLAYER_ENTERING_WORLD" then
         enforceMapHints()
         updateTracker()
@@ -345,5 +407,6 @@ frame:SetScript("OnEvent", function(_, event, changed)
         enforceMapHints()
     elseif event == "PLAYER_REGEN_ENABLED" then
         updateTracker()
+        if type(api.MaybeShowWelcome) == "function" then api.MaybeShowWelcome() end
     end
 end)

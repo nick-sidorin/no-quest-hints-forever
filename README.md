@@ -12,7 +12,9 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-Six **independent, per-character** options in version 1.3.0:
+> **Development preview:** The onboarding, restoration and grouped native settings below belong to unreleased **v1.4.0**. Stable **v1.3.0** still uses the original separate settings window until a new release is tested and published.
+
+Six **independent, per-character** options:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
@@ -30,7 +32,7 @@ The addon leaves the geographical map, quest descriptions, quest-giver exclamati
 
 ### Installation
 
-Download the installable ZIP (from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions) for unreleased test builds or from [GitHub Releases](https://github.com/nick-sidorin/no-quest-hints-forever/releases) for published versions). Copy the `NoQuestHintsForever/` folder into your Forever client's `Interface/AddOns/` directory:
+Download the installable ZIP (from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions) for unreleased test builds or from [GitHub Releases](https://github.com/nick-sidorin/no-quest-hints-forever/releases) for published versions). Test artifact downloads contain the addon folder directly, with no nested ZIP. Copy the `NoQuestHintsForever/` folder into your Forever client's `Interface/AddOns/` directory:
 
 ```text
 World of Warcraft/
@@ -42,6 +44,7 @@ World of Warcraft/
                 ├── Localization.lua
                 ├── NoQuestHintsForever.lua
                 ├── Options.lua
+                ├── Onboarding.lua
                 ├── QuestHints.lua
                 ├── QuestMarkers.lua
                 ├── QuestHintPins.xml
@@ -54,12 +57,26 @@ World of Warcraft/
 
 Restart the game or use `/reload` if you're updating an existing installation. Ensure you do not have an extra nested addon folder.
 
+### First run and playstyles (1.4.0 preview)
+
+A new character sees three realm-rule-style cards, with native game icons and circular portraits:
+
+| Playstyle | Features enabled |
+| --- | --- |
+| **As in Blizzard** | None; keep your personal game settings |
+| **Immersion** | All five quest options: map/navigation, tracker, tooltip hints, quest NPC names and progress popups |
+| **Full immersion** | Immersion plus item sell prices hidden outside a merchant |
+
+Clicking a card only selects it. **Begin adventure** confirms the choice. Closing the window, choosing **Later**, or opening **Customize settings…** applies no preset. An unfinished first run reappears on the next login; editing a checkbox completes setup. Existing characters keep their saved choices and do not see onboarding after upgrading.
+
+Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces all six toggles; manual choices remain available independently. This choice is per character.
+
 ### Open settings
 
-- Type **`/nqh`** without arguments to open or close the standalone Blizzard-styled settings window.
-- Or visit **Esc → Options → AddOns → No Quest Hints** and click **Open addon settings**.
+- Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
+- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All six checkboxes live directly on that page; no separate popup window.
 
-The settings window contains six checkboxes:
+The native Blizzard settings category groups five checkboxes under **Quest hints** and vendor prices under **Additional immersion**. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
@@ -76,12 +93,19 @@ The second option is independent of the first: you can keep the task list while 
 
 | Command | What it does |
 | --- | --- |
-| `/nqh` | Open or close the addon settings window. |
-| `/nqh on` | Turn **on** hiding quest **map hints only**. |
-| `/nqh off` | Turn **off** hiding quest **map hints only** and restore their saved CVar values. |
+| `/nqh` | Open the native Blizzard AddOns settings category. |
+| `/nqh restore` | Turn off all six features and restore saved pre-addon game settings. |
 | `/nqh status` | Display all six option states and the values of targeted CVars. |
 
-The existing `on`/`off` commands stay backward-compatible with version 1.1.1. They control only map hints; the other five options have separate checkboxes.
+The ambiguous map-only `on`/`off` commands have been removed in this preview. They now show command help without changing anything.
+
+### Restoring settings before disabling or removing the addon
+
+Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All six features turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. The standard native checkbox defaults are all OFF; choosing the immersion preset is an explicit first-run decision.
+
+At normal logout or `/reload` the addon also attempts to restore the persistent CVars, without turning off your saved preferences. At the next login with the addon enabled it reapplies those preferences. Failed writes retain their backups for a later restore; an incomplete explicit restore reports that it needs another attempt. A tracker mouse change may wait until combat ends.
+
+**An unloaded addon cannot run cleanup.** The shutdown path and the game's CVar save ordering still need live Forever validation. Crashes, forced termination, disabling without a normal shutdown, or interference from another addon may leave changed CVars behind. If this happens, re-enable/reinstall the addon with its SavedVariables intact, run `/nqh restore`, then disable it. If those backups were deleted, exact personal pre-addon values cannot be recovered by the addon; adjust the affected settings in Blizzard's interface. Do not delete SavedVariables as a restoration procedure.
 
 ## Per-character settings and persistence
 
@@ -108,9 +132,20 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory`, if present.
-- **Stand-alone window:** native `BasicFrameTemplateWithInset`, `UICheckButtonTemplate`, and `UIPanelButtonTemplate`.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, six `Settings.RegisterProxySetting` values and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
+
+### Onboarding art
+
+Only game textures are used; no Wowhead images are bundled. The cards use the exact Forever realm-rule `Mode-Selection-Card-Regular` atlas and its matching selection glow at their authored sizes; the native 260 × 530 card layout leaves a 180px text column. The gold dialog fallback is used only when that atlas is unavailable, so borders are never doubled. Portraits use the native 64px icons, circular mask and beveled `Mode-Selection-Ring`. Glue-only templates and account/realm rules are not modified.
+
+| Card | Game texture | Reference |
+| --- | --- | --- |
+| As in Blizzard | `INV_Misc_Map_01` | [Map](https://www.wowhead.com/icon=134269/inv-misc-map-01) |
+| Immersion | `icon_treasuremap` | [Chosen treasure map](https://www.wowhead.com/icon=1064187/icon-treasuremap) |
+| Full immersion | `Achievement_Zone_ElwynnForest` | [Elwynn Forest](https://www.wowhead.com/icons?filter=na=achievement_zone_elwynnforest) |
+
+The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a native gold/red three-slice confirmation button above two smaller native buttons aligned to its left and right edges. A full-screen mouse/wheel shield prevents background UI hover or clicks while the chooser is open; it is released when the chooser closes. The owner reported general functionality working on the first preview; the revised rendering and text fit still require in-game review; mocked UI tests cannot establish the final rendering.
 
 ### Map and navigation CVars
 
@@ -131,7 +166,8 @@ NoQuestHintsForever/
 ├── NoQuestHintsForever.toc    # Interface, version, SavedVariables and load order
 ├── Localization.lua          # Russian UI, English fallback
 ├── NoQuestHintsForever.lua    # CVar/navigation and tracker controls; slash commands
-├── Options.lua               # Native window and Blizzard AddOns entry
+├── Options.lua               # Grouped native Settings page and restoration actions
+├── Onboarding.lua            # Three consent-based first-run playstyles
 ├── QuestHints.lua            # Per-quest permission, menus, native blue blobs and SuperTrack
 ├── QuestMarkers.lua          # Filtered native in-progress / turn-in map POI buttons
 ├── QuestHintPins.xml         # XML templates inheriting native Blizzard map widgets
@@ -173,18 +209,18 @@ bash scripts/run_ci.sh
 
 Mocked tests check Lua loading order, CVar restoration, independent checkboxes, a delayed Blizzard tracker, re-hiding after Blizzard changes alpha, combat and character isolation. The native NPC-name override tests preserve and restore the original account CVar and check that unrelated name CVars remain untouched. Selective hint tests validate native blob calls, map POI filtering, tracker right-click capture, **no automatic map opening**, safe navigation gating, original title badges and per-character reload. Native blobs, map POIs, in-world navigation diamond, title badges and Russian quest-hint labels have also been checked in the released Forever client. **Automated tests do not replace broader in-game regression testing**, particularly across different characters and UI addons.
 
-## Validation checklist for Forever 1.3.0
+## Validation checklist for Forever 1.4.0 preview
 
-1. Run `/nqh`: confirm the standalone settings window opens with all six independent checkboxes. Open it again to close it.
-2. Open **Options → AddOns → No Quest Hints**: confirm **Open addon settings** opens the same window.
+1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing six checkboxes (no floating window).
+2. Open the same category manually from the AddOns list: all six controls must appear directly in the page; hover each to see its explanation without a permanent description line.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
 5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
-6. Run `/nqh on`, `/reload`, `/nqh off`; verify map hints return and the tracker checkbox keeps its independent state.
+6. Enable map hiding in Settings, `/reload`, then disable that checkbox; verify original map values return and the tracker keeps its independent state.
 7. Log in as another character: verify default-off settings do not inherit hidden hints. Switch back to confirm both options persist.
 8. In the journal, click **Show hint** next to **Back**. Confirm the blue objective area is visible and look for Blizzard's native round quest icon (in-progress or turn-in). If an icon is missing even when a blob is present, note the quest title and state; the client's quest POI APIs may not return coordinates with `questPOI=0`.
 9. Right-click a quest **in the objective tracker** and select **Show hint**. Verify **the map does not automatically open**; the allowed quest's map guidance still appears when you open the map normally. Repeat with a different quest, then **Hide hint**. Check that the right-click never affects a different quest. The journal context menu should behave the same way.
-10. With global quest hints hidden, show a hint and return to the game world. Check for Blizzard's in-world **navigation diamond and distance** toward that quest. Hide it and verify the diamond disappears. If another quest becomes SuperTracked, verify it is suppressed until explicitly allowed. Confirm normal CVar behavior with `/nqh off`.
+10. With global quest hints hidden, show a hint and return to the game world. Check for Blizzard's in-world **navigation diamond and distance** toward that quest. Hide it and verify the diamond disappears. If another quest becomes SuperTracked, verify it is suppressed until explicitly allowed. Confirm normal CVar behavior after disabling the map checkbox.
 11. Verify the native '?' / '...' badges appear beside the title of **allowed quests only** in both the quest journal and right-side objective tracker. Verify they disappear when a hint is hidden, and return after `/reload`.
 12. With a **Russian client (`ruRU`)**, check the localized UI and context-menu labels; the short journal button should read **Показать / Скрыть**.
 13. Confirm that the journal button is horizontally aligned with Blizzard's **Back** button and does not overlap CatQuest's **Read** button. Check both detail layouts.
@@ -193,6 +229,13 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 16. Toggle **Hide item sell prices**; bag hover prices disappear outside a merchant and return while trading.
 17. Toggle **Hide quest progress popups**; quest counts disappear but ordinary warnings and status messages remain.
 18. Change characters and reload to check the six independent settings.
+19. On a fresh character, verify three cards, round icons, readable ruRU/enUS text and layout at different UI scales. Selecting a card or closing the window must not change settings. No default card is selected.
+20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them only outside merchants. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
+21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.
+22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all six effects are off and the original values return. Restore twice; try while in combat and finish after combat.
+23. Apply a preset, disable the addon and reload through the normal addon UI. Verify game settings remain restored without the addon. Re-enable it and verify your saved mode returns. Repeat with normal logout/relogin and switching characters. This client test is required before claiming automatic uninstall cleanup works.
+24. With the chooser open, move/click/scroll over background action bars, quests and screen edges: no background tooltip or action should occur. Test Esc, Later, Customize settings, confirmation and combat; the background must become interactive again when the chooser closes. Check the primary button label and the aligned secondary buttons in ruRU/enUS.
+25. Confirm removed `/nqh on` and `/nqh off` only show help and `/nqh status` still prints diagnostics.
 
 Please report the Forever build, version, `/nqh status` output, steps to reproduce and screenshots at [GitHub Issues](https://github.com/nick-sidorin/no-quest-hints-forever/issues).
 

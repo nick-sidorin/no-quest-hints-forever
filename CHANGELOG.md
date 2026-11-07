@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.4.0] — unreleased development build
+
+- Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
+
+- Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.
+
+- Add a consent-based first-run chooser: As in Blizzard (no hiding), Immersion (five quest features), Full immersion (all six, including merchant-only prices). Native game-art cards and circular icons; no changes before confirmation.
+- Preserve existing users' preferences; unfinished onboarding persists separately per character and can be reopened from Settings.
+- Group native Settings into Quest hints and Additional immersion; explanations remain hover-only. Add playstyle and restoration buttons.
+- Add `/nqh restore` for all six features, restoring saved personal CVars and retaining failed backups for retry. Keep `/nqh` and `/nqh status`; remove the ambiguous map-only `on`/`off` commands (now help only).
+- Attempt CVar restoration on normal logout/reload without resetting saved preferences; guard against re-enforcement during shutdown. Requires live Forever verification of shutdown/save ordering, combat and character switching; no crash cleanup guarantee.
+- Expand Lua 5.1 regression coverage to eleven suites, including preset consent, upgrades, pending onboarding, restoration retry and shutdown/reload.
+
+- Move all six configuration checkboxes directly into Blizzard's **Options → AddOns → No Quest Hints** using its native vertical Settings layout, like CatQuest.
+- Show short setting labels only; explanations now appear in the standard WoW hover tooltips rather than occupying permanent rows.
+- Make `/nqh` navigate straight to the AddOns settings category; remove the duplicate floating window and launcher button.
+- Preserve existing per-character SavedVariables, state logic, default values and independent toggles. Add native Settings integration, tooltip and slash-navigation regression coverage.
+- **Not yet released:** requires live Forever UI validation and a separate stable release request.
+
+
 ## [1.3.0] — 2026-11-06
 
 - Add **Hide quest hints in tooltips**: selectively suppress native quest title/objective/player lines on creature and world-object mouseover without hiding normal details.

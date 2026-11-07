@@ -1,13 +1,14 @@
 ## Interface: 16001
 ## Title: No Quest Hints
 ## Notes: Per-character toggle for Blizzard's native quest map and navigation hints.
-## Version: 1.3.0
+## Version: 1.4.0
 ## Author: nick-sidorin
 ## SavedVariables: NoQuestHintsForeverAccount
 ## SavedVariablesPerCharacter: NoQuestHintsForeverChar
 Localization.lua
 NoQuestHintsForever.lua
 Options.lua
+Onboarding.lua
 QuestHints.lua
 QuestMarkers.lua
 QuestHintPins.xml
