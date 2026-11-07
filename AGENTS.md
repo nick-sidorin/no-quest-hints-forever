@@ -12,10 +12,10 @@ Repository-wide instructions for contributors and coding agents. Before substant
 
 - Target **World of Warcraft: Forever**, not Retail/Classic Era. `Interface: 16001` is not proof of Blizzard API compatibility. Keep gameplay code and tests compatible with **Lua 5.1**; no runtime addon dependencies.
 - Goal: immersive exploration, **not a quest solver or GPS**. Preserve geographical maps, quest journal/text, actual quest progression, quest-giver exclamation marks, normal NPC interactions and voiceover addons. Do not introduce an external quest database or route planner.
-- Preserve the five quest-related controls (map/navigation hints, objective tracker, tooltip lines, quest/special NPC floating names, yellow progress popups) and per-character vendor-price preferences. Merged PR #20 splits price hiding into two independent contexts and adds two quest-title controls, making nine on main. The bag-border follow-up adds a tenth manual-only control. Stable v1.3.0 is separate; never reset saved choices on upgrade.
+- Preserve the five quest-related controls (map/navigation hints, objective tracker, tooltip lines, quest/special NPC floating names, yellow progress popups) and per-character vendor-price preferences. Merged PR #20 splits price hiding into two independent contexts and adds two quest-title controls, making nine on main. The bag-border follow-up adds a tenth manual-only control. v1.3.0 is historical; never reset saved choices on upgrade.
 - Preserve the per-character `enabled` SavedVariable as **hide map hints**, and `revealedQuests` as the quest-ID allowlist. Revealing an individual quest uses original Blizzard blobs, map POIs, journal/tracker badges and SuperTrack where supported, without globally showing all hints, adding the quest to the watch list, or opening the map from context menus.
 - Restore **original personal CVar values**, not presumed default `1` values. Keep account-shared CVar baselines across characters, preserve backups when restoration fails, and never change unrelated NPC-name CVars.
-- Release behavior differs: stable **v1.3.0** retains map-only `/nqh on|off`; the **unreleased v1.4.0 code now on `main`** retires them and uses `/nqh` (native Settings), `/nqh welcome` (playstyle chooser), `/nqh restore` (all applicable hiding controls off + personal CVar restore), and `/nqh status` (diagnostics). Verify target branch before changing commands.
+- Historical **v1.3.0** retained map-only `/nqh on|off`; **v1.4.0** retires them and uses `/nqh` (native Settings), `/nqh welcome` (playstyle chooser), `/nqh restore` (all applicable hiding controls off + personal CVar restore), and `/nqh status` (diagnostics). Verify target branch before changing commands.
 
 ## Native UI and onboarding (v1.4.0 work)
 
@@ -28,7 +28,7 @@ Repository-wide instructions for contributors and coding agents. Before substant
 ## Approved price-context behavior (merged PR #20)
 
 - Merchants always show the native NPC vendor sell value. Outside merchant/auction UI use only `hideSellPrices`; at an open `AuctionHouseFrame` or legacy `AuctionFrame` use only `hideAuctionSellPrices`. These are not auction-market estimates, cost prices or listing fees. Treat unloaded frames as closed; prefer `IsVisible` over `IsShown`.
-- Both price controls default OFF. Full immersion sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. Presets deliberately reapply all nine checkboxes, ordinary `/reload` preserves manual choices, and restore/native defaults turn both OFF.
+- Both price controls default OFF. Full immersion sets outside-trading hiding ON and auction hiding OFF; the other presets set both OFF. Presets deliberately reapply all ten checkboxes, ordinary `/reload` preserves manual choices, and restore/native defaults turn both OFF.
 - Migrate the earlier preview's inverse/dependent `showAuctionSellPrices` to effective auction hiding (`old hideSellPrices == true AND old showAuctionSellPrices == false`), then remove the old field. Retain explicit new-format `hideAuctionSellPrices`; perform migration after detecting first-run data.
 - Keep the current native-tooltip pre-call filter and non-item isolation. Re-evaluate on the next tooltip composition/hover; do not add global tooltip redraw hooks or polling. Preserve prices drawn independently by other addons.
 
@@ -42,7 +42,7 @@ Repository-wide instructions for contributors and coding agents. Before substant
 
 ## Architecture, tests and packaging
 
-- `Localization.lua` loads first, followed by `LocaleTranslations.lua` before any consumers; `NoQuestHintsForever.lua` owns state/effects; `Options.lua` owns settings UI. `Onboarding.lua` was introduced in unreleased v1.4.0 code by PR #18. Selective map/inline guidance is in `QuestHints.lua`, `QuestMarkers.lua`, `QuestInlineHints.lua`; quest title filters in `QuestPresentation.lua`; other filters in `QuestTooltips.lua`, `SellPrices.lua`, `QuestProgressMessages.lua`.
+- `Localization.lua` loads first, followed by `LocaleTranslations.lua` before any consumers; `NoQuestHintsForever.lua` owns state/effects; `Options.lua` owns settings UI. `Onboarding.lua` was introduced in v1.4.0 by PR #18. Selective map/inline guidance is in `QuestHints.lua`, `QuestMarkers.lua`, `QuestInlineHints.lua`; quest title filters in `QuestPresentation.lua`; other filters in `QuestTooltips.lua`, `SellPrices.lua`, `QuestProgressMessages.lua`.
 - Account for late Blizzard UI initialization, combat lockdown, `/reload`, native settings changes and competing addons. Avoid invasive protected-frame hooks or silently removing working features to cover up unproven taint.
 - Run **`bash scripts/run_ci.sh`** from repo root (Python 3, `lua5.1`, `luac5.1`). It finds `tests/test_*.lua`, validates Lua syntax and checks TOC/package integrity. Add a focused regression test for a confirmed behavior fix.
 - Use **`scripts/package_addon.py`** for installable ZIPs; the `.toc` plus LICENSE defines files. Keep new runtime modules in the `.toc` and internal docs out of CurseForge packages via `.pkgmeta`. Mock tests cannot prove visual correctness or freedom from protected-action taint.
@@ -62,7 +62,7 @@ Repository-wide instructions for contributors and coding agents. Before substant
 ## Keeping context usable
 
 - When parallel PRs touch these files, reconcile both branches before merging. Keep the English contributor rules and latest approved decisions; a gameplay PR must not reintroduce obsolete Russian documentation or the rejected price hierarchy.
-- `PROJECT_CONTEXT.md` records product rationale, decisions, caveats and a clearly dated handoff—not an ever-growing task transcript. Before a new session, verify open PRs, releases, branch rules and CI. Keep stable 1.3.0 distinct from the 1.4.0 preview until a new stable release actually ships.
+- `PROJECT_CONTEXT.md` records product rationale, decisions, caveats and a clearly dated handoff—not an ever-growing task transcript. Before a new session, verify open PRs, releases, branch rules and CI. Verify tags/releases and publisher status before stating which version is published. The owner approved the final 1.4.0 preview and requested stable publication on 2026-11-07.
 
 ## Optional bag borders
 
