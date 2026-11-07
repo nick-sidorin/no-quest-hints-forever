@@ -32,6 +32,43 @@ local controls = {
       "IsQuestItemHighlightHidden", "SetQuestItemHighlightHidden" },
 }
 
+local PROJECT_URL = "https://github.com/nick-sidorin/no-quest-hints-forever"
+local REPORT_DIALOG = "NOQUESTHINTSFOREVER_PROJECT_LINK"
+local function editBox(dialog)
+    if type(dialog.GetEditBox) == "function" then return dialog:GetEditBox() end
+    return dialog.editBox or dialog.EditBox
+end
+
+function api.ShowProjectLink()
+    if type(StaticPopupDialogs) ~= "table" or type(StaticPopup_Show) ~= "function" then
+        print("|cff80c0ffNo Quest Hints|r: " .. L.REPORT_LINK_TEXT .. " " .. PROJECT_URL)
+        return false
+    end
+    if not StaticPopupDialogs[REPORT_DIALOG] then
+        StaticPopupDialogs[REPORT_DIALOG] = {
+            text = L.REPORT_LINK_TEXT,
+            button1 = L.LINK_CLOSE,
+            hasEditBox = true,
+            editBoxWidth = 440,
+            maxLetters = 0,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            OnShow = function(dialog)
+                local box = editBox(dialog)
+                if box then
+                    box:SetText(PROJECT_URL)
+                    box:SetFocus()
+                    box:HighlightText()
+                end
+            end,
+            EditBoxOnEscapePressed = function(box) box:GetParent():Hide() end,
+            EditBoxOnEnterPressed = function(box) box:GetParent():Hide() end,
+        }
+    end
+    return StaticPopup_Show(REPORT_DIALOG) ~= nil
+end
+
 function api.RefreshOptions()
     if not category or not Settings or type(Settings.NotifyUpdate) ~= "function" then return end
     for _, item in ipairs(controls) do Settings.NotifyUpdate(item[1]) end
@@ -89,6 +126,9 @@ local function registerCategory()
             end)
         Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
     end
+
+    heading(L.SUPPORT_GROUP)
+    button(L.REPORT_BUTTON, api.ShowProjectLink, L.REPORT_DESC)
 
     Settings.RegisterAddOnCategory(newCategory)
     category = newCategory

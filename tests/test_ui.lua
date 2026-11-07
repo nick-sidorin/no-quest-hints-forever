@@ -486,3 +486,39 @@ NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
 local altBags = session({}, {}, true, false)
 assert(not altBags.checks[10]:GetChecked())
+
+-- The last Settings action presents a copyable project URL, with no browser API
+-- assumptions. Exercise the native GetEditBox shape and legacy frame fields.
+local support = session({}, {}, true, false, "ruRU")
+local rows = support.panels[1].rows
+assert(rows[#rows-1].header == "Поддержка" and rows[#rows].button == "Сообщить о проблеме")
+local url = "https://github.com/nick-sidorin/no-quest-hints-forever"
+StaticPopupDialogs = {}
+local popup = { shown=true }
+function popup:Hide() self.shown=false end
+local box = {}
+function box:SetText(text) self.text=text end
+function box:SetFocus() self.focus=true end
+function box:HighlightText() self.highlight=true end
+function box:GetParent() return popup end
+function popup:GetEditBox() return box end
+local shown=0
+StaticPopup_Show = function(which)
+    local info=StaticPopupDialogs[which]
+    assert(info.hasEditBox and info.hideOnEscape and info.whileDead and info.timeout==0)
+    assert(info.text:find("Ctrl+C",1,true) and info.text:find("Issues",1,true))
+    info.OnShow(popup);shown=shown+1;return popup
+end
+local before=NoQuestHintsForeverChar.onboardingComplete
+rows[#rows].click()
+assert(shown==1 and box.text==url and box.focus and box.highlight)
+assert(NoQuestHintsForeverChar.onboardingComplete==before, "support button changed onboarding")
+local definition=StaticPopupDialogs.NOQUESTHINTSFOREVER_PROJECT_LINK
+definition.EditBoxOnEscapePressed(box);assert(not popup.shown)
+popup.shown=true;definition.EditBoxOnEnterPressed(box);assert(not popup.shown)
+popup.GetEditBox=nil;popup.editBox=box;box.text=""
+rows[#rows].click();assert(box.text==url)
+popup.editBox=nil;popup.EditBox=box;box.text=""
+rows[#rows].click();assert(box.text==url)
+StaticPopupDialogs=nil;StaticPopup_Show=nil
+assert(not NoQuestHintsForeverAPI.ShowProjectLink(), "missing popup API must use text fallback")

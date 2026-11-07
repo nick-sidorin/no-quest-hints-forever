@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Add a bottom Support section with a localized Report a problem button and native copyable GitHub link dialog. Add `/nqh welcome` to reopen the playstyle chooser without changing settings until confirmation; defer opening in combat.
+
 - Move the entire Playstyle and restoration section above individual checkboxes so both actions are immediately accessible when opening Settings.
 
 - Add an optional **Bags → Hide quest item borders** checkbox, localized in ruRU/enUS, saved per character and OFF in every preset. Hide only native carried-bag quest borders; preserve quest-start markers, quality/new-item overlays and Blizzard visibility. Restore original alpha on disable/restore or slot reuse, defer in combat and cover pooled/late-loaded bags. Custom bag overlays are outside this initial integration.

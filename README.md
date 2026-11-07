@@ -102,11 +102,14 @@ The merchant always shows native values. Elsewhere, the active context selects t
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
+The final **Support → Report a problem** button opens a selected, copyable GitHub project URL. Copy it into your browser, then use **Issues → New issue** for bug reports or suggestions. Include the Forever build, addon version and reproduction steps. WoW does not launch a browser from this button.
+
 ### Slash commands
 
 | Command | What it does |
 | --- | --- |
 | `/nqh` | Open the native Blizzard AddOns settings category. |
+| `/nqh welcome` | Reopen the playstyle chooser without changing settings until confirmation. |
 | `/nqh restore` | Turn off all ten hiding controls and restore saved pre-addon game settings. |
 | `/nqh status` | Display all ten checkbox states and targeted CVars. |
 

@@ -468,6 +468,8 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         if type(api.OpenOptions) ~= "function" or api.OpenOptions() ~= true then
             printMessage(L.UNAVAILABLE or "Addon settings are unavailable.")
         end
+    elseif command == "welcome" then
+        if type(api.ShowWelcome) == "function" then api.ShowWelcome() end
     elseif command == "restore" then
         local restored = api.RestoreGameSettings()
         printMessage(restored and (L.RESTORED or "Saved game settings restored.") or (L.RESTORE_PENDING or "Restore incomplete; saved backups retained. Retry /nqh restore."))
@@ -488,7 +490,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
         end
     else
-        printMessage(L.COMMANDS or "Commands: /nqh, /nqh restore, /nqh status")
+        printMessage(L.COMMANDS or "Commands: /nqh, /nqh welcome, /nqh restore, /nqh status")
     end
 end
 

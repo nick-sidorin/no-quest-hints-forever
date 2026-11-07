@@ -66,6 +66,8 @@ Select a card and confirm to begin. Or customize individual options. You can cha
 
 Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints**, **Item prices** and **Bags**, with explanations on hover.
 
+The **Playstyle and restoration** buttons appear first. At the bottom, **Support → Report a problem** provides a copyable GitHub project link; open it in your browser and choose **Issues → New issue** for reports or suggestions.
+
 The optional **Bags → Hide quest item borders** control hides yellow quest-item borders in native carried bags. Quality borders, new-item highlights and quest-start exclamation marks remain. It is OFF in every playstyle and must be enabled manually. Custom bag addons may draw independent borders.
 
 The **Item prices** section has two equal-rank checkboxes: **Hide outside trading** and **Hide at auction**. Both mean hiding and work independently. Merchants always show prices; the auction checkbox affects the existing **NPC vendor sell value**, not an auction market estimate. Both default OFF, while Full immersion enables only hiding outside trading.
@@ -73,6 +75,7 @@ The **Item prices** section has two equal-rank checkboxes: **Hide outside tradin
 | Command | Action |
 |---|---|
 | `/nqh` | Open addon settings |
+| `/nqh welcome` | Reopen the playstyle chooser |
 | `/nqh restore` | Turn off all features and restore saved original game settings |
 | `/nqh status` | Show current settings |
 

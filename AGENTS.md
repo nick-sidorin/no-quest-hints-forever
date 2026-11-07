@@ -15,7 +15,7 @@ Repository-wide instructions for contributors and coding agents. Before substant
 - Preserve the five quest-related controls (map/navigation hints, objective tracker, tooltip lines, quest/special NPC floating names, yellow progress popups) and per-character vendor-price preferences. Merged PR #20 splits price hiding into two independent contexts and adds two quest-title controls, making nine on main. The bag-border follow-up adds a tenth manual-only control. Stable v1.3.0 is separate; never reset saved choices on upgrade.
 - Preserve the per-character `enabled` SavedVariable as **hide map hints**, and `revealedQuests` as the quest-ID allowlist. Revealing an individual quest uses original Blizzard blobs, map POIs, journal/tracker badges and SuperTrack where supported, without globally showing all hints, adding the quest to the watch list, or opening the map from context menus.
 - Restore **original personal CVar values**, not presumed default `1` values. Keep account-shared CVar baselines across characters, preserve backups when restoration fails, and never change unrelated NPC-name CVars.
-- Release behavior differs: stable **v1.3.0** retains map-only `/nqh on|off`; the **unreleased v1.4.0 code now on `main`** retires them and uses `/nqh` (native Settings), `/nqh restore` (all applicable hiding controls off + personal CVar restore), and `/nqh status` (diagnostics). Verify target branch before changing commands.
+- Release behavior differs: stable **v1.3.0** retains map-only `/nqh on|off`; the **unreleased v1.4.0 code now on `main`** retires them and uses `/nqh` (native Settings), `/nqh welcome` (playstyle chooser), `/nqh restore` (all applicable hiding controls off + personal CVar restore), and `/nqh status` (diagnostics). Verify target branch before changing commands.
 
 ## Native UI and onboarding (v1.4.0 work)
 
@@ -70,3 +70,5 @@ Repository-wide instructions for contributors and coding agents. Before substant
 - Target native carried-bag `IconQuestTexture` borders only. Preserve quest-start exclamation marks, quality/new-item overlays, native Show/Hide state and original alpha. Cover actual pooled button methods, new slots/late UI and combat-end restoration. Do not promise compatibility with custom bag overlays without verification.
 
 - Keep **Playstyle and restoration** first in native Settings, with both existing buttons, above Quest hints, Item prices and Bags. The owner confirmed the bag preview works and explicitly chose to leave Baganator/custom bag highlighting under those addons' control; do not add compatibility hooks for them.
+
+- Keep **Support → Report a problem** last in Settings. Use a native popup with a selected copyable repository URL and localized Issues instructions; no browser-launch promises, SavedVariable changes or report submission. `/nqh welcome` delegates to the existing combat-aware chooser without resetting preferences/onboarding.
