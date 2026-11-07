@@ -316,6 +316,14 @@ local function setQuestDifficultyHidden(hidden)
     refreshQuestPresentation()
 end
 
+local function setQuestItemHighlightHidden(hidden)
+    if not character then return end
+    character.hideQuestItemHighlight = hidden == true
+    if NoQuestHintsForeverAPI.RefreshQuestItemHighlight then
+        NoQuestHintsForeverAPI.RefreshQuestItemHighlight()
+    end
+end
+
 local function setQuestProgressHidden(hidden)
     if not character then return end
     character.hideQuestProgressMessages = hidden == true
@@ -379,6 +387,8 @@ api.SetQuestProgressHidden = setQuestProgressHidden
 api.SetQuestLevelsHidden = setQuestLevelsHidden
 api.SetQuestDifficultyHidden = setQuestDifficultyHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
+api.IsQuestItemHighlightHidden = function() return character and character.hideQuestItemHighlight == true end
+api.SetQuestItemHighlightHidden = setQuestItemHighlightHidden
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
@@ -416,10 +426,12 @@ function api.RestoreGameSettings()
     setQuestProgressHidden(false)
     setQuestLevelsHidden(false)
     setQuestDifficultyHidden(false)
+    setQuestItemHighlightHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
+    local itemsRestored = not api.RestoreQuestItemHighlight or api.RestoreQuestItemHighlight()
     local presentationRestored = not api.RestoreQuestPresentation or api.RestoreQuestPresentation()
-    return presentationRestored and next(character.original) == nil and next(account.original) == nil
+    return itemsRestored and presentationRestored and next(character.original) == nil and next(account.original) == nil
         and account.npcNameOriginal == nil and next(trackerInputs) == nil
 end
 
@@ -439,6 +451,7 @@ function api.ApplyPreset(preset)
     setAuctionSellPriceHidden(false)
     setQuestLevelsHidden(preset == "full")
     setQuestDifficultyHidden(false)
+    setQuestItemHighlightHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -466,6 +479,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
         printMessage((L.SELL_PRICE_STATUS or "Hide item sell prices: ") .. (character.hideSellPrices == true and statusOn or statusOff))
         printMessage((L.AUCTION_PRICE_STATUS or "Hide vendor prices at auction: ") .. (api.IsAuctionSellPriceHidden() and statusOn or statusOff))
+        printMessage((L.ITEM_HIGHLIGHT_STATUS or "Hide quest item borders: ") .. (api.IsQuestItemHighlightHidden() and statusOn or statusOff))
         printMessage((L.LEVELS_STATUS or "Hide quest levels: ") .. (api.IsQuestLevelsHidden() and statusOn or statusOff))
         printMessage((L.DIFFICULTY_STATUS or "Hide quest difficulty colors: ") .. (api.IsQuestDifficultyHidden() and statusOn or statusOff))
         printMessage((L.PROGRESS_STATUS or "Hide quest progress popups: ") .. (character.hideQuestProgressMessages == true and statusOn or statusOff))

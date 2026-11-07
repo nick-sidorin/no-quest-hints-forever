@@ -17,3 +17,4 @@ QuestTooltips.lua
 SellPrices.lua
 QuestProgressMessages.lua
 QuestPresentation.lua
+QuestItemHighlight.lua

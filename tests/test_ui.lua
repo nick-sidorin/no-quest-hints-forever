@@ -208,12 +208,12 @@ assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
     "/nqh did not navigate to native Settings category")
 assert(NoQuestHintsForeverOptionsFrame == nil,
     "legacy floating settings window must never be created")
-assert(#s.proxySettings == 9, "each option needs a native proxy setting")
+assert(#s.proxySettings == 10, "each option needs a native proxy setting")
 for _, control in ipairs(s.checks) do
     assert(type(control.tooltip) == "string" and #control.tooltip > 0,
         "native checkbox description must be shown in tooltip")
 end
-assert(#s.checks == 9, "expected nine independent controls")
+assert(#s.checks == 10, "expected ten independent controls")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
     and s.checks[8]:GetChecked() == false and s.checks[5]:GetChecked() == false,
@@ -391,12 +391,13 @@ assert(lateFrame:GetAlpha() == 0, "late objective tracker not hidden")
 io.write("PASS: native vertical Settings controls/tooltips, independent options, tracker hooks, reload and alts\n")
 
 local category = localized.panels[1]
-assert(category.rows[1].header == "Подсказки заданий")
-assert(category.rows[2].header == "Цены предметов")
-assert(category.rows[3].header == "Стиль игры и восстановление")
+assert(category.rows[1].header == "Стиль игры и восстановление")
+assert(type(category.rows[2].click) == "function" and type(category.rows[3].click) == "function")
+assert(category.rows[4].header == "Подсказки заданий")
+assert(category.rows[5].header == "Цены предметов")
+assert(category.rows[6].header == "Сумки")
 assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
 assert(localized.checks[8].setting.variable == "NQH_HIDE_SELL_PRICES")
-assert(type(category.rows[4].click) == "function" and type(category.rows[5].click) == "function")
 
 local reset = session({}, {}, true, true)
 local notifications = {}
@@ -410,7 +411,7 @@ assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
 reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
 assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
 local count=0; for _ in pairs(notifications) do count=count+1 end
-assert(count==9, "preset/restore must refresh every native checkbox")
+assert(count==10, "preset/restore must refresh every native checkbox")
 
 -- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
@@ -464,3 +465,24 @@ assert(not NoQuestHintsForeverAPI.IsQuestLevelsHidden() and not NoQuestHintsFore
 NoQuestHintsForeverAPI.ApplyPreset("full")
 NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsQuestLevelsHidden() and not NoQuestHintsForeverAPI.IsQuestDifficultyHidden())
+
+-- Bag highlighting is a manual per-character option, OFF in every preset.
+local bagChar = {}
+local bags = session(bagChar, {}, true, false)
+local bagCheck = bags.checks[10]
+assert(bagCheck.setting.variable == "NQH_HIDE_QUEST_ITEM_HIGHLIGHT")
+assert(not bagCheck:GetChecked())
+bagCheck:SetChecked(true); bagCheck.scripts.OnClick(bagCheck)
+assert(bagChar.hideQuestItemHighlight and NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
+bags = session(bagChar, {}, true, false)
+assert(bags.checks[10]:GetChecked(), "manual bag preference lost on reload")
+for _, preset in ipairs({ "blizzard", "immersion", "full" }) do
+    NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
+    NoQuestHintsForeverAPI.ApplyPreset(preset)
+    assert(not NoQuestHintsForeverAPI.IsQuestItemHighlightHidden(), "preset enabled bag restriction")
+end
+NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(not NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
+local altBags = session({}, {}, true, false)
+assert(not altBags.checks[10]:GetChecked())
