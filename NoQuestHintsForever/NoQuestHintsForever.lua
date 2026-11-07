@@ -42,10 +42,15 @@ end
 
 -- Do not capture SavedVariables until ADDON_LOADED: WoW loads them after Lua.
 local character, account
+local existingInstallation
 local enforcing = false
 local loggingOut = false
 
 local function initialize()
+    if existingInstallation == nil then
+        existingInstallation = (type(NoQuestHintsForeverChar) == "table" and next(NoQuestHintsForeverChar) ~= nil)
+            or (type(NoQuestHintsForeverAccount) == "table" and next(NoQuestHintsForeverAccount) ~= nil)
+    end
     if type(NoQuestHintsForeverChar) ~= "table" then NoQuestHintsForeverChar = {} end
     if type(NoQuestHintsForeverAccount) ~= "table" then NoQuestHintsForeverAccount = {} end
     character, account = NoQuestHintsForeverChar, NoQuestHintsForeverAccount
@@ -68,6 +73,51 @@ local function initialize()
     -- Hide quest lines on unit/object tooltips is a new independent,
     -- opt-in option. Existing 1.2.0 users retain all their preferences.
     -- Both hideTracker and hideQuestTooltips default to false.
+end
+
+-- Compare TOC versions, including the alpha/beta forms used by publication.
+-- Keep the highest seen version account-wide so alts, reloads and downgrades
+-- do not repeat an upgrade notice. Unknown metadata is not a real version.
+local function versionParts(version)
+    if type(version) ~= "string" then return end
+    local major, minor, patch, suffix = version:match("^v?(%d+)%.(%d+)%.(%d+)(.*)$")
+    if not major then return end
+    local stage, serial = 3, 0
+    if suffix ~= "" then
+        local label, number = suffix:match("^%-(%a+)%.(%d+)$")
+        if not label then label = suffix:match("^%-(%a+)$") end
+        local ranks = { alpha=0, beta=1, rc=2 }
+        if ranks[label] == nil then return end
+        stage, serial = ranks[label], tonumber(number) or 0
+    end
+    return {tonumber(major), tonumber(minor), tonumber(patch), stage, serial}
+end
+
+local function notifyVersionUpgrade()
+    if not account then return end
+    local getter = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    if type(getter) ~= "function" then return end
+    local ok, version = pcall(getter, ADDON_NAME, "Version")
+    local current = ok and versionParts(version)
+    if not current then return end
+    local previous = account.lastSeenVersion
+    local old = versionParts(previous)
+    local newer = false
+    if old then
+        for index, value in ipairs(current) do
+            if value ~= old[index] then newer = value > old[index]; break end
+        end
+        if not newer then return end
+    else
+        -- First tracked upgrade from an older installation: announce once.
+        -- A genuine first install already has the first-run chooser instead.
+        newer = previous == nil and existingInstallation == true
+    end
+    account.lastSeenVersion = version
+    if newer then
+        printMessage(string.format(L.VERSION_UPDATED or
+            "Updated to version %s! Open /nqh to explore new features in settings.", version))
+    end
 end
 
 local function enforceMapHints()
@@ -517,6 +567,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
         if not character then initialize() end
+        notifyVersionUpgrade()
         if character.enabled == true then
             enforceMapHints()
         else

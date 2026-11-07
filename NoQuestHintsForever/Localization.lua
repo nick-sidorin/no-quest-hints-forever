@@ -1,6 +1,7 @@
 -- Display-language strings. English is the fallback for unsupported locales.
 -- Keep keys shared between the slash commands, native UI and quest menus.
 local en = {
+    VERSION_UPDATED = "Updated to version %s! Open /nqh to explore new features in settings.",
     QUEST_LEVELS = "Hide quest levels",
     QUEST_LEVELS_DESC = "Remove the numeric [level] prefix from native quest journal and tracker titles. Quest levels, rewards and difficulty remain unchanged.",
     QUEST_DIFFICULTY = "Hide difficulty colors",
@@ -79,6 +80,7 @@ local en = {
     VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
+    VERSION_UPDATED = "Аддон обновлён до версии %s! Загляните в настройки через /nqh — там вас ждут новые функции.",
     QUEST_LEVELS = "Скрывать уровень заданий",
     QUEST_LEVELS_DESC = "Убирает числовой [уровень] из заголовков заданий в журнале и трекере. Уровень, награды и сложность самих заданий не меняются.",
     QUEST_DIFFICULTY = "Скрывать цвет сложности",

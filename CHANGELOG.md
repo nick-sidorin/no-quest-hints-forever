@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Announce a version upgrade once per account at login, inviting players to explore new settings with `/nqh`. Read actual addon metadata, preserve preferences, avoid repeat notices on reload/alts/downgrades, and keep first installs silent. Existing installations without a version baseline receive one notice. Localized in ruRU/enUS.
+
 - Stop stationary map-pin tooltips from repeatedly dispatching hover-entry events and rebuilding the quest journal. Keep unchanged selective pins across repeated quest events; still refresh changed permissions, positions, styles, selections and maps. Tooltip content refreshes on actual re-entry.
 - Require confirmation before the Settings restore button clears a custom configuration. Cancel/Escape or unavailable confirmation UI leaves all settings intact. The explicit `/nqh restore` command remains immediate.
 

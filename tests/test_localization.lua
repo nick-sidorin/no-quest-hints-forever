@@ -9,6 +9,7 @@ local english = loadLocale("enUS")
 local russian = loadLocale("ruRU")
 local fallback = loadLocale("deDE")
 local keys = {
+    "VERSION_UPDATED",
     "SUPPORT_GROUP", "REPORT_BUTTON", "REPORT_DESC", "REPORT_LINK_TEXT", "LINK_CLOSE",
     "QUEST_HINTS_GROUP", "ADDITIONAL_GROUP", "MANAGE_GROUP",
     "CHOOSE_PLAYSTYLE", "CHOOSE_PLAYSTYLE_DESC", "RESTORE_BUTTON", "RESTORE_DESC",

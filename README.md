@@ -76,6 +76,8 @@ Clicking a card only selects it. **Begin adventure** confirms the choice. Closin
 
 Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the ten checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
 
+After an upgrade, one localized login message per account shows the new addon version and points to `/nqh` for new options. Ordinary reloads, alts and downgrades do not repeat it; a first install uses onboarding instead. Existing installations without version bookkeeping receive one notice, then keep a baseline in account SavedVariables. Test builds with the same TOC version do not count as separate upgrades.
+
 ### Open settings
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.

@@ -60,6 +60,8 @@ On your first visit with a new character, choose a playstyle:
 - **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
 - **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible unless you hide them separately.
 
+After a version upgrade, a one-time login message invites you to check `/nqh` for new options. Your existing settings remain intact.
+
 Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
 
 ## ⚙️ Settings
