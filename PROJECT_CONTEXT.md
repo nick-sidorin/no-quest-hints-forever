@@ -34,7 +34,7 @@
 - Иконки: INV_Misc_Map_01, выбранная владельцем icon_treasuremap, Achievement_Zone_ElwynnForest. Изображения с Wowhead не входят в аддон.
 - README, changelog и черновик описания CurseForge обновлены; опубликованная стабильная версия по-прежнему 1.3.0.
 
-Локально на переданном коде прошли 11 наборов Lua 5.1.5, синтаксис, TOC, побайтовая проверка ZIP из 13 файлов и git diff --check. GitHub CI: https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42367625914 — проверить результат и актуальный SHA перед продолжением.
+Локально на переданном коде прошли 11 наборов Lua 5.1.5, синтаксис, TOC, побайтовая проверка ZIP из 13 файлов и git diff --check. GitHub CI на этом SHA: https://github.com/nick-sidorin/no-quest-hints-forever/actions/runs/42367625914 — build success, github-release skipped. Artifact addon-1.4.0 (ID 13571933636) готов; перед установкой проверить актуальный SHA. Живая проверка в Forever ещё не выполнена.
 
 Следующий шаг: установить artifact addon-1.4.0 из CI #18, проверить ruRU/enUS, три режима, масштаб и текст колонок, переход в настройки, новый/старый персонаж, restore, бой и отключение аддона с /reload. В особенности проверить, сохраняет ли Forever восстановленные CVar при logout: mock-тест не доказывает фактический порядок сохранения клиента. План живой проверки есть в README и описании PR. До проверки в игре не сливать и не выпускать стабильный релиз.
 
