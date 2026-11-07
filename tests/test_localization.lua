@@ -66,3 +66,10 @@ for _,locale in ipairs({"enUS","enGB","ruRU","deDE","frFR","esES","esMX","itIT",
     if locale=="deDE" then assert(current.WELCOME_APPLY=="Abenteuer beginnen") end
     if locale=="frFR" then assert(current.WELCOME_APPLY=="Commencer l'aventure") end
 end
+
+-- Welcome identifies the addon; the existing second line carries the selection
+-- instruction so localization never introduces a third header row.
+assert(english.WELCOME_TITLE=="Welcome to No Quest Hints")
+assert(english.WELCOME_SUBTITLE=="Choose your adventure")
+assert(russian.WELCOME_TITLE=="Добро пожаловать в No Quest Hints")
+assert(russian.WELCOME_SUBTITLE=="Выберите своё приключение")
