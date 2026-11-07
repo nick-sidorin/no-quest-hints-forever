@@ -175,7 +175,11 @@ for _,label in ipairs({NoQuestHintsForeverLocale.WELCOME_LATER,NoQuestHintsForev
 end
 assert(welcome.shown and #s.cards()==3 and welcome.scale<1, "welcome must fit the viewport")
 assert(welcome.Apply.disabled, "confirm must wait for a selection")
+local instruction=welcome.Prompt.text
+assert(instruction==NoQuestHintsForeverLocale.WELCOME_SELECT)
 s.click(s.cards()[2])
+assert(welcome.Prompt.text==instruction, "selection replaced the static instruction with a status")
+assert(s.cards()[2].Choice.text==NoQuestHintsForeverLocale.WELCOME_SELECTED)
 assert(#s.writes==0 and not welcome.Apply.disabled, "selection applied before confirmation")
 local art=s.cards()[2].textures
 assert(art[1].atlas=="Mode-Selection-Card-Regular" and art[1].useAtlasSize

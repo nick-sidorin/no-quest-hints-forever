@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Identify the addon in the existing welcome headline (Welcome to No Quest Hints) and use the second gold line for Choose your adventure, localized in every supported language. Keep the two-line header and current typography/layout.
+- Identify the addon in the white welcome headline, keep the slogan in the gold second line, and use a short static Choose your playstyle instruction below the cards. Remove duplicated selected-status text while retaining the selected card marker and Begin adventure action. Use informal Russian address throughout the chooser; update all locales without changing typography or spacing.
 
 - Deliver version-upgrade chat notices after loading-screen completion, outside the event stack, to keep them out of the initial login-message burst. Update the seen-version baseline only at delivery; interrupted loading/logout retains the notice for a later attempt.
 

@@ -127,7 +127,9 @@ The owner reset onboarding on a configured character and verified `pending=true,
 
 ## Welcome header design
 
-The owner approved identifying the addon in the welcome heading and requested keeping the Choose your adventure phrase without a third header line. The preview now uses two existing lines: white Welcome to No Quest Hints, then gold Choose your adventure, translated in all locales with the current native typography/spacing. Begin adventure remains the primary action; Read the quest stays in marketing copy. Two generated design sketches explored custom circular illustrations; the owner likes that direction, but custom portrait assets have not been integrated. The working UI still uses native game icons. A one-time reintroduction for existing users was proposed separately; it is not implemented in this preview because prior versions did not persist an independent actually-viewed flag.
+Final owner-approved composition: white Welcome to No Quest Hints; gold Read the quest. Explore the world. Find your own way.; existing cards; a short static Choose your playstyle instruction above the Begin adventure button. No changing Selected: ... footer sentence. The native card glow/Selected label and active primary button already communicate selection. Preserve existing sizes, spacing and the large gap above the cards. Russian copy addresses the player informally: Читай задания. Исследуй мир. Найди свой путь.; Выбери свой стиль игры. All locales receive the same roles. The owner likes custom circular illustrations shown in generated concepts, but custom assets are not integrated; runtime icons remain native. A one-time reintroduction for existing users was proposed separately and is not implemented.
+
+The owner tested the earlier automatic-opening fix in Forever and confirmed the chooser appears immediately after world loading without an observed delay. Record that startup test as approved; the latest text composition still needs visual review. The draft PR includes deferred upgrade chat and these localized copy changes, with no new release request.
 
 ## Maintenance policy
 

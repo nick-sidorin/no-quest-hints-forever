@@ -67,9 +67,11 @@ for _,locale in ipairs({"enUS","enGB","ruRU","deDE","frFR","esES","esMX","itIT",
     if locale=="frFR" then assert(current.WELCOME_APPLY=="Commencer l'aventure") end
 end
 
--- Welcome identifies the addon; the existing second line carries the selection
--- instruction so localization never introduces a third header row.
+-- Two header lines identify the addon and carry the slogan. The short static
+-- instruction sits below the cards without repeating the primary action.
 assert(english.WELCOME_TITLE=="Welcome to No Quest Hints")
-assert(english.WELCOME_SUBTITLE=="Choose your adventure")
+assert(english.WELCOME_SUBTITLE=="Read the quest. Explore the world. Find your own way.")
+assert(english.WELCOME_SELECT=="Choose your playstyle")
 assert(russian.WELCOME_TITLE=="Добро пожаловать в No Quest Hints")
-assert(russian.WELCOME_SUBTITLE=="Выберите своё приключение")
+assert(russian.WELCOME_SUBTITLE=="Читай задания. Исследуй мир. Найди свой путь.")
+assert(russian.WELCOME_SELECT=="Выбери свой стиль игры")
