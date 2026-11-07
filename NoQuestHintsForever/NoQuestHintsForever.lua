@@ -567,11 +567,33 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     end
 end
 
+-- PLAYER_LOGIN precedes the loading screen finishing and startup UI cleanup.
+-- Present the automatic chooser only after that transition, outside the native
+-- event stack. Keep the saved pending flag independent from session visibility.
+local worldLoaded, welcomeQueued = false, false
+local function queueWelcome()
+    if welcomeQueued or loggingOut then return end
+    welcomeQueued = true
+    local function showAfterLoad()
+        welcomeQueued = false
+        if not loggingOut and worldLoaded and type(api.MaybeShowWelcome) == "function" then
+            api.MaybeShowWelcome()
+        end
+    end
+    if C_Timer and type(C_Timer.After) == "function" then
+        C_Timer.After(0, showAfterLoad)
+    else
+        showAfterLoad()
+    end
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_LOGOUT")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:RegisterEvent("LOADING_SCREEN_ENABLED")
+frame:RegisterEvent("LOADING_SCREEN_DISABLED")
 frame:RegisterEvent("CVAR_UPDATE")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("SUPER_TRACKING_CHANGED")
@@ -599,7 +621,11 @@ frame:SetScript("OnEvent", function(_, event, changed)
         end
         updateTracker()
         updateQuestNPCNames()
-        if type(api.MaybeShowWelcome) == "function" then api.MaybeShowWelcome() end
+    elseif event == "LOADING_SCREEN_ENABLED" then
+        worldLoaded = false
+    elseif event == "LOADING_SCREEN_DISABLED" then
+        worldLoaded = true
+        queueWelcome()
     elseif event == "PLAYER_ENTERING_WORLD" then
         enforceMapHints()
         updateTracker()
@@ -621,6 +647,6 @@ frame:SetScript("OnEvent", function(_, event, changed)
         enforceMapHints()
     elseif event == "PLAYER_REGEN_ENABLED" then
         updateTracker()
-        if type(api.MaybeShowWelcome) == "function" then api.MaybeShowWelcome() end
+        if worldLoaded then queueWelcome() end
     end
 end)

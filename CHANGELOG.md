@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Defer automatic onboarding until the loading screen has finished, then open it outside the loading event stack. Preserve explicit pending state, combat retry and once-per-session dismissal. Fix the reported case where `pending=true, complete=false` survived a full restart but no chooser appeared.
+
 ## [1.4.0] — 2026-11-07
 
 - Choose **As in Blizzard**, **Immersion** or **Full immersion** in a native three-card onboarding window. Changes apply only after confirmation; existing characters keep their preferences. Reopen it with `/nqh welcome`.

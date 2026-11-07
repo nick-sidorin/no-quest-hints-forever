@@ -65,7 +65,7 @@ Restart the game or use `/reload` if you're updating an existing installation. E
 
 ### First run and playstyles (1.4.0)
 
-A new character sees three realm-rule-style cards, with native game icons and circular portraits:
+After the loading screen finishes, a new character sees three realm-rule-style cards, with native game icons and circular portraits:
 
 | Playstyle | Features enabled |
 | --- | --- |
@@ -298,3 +298,5 @@ See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 *The world is more interesting when you have to find your own way.*
 
 Bag-border smoke test: enable **Bags → Hide quest item borders**, move quest and ordinary items between individual/combined native bags, obtain/complete a quest and reload. Quest borders should disappear; quality/new-item overlays and quest-start exclamation marks should remain. Disable or restore to recover original alpha/visibility. Check combat-end retry. Custom bag overlays require separate compatibility work.
+
+To test automatic first-run presentation on an existing character, run `/run NoQuestHintsForeverChar.onboardingComplete=false; ReloadUI()`. This preserves the checkbox configuration and reopens the chooser after loading; choices change only after confirmation. `pending=true, complete=false` means setup is incomplete, whether the chooser is visible or awaiting a safe opening time.

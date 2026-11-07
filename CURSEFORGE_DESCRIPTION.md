@@ -49,7 +49,7 @@ Select **Hide hint** when you no longer need help. You can reveal multiple quest
 
 ## 🌍 Choose Your Adventure
 
-Choose a playstyle on first setup, or reopen the chooser with `/nqh welcome`:
+After the loading screen finishes, choose a playstyle on first setup, or reopen the chooser with `/nqh welcome`:
 
 - **As in Blizzard:** keep your current game settings; nothing is hidden.
 - **Immersion:** hide the five forms of quest guidance.
