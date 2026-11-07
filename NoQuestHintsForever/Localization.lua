@@ -1,6 +1,12 @@
 -- Display-language strings. English is the fallback for unsupported locales.
 -- Keep keys shared between the slash commands, native UI and quest menus.
 local en = {
+    QUEST_LEVELS = "Hide quest levels",
+    QUEST_LEVELS_DESC = "Remove the numeric [level] prefix from native quest journal and tracker titles. Quest levels, rewards and difficulty remain unchanged.",
+    QUEST_DIFFICULTY = "Hide difficulty colors",
+    QUEST_DIFFICULTY_DESC = "Use ordinary yellow quest titles instead of level-based green, orange or red. Separate from hiding the numeric level; disabled in all playstyles unless enabled manually.",
+    LEVELS_STATUS = "Hide quest levels: ",
+    DIFFICULTY_STATUS = "Hide quest difficulty colors: ",
     QUEST_HINTS_GROUP = "Quest hints",
     ADDITIONAL_GROUP = "Item prices",
     MANAGE_GROUP = "Playstyle and restoration",
@@ -17,7 +23,7 @@ local en = {
     PRESET_IMMERSION = "Immersion",
     PRESET_IMMERSION_DESC = "Hide quest guidance. Read the quests and find your own way.",
     PRESET_FULL = "Full immersion",
-    PRESET_FULL_DESC = "Everything in Immersion, plus hidden item sell prices outside trading.",
+    PRESET_FULL_DESC = "Everything in Immersion, plus hidden quest levels and item sell prices outside trading.",
     WELCOME_FOOTER = "Need help? Reveal a hint for an individual quest. You can change any option later.",
     WELCOME_READY = "Selected: %s. Begin your adventure when you are ready.",
     WELCOME_SELECTED = "Selected",
@@ -60,6 +66,12 @@ local en = {
     VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
+    QUEST_LEVELS = "Скрывать уровень заданий",
+    QUEST_LEVELS_DESC = "Убирает числовой [уровень] из заголовков заданий в журнале и трекере. Уровень, награды и сложность самих заданий не меняются.",
+    QUEST_DIFFICULTY = "Скрывать цвет сложности",
+    QUEST_DIFFICULTY_DESC = "Делает заголовки заданий обычными жёлтыми вместо зелёных, оранжевых и красных по сложности. Не зависит от скрытия числового уровня; включается только вручную.",
+    LEVELS_STATUS = "Скрывать уровень заданий: ",
+    DIFFICULTY_STATUS = "Скрывать цвет сложности: ",
     QUEST_HINTS_GROUP = "Подсказки заданий",
     ADDITIONAL_GROUP = "Цены предметов",
     MANAGE_GROUP = "Стиль игры и восстановление",
@@ -76,7 +88,7 @@ local ru = {
     PRESET_IMMERSION = "Погружение",
     PRESET_IMMERSION_DESC = "Квестовые подсказки скрыты. Читайте задания и находите путь самостоятельно.",
     PRESET_FULL = "Полное погружение",
-    PRESET_FULL_DESC = "Всё из «Погружения» и скрытие цен продажи предметов вне торговли.",
+    PRESET_FULL_DESC = "Всё из «Погружения», без числовых уровней заданий и цен вне торговли.",
     WELCOME_FOOTER = "Нужна помощь? Подсказку отдельного задания можно вернуть. Любая настройка доступна позже.",
     WELCOME_READY = "Выбрано: %s. Начните приключение, когда будете готовы.",
     WELCOME_SELECTED = "Выбрано",

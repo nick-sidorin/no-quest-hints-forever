@@ -24,6 +24,10 @@ local controls = {
       "IsQuestProgressHidden", "SetQuestProgressHidden" },
     { "NQH_HIDE_AUCTION_SELL_PRICES", "AUCTION_PRICES", "AUCTION_PRICES_DESC",
       "IsAuctionSellPriceHidden", "SetAuctionSellPriceHidden" },
+    { "NQH_HIDE_QUEST_LEVELS", "QUEST_LEVELS", "QUEST_LEVELS_DESC",
+      "IsQuestLevelsHidden", "SetQuestLevelsHidden" },
+    { "NQH_HIDE_QUEST_DIFFICULTY", "QUEST_DIFFICULTY", "QUEST_DIFFICULTY_DESC",
+      "IsQuestDifficultyHidden", "SetQuestDifficultyHidden" },
 }
 
 function api.RefreshOptions()
@@ -55,7 +59,7 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 2, 3, 4, 6, 5, 7 }
+    local order = { 1, 2, 3, 4, 6, 8, 9, 5, 7 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end
