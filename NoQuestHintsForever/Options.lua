@@ -58,6 +58,15 @@ local function registerCategory()
             layout:AddInitializer(CreateSettingsButtonInitializer("", text, callback, tooltip, true))
         end
     end
+    heading(L.MANAGE_GROUP)
+    button(L.CHOOSE_PLAYSTYLE, function()
+        if api.ShowWelcome then api.ShowWelcome() end
+    end, L.CHOOSE_PLAYSTYLE_DESC)
+    button(L.RESTORE_BUTTON, function()
+        local restored = api.RestoreGameSettings()
+        print("|cff80c0ffNo Quest Hints|r: " .. (restored and L.RESTORED or L.RESTORE_PENDING))
+    end, L.RESTORE_DESC)
+
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
@@ -80,15 +89,6 @@ local function registerCategory()
             end)
         Settings.CreateCheckbox(newCategory, setting, L[item[3]] or "")
     end
-
-    heading(L.MANAGE_GROUP)
-    button(L.CHOOSE_PLAYSTYLE, function()
-        if api.ShowWelcome then api.ShowWelcome() end
-    end, L.CHOOSE_PLAYSTYLE_DESC)
-    button(L.RESTORE_BUTTON, function()
-        local restored = api.RestoreGameSettings()
-        print("|cff80c0ffNo Quest Hints|r: " .. (restored and L.RESTORED or L.RESTORE_PENDING))
-    end, L.RESTORE_DESC)
 
     Settings.RegisterAddOnCategory(newCategory)
     category = newCategory

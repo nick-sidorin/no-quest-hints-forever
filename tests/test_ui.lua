@@ -391,13 +391,13 @@ assert(lateFrame:GetAlpha() == 0, "late objective tracker not hidden")
 io.write("PASS: native vertical Settings controls/tooltips, independent options, tracker hooks, reload and alts\n")
 
 local category = localized.panels[1]
-assert(category.rows[1].header == "Подсказки заданий")
-assert(category.rows[2].header == "Цены предметов")
-assert(category.rows[3].header == "Сумки"
-    and category.rows[4].header == "Стиль игры и восстановление")
+assert(category.rows[1].header == "Стиль игры и восстановление")
+assert(type(category.rows[2].click) == "function" and type(category.rows[3].click) == "function")
+assert(category.rows[4].header == "Подсказки заданий")
+assert(category.rows[5].header == "Цены предметов")
+assert(category.rows[6].header == "Сумки")
 assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
 assert(localized.checks[8].setting.variable == "NQH_HIDE_SELL_PRICES")
-assert(type(category.rows[5].click) == "function" and type(category.rows[6].click) == "function")
 
 local reset = session({}, {}, true, true)
 local notifications = {}

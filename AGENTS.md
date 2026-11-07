@@ -68,3 +68,5 @@ Repository-wide instructions for contributors and coding agents. Before substant
 
 - The owner approved PR #20 in Forever and explicitly requested its squash merge on 2026-11-07. New bag-border concealment is a **separate PR**, OFF in every preset, with an equal-rank checkbox in **Bags**. Restore/defaults turn it OFF; reload preserves manual choices.
 - Target native carried-bag `IconQuestTexture` borders only. Preserve quest-start exclamation marks, quality/new-item overlays, native Show/Hide state and original alpha. Cover actual pooled button methods, new slots/late UI and combat-end restoration. Do not promise compatibility with custom bag overlays without verification.
+
+- Keep **Playstyle and restoration** first in native Settings, with both existing buttons, above Quest hints, Item prices and Bags. The owner confirmed the bag preview works and explicitly chose to leave Baganator/custom bag highlighting under those addons' control; do not add compatibility hooks for them.

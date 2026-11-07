@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Move the entire Playstyle and restoration section above individual checkboxes so both actions are immediately accessible when opening Settings.
+
 - Add an optional **Bags → Hide quest item borders** checkbox, localized in ruRU/enUS, saved per character and OFF in every preset. Hide only native carried-bag quest borders; preserve quest-start markers, quality/new-item overlays and Blizzard visibility. Restore original alpha on disable/restore or slot reuse, defer in combat and cover pooled/late-loaded bags. Custom bag overlays are outside this initial integration.
 
 - Keep difficulty-color concealment active during hover in the large quest journal by appending handlers to actual pooled row scripts; XML-bound function references can bypass global-name hooks. Cover enter/leave, new rows, single registration and native behavior after disabling.

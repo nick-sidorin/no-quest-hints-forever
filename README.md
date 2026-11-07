@@ -81,7 +81,7 @@ Reopen the cards with **Choose playstyle** in the addon settings. Applying a pla
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
 - Or open **Esc → Options → AddOns → No Quest Hints** yourself. All ten checkboxes live directly on that page; no separate popup window.
 
-The native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**, plus one manual option under **Bags**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
+The **Playstyle and restoration** section appears first, with both playstyle selection and restore buttons. Below it, the native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**, plus one manual option under **Bags**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
