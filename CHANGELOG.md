@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Keep difficulty-color concealment active during hover in the large quest journal by appending handlers to actual pooled row scripts; XML-bound function references can bypass global-name hooks. Cover enter/leave, new rows, single registration and native behavior after disabling.
+
 - Fix ghost tracker hover/click areas by disabling input on tracker descendants as well as its root, including newly pooled blocks. Restore original click/motion/wheel flags individually, release detached children and defer protected writes until combat ends.
 - Add independent numeric quest-level and difficulty-color controls for native journal/tracker titles. Preserve actual title content and party counts, defer post-hook updates, and restore native text/colors. Full immersion hides numeric levels but leaves difficulty colors and auction values visible; other playstyles leave both presentation controls OFF.
 - Consolidate English contributor/product documentation with merged PR #19; retain ruRU/enUS UI localization and all current owner decisions. Expand regression coverage to thirteen suites.

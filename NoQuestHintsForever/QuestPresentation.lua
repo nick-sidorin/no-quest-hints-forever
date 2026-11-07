@@ -5,6 +5,8 @@ local api = NoQuestHintsForeverAPI
 if not api then return end
 local records = setmetatable({}, { __mode = "k" })
 local hooked, queued = {}, false
+local journalScripts = setmetatable({}, { __mode = "k" })
+local queue
 
 local function inCombat()
     return type(InCombatLockdown) == "function" and InCombatLockdown()
@@ -115,6 +117,17 @@ local function apply(font, owner, hideLevels, hideDifficulty)
     record.lastText, record.lastColor = call(font.GetText, font), color(font)
 end
 
+local function hookJournalScripts(button)
+    if type(button.HookScript) ~= "function" then return end
+    local scripts = journalScripts[button] or {}
+    journalScripts[button] = scripts
+    -- XML rows can retain pre-hook function references. Append to the actual
+    -- frame scripts too, rather than relying solely on global-name hooks.
+    for _, event in ipairs({ "OnEnter", "OnLeave" }) do
+        if not scripts[event] then scripts[event] = pcall(button.HookScript, button, event, queue) end
+    end
+end
+
 local function refresh()
     if inCombat() then return end
     local levels = api.IsQuestLevelsHidden() == true
@@ -124,6 +137,7 @@ local function refresh()
         and type(QuestScrollFrame.titleFramePool.EnumerateActive) == "function" then
         for button in QuestScrollFrame.titleFramePool:EnumerateActive() do
             if not (button.info and button.info.isHeader) then
+                hookJournalScripts(button)
                 apply(button.Text, button, levels, difficulty)
                 apply(button.TagText, button, false, difficulty)
             end
@@ -142,7 +156,7 @@ local function refresh()
     end
 end
 
-local function queue()
+queue = function()
     if queued or (not api.IsQuestLevelsHidden() and not api.IsQuestDifficultyHidden() and not next(records)) then return end
     if C_Timer and type(C_Timer.After) == "function" then
         queued = true

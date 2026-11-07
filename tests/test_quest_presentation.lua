@@ -39,6 +39,16 @@ QuestLogQuests_Update=function()
 end
 QuestMapLogTitleButton_OnEnter=function(button) button.Text.rgba={1,0.4,0,1} end
 QuestMapLogTitleButton_OnLeave=function(button) button.Text.rgba={0,1,0,1} end
+-- XML binds these function references when the row is created, BEFORE our
+-- global-name hooks are installed. Calling the global directly is insufficient.
+local xmlEnter,xmlLeave=QuestMapLogTitleButton_OnEnter,QuestMapLogTitleButton_OnLeave
+journal.scripts={OnEnter=xmlEnter,OnLeave=xmlLeave}
+journal.scriptHooks={}
+function journal:HookScript(event, fn)
+ self.scriptHooks[event]=(self.scriptHooks[event] or 0)+1
+ local original=self.scripts[event]
+ self.scripts[event]=function(...) if original then original(...) end;fn(...) end
+end
 ObjectiveTrackerBlockMixin={SetHeader=function() end,UpdateHighlight=function() end}
 hooksecurefunc=function(owner,name,fn)
  hookCount=hookCount+1
@@ -69,6 +79,21 @@ levels=false;difficulty=true;api.RefreshQuestPresentation();flush()
 assert(journal.Text.text=="[2] [14+] Example [14] title", "color-only setting removed numeric level")
 assert(tracked.HeaderText.text=="[16] Red quest" and journal.Text.rgba[1]==1 and journal.Text.rgba[2]==0.82)
 assert(journal.TagText.rgba[2]==0.82 and header.Text.rgba[2]==1)
+journal.scripts.OnEnter(journal);flush()
+assert(journal.Text.rgba[2]==0.82,"XML-bound journal hover bypassed difficulty concealment")
+journal.scripts.OnLeave(journal);flush()
+assert(journal.Text.rgba[2]==0.82,"XML-bound journal leave bypassed difficulty concealment")
+assert(journal.scriptHooks.OnEnter==1 and journal.scriptHooks.OnLeave==1,
+ "pooled journal row scripts must be hooked once")
+-- Rows acquired after the first pass use the same XML-bound references.
+local added={questID=3,info=info[3],Text=font("[2] Reused title",0,1,0),TagText=font("",0,1,0),
+ scripts={OnEnter=xmlEnter,OnLeave=xmlLeave},scriptHooks={},HookScript=journal.HookScript}
+buttons[#buttons+1]=added
+QuestLogQuests_Update();flush()
+added.scripts.OnEnter(added);flush()
+assert(added.Text.rgba[2]==0.82,"newly acquired journal row leaked hover difficulty")
+added.scripts.OnLeave(added);flush()
+assert(added.Text.rgba[2]==0.82 and added.scriptHooks.OnEnter==1 and added.scriptHooks.OnLeave==1)
 QuestMapLogTitleButton_OnEnter(journal);flush()
 assert(journal.Text.rgba[2]==0.82,"hover leaked difficulty color")
 levels=true;api.RefreshQuestPresentation();flush()
@@ -79,6 +104,11 @@ assert(journal.Text.rgba[2]==0.4,"original native hover color not restored")
 assert(tracked.HeaderText.text=="|cffff0000[16] Red quest|r")
 QuestMapLogTitleButton_OnLeave(journal)
 assert(journal.Text.rgba[2]==1)
+journal.scripts.OnEnter(journal);flush()
+assert(journal.Text.rgba[2]==0.4,"disabled concealment suppressed native row hover")
+journal.scripts.OnLeave(journal);flush()
+assert(journal.Text.rgba[2]==1 and added.Text.rgba[2]==1)
+assert(journal.scriptHooks.OnEnter==1 and journal.scriptHooks.OnLeave==1)
 -- A party count equal to the level must remain; remove the rightmost level
 -- decoration before the real title, never every bracketed number.
 journal.questID=3;journal.info=info[3];journal.Text.text="[2] [2] Reused title"

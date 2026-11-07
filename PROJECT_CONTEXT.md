@@ -114,6 +114,10 @@ These additions expand pending #20 to nine equal-rank controls: seven under Ques
 - **[Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3)** reports recurrent `ADDON_ACTION_BLOCKED` naming NoQuestHintsForever around the map/quest journal. The triggering interaction and root cause remain unconfirmed; collect preceding action, combat status and `taint.log` before changing hooks. No mock test proves the error resolved.
 - **[Main protection ruleset](https://github.com/nick-sidorin/no-quest-hints-forever/rules/26724884)** is active and specifies PRs, squash merges, linear history and no bypass; however, its `required_status_checks` list was **empty** at review time even though PRs run a `build` job. Confirm/configure the actual mandatory check separately; do not mistake a green job for an enforced merge gate.
 
+### Journal hover regression
+
+The owner tested the combined preview and reported that difficulty color reappeared specifically on hover in the large quest journal; the tracker was unaffected. The regression fixture now binds enter/leave references before hook installation, matching XML row creation, and reproduced the leak missed by direct-global-call tests. Actual pooled journal rows now receive idempotent HookScript enter/leave callbacks that queue the existing presentation refresh. Newly acquired rows are covered; native hover/colors return after the option is disabled. This is a journal-only change, without global FontString hooks or tracker modifications. Verify hover/leave and new quest rows in the client.
+
 ### Current integration handoff
 
 English documentation **PR #19 was reviewed, reconciled with the owner's recent decisions and squash-merged** at `9488685c0661f73f04691aa49899f92e83c7c9a2`, after green final-head CI. This branch includes those canonical English files and the above tracker/title follow-ups; it must not restore older Russian documentation.
