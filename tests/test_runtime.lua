@@ -67,7 +67,7 @@ for _, name in ipairs(names) do values[name] = "1" end
 
 local run, event, writes = createSession(a, shared, values, true)
 assert(a.enabled == nil and #writes == 0, "OFF by default must not change CVars")
-run("on")
+NoQuestHintsForeverAPI.SetMapHidden(true)
 assert(a.enabled == true, "ON not saved per character")
 for _, name in ipairs(names) do assert(values[name] == "0", "not hidden: " .. name) end
 assert(shared.original.showInGameNavigation == "1", "shared original wasn't saved")
@@ -82,7 +82,7 @@ assert(values.questPOI == "0", "ON did not re-enforce")
 run, event = createSession(a, shared, values, true)
 assert(a.enabled == true, "ON did not survive reload")
 run("status")
-run("off")
+NoQuestHintsForeverAPI.SetMapHidden(false)
 assert(a.enabled == false, "OFF did not save to the loaded character DB")
 for _, name in ipairs(names) do
     assert(values[name] == "1", "OFF after reload did not restore " .. name)
@@ -99,7 +99,7 @@ assert(values.questPOI == "1", "OFF still enforces after reload")
 
 -- Enable again, switch to a fresh second character: only shared CVar
 -- suppression is reverted on the OFF character.
-run("on")
+NoQuestHintsForeverAPI.SetMapHidden(true)
 for _, name in ipairs(names) do assert(values[name] == "0", "not hidden on re-enable") end
 local b = {}
 for _, name in ipairs(names) do
@@ -118,7 +118,7 @@ for _, name in ipairs(names) do
 end
 run, event = createSession(a, shared, values, true)
 assert(a.enabled == true, "main character lost ON")
-run("off")
+NoQuestHintsForeverAPI.SetMapHidden(false)
 for _, name in ipairs(names) do
     assert(values[name] == "1", "main character OFF could not restore " .. name)
 end
@@ -127,7 +127,7 @@ end
 values.questPOILocalStory = nil
 run, event = createSession({}, {}, values, false)
 run("status")
-run("on")
+NoQuestHintsForeverAPI.SetMapHidden(true)
 assert(values.questPOI == "0", "fallback on missing info API failed")
 
 io.write("PASS: SavedVariables load order, reload->off, per-character settings, re-enforcement and unavailable APIs\n")

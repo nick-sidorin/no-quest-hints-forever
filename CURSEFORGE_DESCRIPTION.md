@@ -1,5 +1,7 @@
 # CurseForge — No Quest Hints
 
+> **Development draft for unreleased 1.4.0. Do not publish this description before the version is verified and released.**
+
 > **Maintainer note (not part of the public description):** This is the source of truth for the CurseForge project page. Copy the **Short description** and **Full description** sections into the corresponding CurseForge fields when releasing. Update this file in the release PR whenever user-facing features or compatibility notes change. The file is documentation, not part of the installed addon.
 
 ## Short description
@@ -27,7 +29,7 @@ Six independent, optional settings:
 - 💰 **Hide Item Sell Prices** — Discover what your loot is worth only when you visit a merchant.
 - 🔕 **Hide Quest Progress Popups** — Remove yellow objective counters and completion messages without hiding other game notifications.
 
-**All settings are independent, saved per character, and disabled by default.**
+**All settings are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
 
 ## 🧭 Need Help? Reveal Just One Quest.
 
@@ -48,18 +50,27 @@ Select **Hide hint** when you no longer need help. You can reveal multiple quest
 
 **No external quest database. No replacement markers. Just Blizzard's own guidance, under your control.**
 
+## 🌍 Choose Your Adventure
+
+On your first visit with a new character, choose a playstyle:
+
+- **As in Blizzard:** keep your game settings; nothing is hidden.
+- **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
+- **Full immersion:** hide quest guidance and discover item sell prices only at a merchant.
+
+Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
+
 ## ⚙️ Settings
 
-Open the settings window with `/nqh` or through **Options → AddOns → No Quest Hints**.
+Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints** and **Additional immersion**, with explanations on hover.
 
 | Command | Action |
 |---|---|
 | `/nqh` | Open addon settings |
-| `/nqh on` | Hide default quest map hints |
-| `/nqh off` | Restore default quest map hints |
+| `/nqh restore` | Turn off all features and restore saved original game settings |
 | `/nqh status` | Show current settings |
 
-The `on` and `off` commands affect map hints only. All other options have their own checkboxes.
+**Before disabling or removing the addon**, use **Restore game settings** or `/nqh restore`. This restores your saved personal settings, rather than resetting all of Blizzard’s options. If already removed and settings remain changed, reinstall with saved settings intact and run the restore command. The older map-only `on`/`off` commands have been removed.
 
 ## ℹ️ Good to Know
 

@@ -49,7 +49,7 @@ local api=NoQuestHintsForeverAPI
 api.IsQuestNavigationAllowed=function()
     return char.revealedQuests[C_SuperTrack.current] == true
 end
-SlashCmdList.NOQUESTHINTSFOREVER("on")
+api.SetMapHidden(true)
 for _,name in ipairs(names) do
     assert(values[name]=="0","expected map hints off: "..name)
 end
@@ -71,7 +71,7 @@ assert(values.showInGameNavigation=="1","navigation not reenabled for second all
 char.revealedQuests[200]=nil
 api.RefreshNavigation()
 assert(values.showInGameNavigation=="0","navigation not hidden on permission removal")
-SlashCmdList.NOQUESTHINTSFOREVER("off")
+api.SetMapHidden(false)
 assert(char.enabled==false)
 for _,name in ipairs(names) do
     assert(values[name]=="1","OFF failed to restore original "..name)
