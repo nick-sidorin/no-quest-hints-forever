@@ -32,7 +32,7 @@ The addon leaves the geographical map, quest descriptions, quest-giver exclamati
 
 ### Installation
 
-Download the installable ZIP (from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions) for unreleased test builds or from [GitHub Releases](https://github.com/nick-sidorin/no-quest-hints-forever/releases) for published versions). Copy the `NoQuestHintsForever/` folder into your Forever client's `Interface/AddOns/` directory:
+Download the installable ZIP (from [GitHub Actions](https://github.com/nick-sidorin/no-quest-hints-forever/actions) for unreleased test builds or from [GitHub Releases](https://github.com/nick-sidorin/no-quest-hints-forever/releases) for published versions). Test artifact downloads contain the addon folder directly, with no nested ZIP. Copy the `NoQuestHintsForever/` folder into your Forever client's `Interface/AddOns/` directory:
 
 ```text
 World of Warcraft/

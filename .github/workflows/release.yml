@@ -64,7 +64,24 @@ jobs:
           set -euo pipefail
           python3 scripts/package_addon.py "dist/$FILENAME"
 
+      # GitHub wraps artifacts in a ZIP itself. For test builds upload the
+      # verified addon folder so the download is directly installable.
+      - name: Prepare single-ZIP test download
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          FILENAME: ${{ steps.version.outputs.filename }}
+        run: python3 -m zipfile -e "dist/$FILENAME" dist/installable
+
       - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        with:
+          name: NoQuestHintsForever-v${{ steps.version.outputs.version }}
+          path: dist/installable/
+          if-no-files-found: error
+
+      # Tagged releases still transfer the canonical ZIP to the release job.
+      - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: addon-${{ steps.version.outputs.version }}
           path: dist/*.zip
