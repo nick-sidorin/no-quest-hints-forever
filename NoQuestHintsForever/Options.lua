@@ -28,6 +28,8 @@ local controls = {
       "IsQuestLevelsHidden", "SetQuestLevelsHidden" },
     { "NQH_HIDE_QUEST_DIFFICULTY", "QUEST_DIFFICULTY", "QUEST_DIFFICULTY_DESC",
       "IsQuestDifficultyHidden", "SetQuestDifficultyHidden" },
+    { "NQH_HIDE_QUEST_ITEM_HIGHLIGHT", "ITEM_HIGHLIGHT", "ITEM_HIGHLIGHT_DESC",
+      "IsQuestItemHighlightHidden", "SetQuestItemHighlightHidden" },
 }
 
 function api.RefreshOptions()
@@ -59,10 +61,11 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 2, 3, 4, 6, 8, 9, 5, 7 }
+    local order = { 1, 2, 3, 4, 6, 8, 9, 5, 7, 10 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end
+        if index == 10 then heading(L.BAGS_GROUP) end
         -- Do not store copied state in the Settings framework. Getters read the
         -- active character's SavedVariables on every access; setters delegate
         -- to the existing routines that update Blizzard UI immediately.

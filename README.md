@@ -14,13 +14,14 @@ Remember when finding a quest objective meant reading the description, looking a
 
 > **Development preview:** The onboarding, restoration and grouped native settings below belong to unreleased **v1.4.0**. Stable **v1.3.0** still uses the original separate settings window until a new release is tested and published.
 
-Six **independent, per-character** options:
+**Independent, per-character** options:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
 - **Hide quest NPC names:** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
 - **Item prices:** Two independent controls hide the native vendor SellPrice line **outside trading** and **at auction**. Merchants always show prices. These controls do not change actual prices, stats, trading mechanics or separate price overlays from other addons.
+- **Hide quest item borders (optional):** Hide the yellow quest-item border in native bags. Preserve item quality, new-item highlights and quest-start exclamation marks. OFF in every playstyle; enable manually under **Bags**. Custom bag addons may draw their own borders.
 - **Hide quest levels:** Remove the native numeric `[level]` prefix from quest titles in the journal and tracker, preserving real quest names and party-member counts.
 - **Hide difficulty colors:** Use normal yellow quest titles instead of difficulty-based green/orange/red. Independent of numeric levels; enabled only manually.
 - **Hide quest progress popups:** Suppress the six native yellow quest objective progress/completion messages while preserving ordinary status messages and red combat/UI errors. Uses Blizzard `UIErrorsFrame:SetMessageTypeEnabled` and original visibility restoration instead of parsing translated strings.
@@ -52,8 +53,9 @@ World of Warcraft/
                 ├── QuestHintPins.xml
                 ├── QuestInlineHints.lua
                 ├── QuestPresentation.lua     # Numeric title levels and difficulty-color filtering
-├── QuestTooltips.lua
+                ├── QuestTooltips.lua
                 ├── SellPrices.lua
+                ├── QuestItemHighlight.lua   # Optional native bag quest borders
                 ├── QuestProgressMessages.lua
                 └── LICENSE
 ```
@@ -72,14 +74,14 @@ A new character sees three realm-rule-style cards, with native game icons and ci
 
 Clicking a card only selects it. **Begin adventure** confirms the choice. Closing the window, choosing **Later**, or opening **Customize settings…** applies no preset. An unfinished first run reappears on the next login; editing a checkbox completes setup. Existing characters keep their saved choices and do not see onboarding after upgrading.
 
-Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the nine checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Choices are saved per character.
+Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the ten checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
 
 ### Open settings
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
-- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All nine checkboxes live directly on that page; no separate popup window.
+- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All ten checkboxes live directly on that page; no separate popup window.
 
-The native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
+The native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**, plus one manual option under **Bags**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
@@ -88,6 +90,7 @@ The native Blizzard settings category groups seven checkboxes under **Quest hint
 | Hide quest hints in tooltips | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
 | Hide quest NPC names | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
 | Hide outside trading | Hide native vendor sell values when neither a merchant nor auction house is open | Off |
+| Hide quest item borders | Hide yellow quest-item borders in native carried bags; preserve quest-start markers | Off |
 | Hide quest levels | Remove numeric level decoration in native journal/tracker titles | Off |
 | Hide difficulty colors | Render quest titles in normal yellow instead of difficulty colors | Off |
 | Hide at auction | Hide native vendor sell values while the auction house is open | Off |
@@ -104,14 +107,14 @@ The second option is independent of the first: you can keep the task list while 
 | Command | What it does |
 | --- | --- |
 | `/nqh` | Open the native Blizzard AddOns settings category. |
-| `/nqh restore` | Turn off all nine hiding controls and restore saved pre-addon game settings. |
-| `/nqh status` | Display all nine checkbox states and targeted CVars. |
+| `/nqh restore` | Turn off all ten hiding controls and restore saved pre-addon game settings. |
+| `/nqh status` | Display all ten checkbox states and targeted CVars. |
 
 The ambiguous map-only `on`/`off` commands have been removed in this preview. They now show command help without changing anything.
 
 ### Restoring settings before disabling or removing the addon
 
-Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All nine hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All nine checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
+Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All ten hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All ten checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
 
 At normal logout or `/reload` the addon also attempts to restore the persistent CVars, without turning off your saved preferences. At the next login with the addon enabled it reapplies those preferences. Failed writes retain their backups for a later restore; an incomplete explicit restore reports that it needs another attempt. A tracker mouse change may wait until combat ends.
 
@@ -142,7 +145,7 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, nine equal-rank `Settings.RegisterProxySetting` values (seven quest controls and two independent price contexts) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, ten equal-rank `Settings.RegisterProxySetting` values (seven quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
 
 ### Quest title presentation
@@ -229,8 +232,8 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 
 ## Validation checklist for Forever 1.4.0 preview
 
-1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing seven quest checkboxes and two equal-rank item price checkboxes (no floating window).
-2. Open the same category manually from the AddOns list: all nine controls must appear directly in the page; hover each to see its explanation without a permanent description line.
+1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing seven quest checkboxes, two equal-rank item price checkboxes and one bag checkbox (no floating window).
+2. Open the same category manually from the AddOns list: all ten controls must appear directly in the page; hover each to see its explanation without a permanent description line.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
 5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
@@ -250,7 +253,7 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 19. On a fresh character, verify three cards, round icons, readable ruRU/enUS text and layout at different UI scales. Selecting a card or closing the window must not change settings. No default card is selected.
 20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them outside trading while keeping the auction control OFF. Then enable Hide at auction manually to check strict RP. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
 21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.
-22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all nine checkbox effects are off and the original values return. Restore twice; try while in combat and finish after combat.
+22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all ten checkbox effects are off and the original values return. Restore twice; try while in combat and finish after combat.
 23. Apply a preset, disable the addon and reload through the normal addon UI. Verify game settings remain restored without the addon. Re-enable it and verify your saved mode returns. Repeat with normal logout/relogin and switching characters. This client test is required before claiming automatic uninstall cleanup works.
 24. With the chooser open, move/click/scroll over background action bars, quests and screen edges: no background tooltip or action should occur. Test Esc, Later, Customize settings, confirmation and combat; the background must become interactive again when the chooser closes. Check the primary button label and the aligned secondary buttons in ruRU/enUS.
 25. Hide the tracker and hover/click/scroll across its former quest rows; no quest tooltip or quest action should fire. Add/track another quest while hidden, then restore the tracker and verify interaction returns. Test mixed input states, combat and existing tooltip dismissal.
@@ -280,3 +283,5 @@ See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 ---
 
 *The world is more interesting when you have to find your own way.*
+
+Bag-border smoke test: enable **Bags → Hide quest item borders**, move quest and ordinary items between individual/combined native bags, obtain/complete a quest and reload. Quest borders should disappear; quality/new-item overlays and quest-start exclamation marks should remain. Disable or restore to recover original alpha/visibility. Check combat-end retry. Custom bag overlays require separate compatibility work.
