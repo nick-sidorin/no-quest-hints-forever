@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Add a per-character **Show at auction** sub-option under item price hiding (default ON). Native vendor sell values are visible while a modern or legacy auction window is open; switch it OFF for stricter roleplay. Merchant prices remain visible. This is not an auction valuation. Preserve the preference across reloads, presets and restoration; add regression coverage for visibility, legacy frames and saved choices.
+
 - Make the chooser modal with a full-screen mouse/wheel shield; hide stale background tooltips and release input on every close path. Use a native gold/red three-slice primary button with centered text and two aligned native secondary buttons.
 
 - Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.

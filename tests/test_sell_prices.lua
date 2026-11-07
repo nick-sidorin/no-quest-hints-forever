@@ -1,9 +1,10 @@
--- Native SellPrice line filtering, with prices visible only at the vendor.
+-- Native SellPrice filtering: merchant visibility and optional auction exception.
 -- Run: lua5.1 tests/test_sell_prices.lua
 local addon = "NoQuestHintsForever/SellPrices.lua"
 
 local function session(initialHidden, delayed)
     local hidden = initialHidden
+    local showAtAuction, auctionVisible = true, false
     local handlers, registrations, eventFrame = {}, 0, nil
     local merchantVisible, merchantStyle = false, "visible"
 
@@ -13,6 +14,7 @@ local function session(initialHidden, delayed)
     }
     NoQuestHintsForeverAPI = {
         IsSellPriceHidden = function() return hidden end,
+        IsAuctionSellPriceShown = function() return showAtAuction end,
     }
 
     if delayed then
@@ -41,6 +43,11 @@ local function session(initialHidden, delayed)
         IsShown = function() return merchantVisible end,
     }
 
+    AuctionFrame = nil
+    AuctionHouseFrame = {
+        IsVisible = function() return auctionVisible end,
+        IsShown = function() return auctionVisible end,
+    }
     assert(loadfile(addon))()
 
     local function hover(dataType, primary)
@@ -62,6 +69,9 @@ local function session(initialHidden, delayed)
         hover=hover,
         hidden=function(v) hidden=v end,
         merchant=function(v) merchantVisible=v end,
+        auction=function(v) auctionVisible=v end,
+        showAtAuction=function(v) showAtAuction=v end,
+        auctionFrame=function(frame) AuctionHouseFrame=frame end,
         merchantFrame=function(v) MerchantFrame=v end,
         ready=function()
             TooltipDataProcessor={
@@ -104,6 +114,27 @@ assert(s.hover(0):find("Sell Price: 1g"),"older merchant IsShown fallback missin
 s.merchantFrame(nil)
 assert(s.hover(0)=="Item name|Item attributes","missing MerchantFrame should count as closed")
 
+s.auction(true)
+assert(s.hover(0):find("Sell Price: 1g"), "open auction should show vendor price by default")
+s.showAtAuction(false)
+assert(s.hover(0)=="Item name|Item attributes", "RP option must hide vendor prices even at auction")
+s.merchantFrame({IsVisible=function() return true end})
+assert(s.hover(0):find("Sell Price: 1g"), "auction preference must not hide merchant prices")
+s.merchantFrame(nil)
+s.showAtAuction(true); s.auction(false)
+assert(s.hover(0)=="Item name|Item attributes", "closing auction must hide prices again")
+s.auctionFrame(nil)
+assert(s.hover(0)=="Item name|Item attributes", "unloaded auction frame must count as closed")
+AuctionFrame={IsShown=function() return true end}
+assert(s.hover(0,true):find("Sell Price: 1g"), "legacy auction frame should allow native item prices")
+s.showAtAuction(false)
+assert(s.hover(0)=="Item name|Item attributes", "legacy auction exception must respect RP choice")
+AuctionFrame=nil; s.showAtAuction(true)
+s.auctionFrame({IsVisible=function() return false end, IsShown=function() return true end})
+assert(s.hover(0)=="Item name|Item attributes", "shown child of a hidden parent is not an open auction")
+s.auctionFrame({IsVisible=function() return true end})
+assert(s.hover(2):find("Sell Price: 1g") and s.hover(4):find("Sell Price: 1g"), "auction must not change non-item tooltips")
+
 s.hidden(false)
 assert(s.hover(0):find("Sell Price: 1g"),"turning option off must restore normal prices")
 
@@ -113,10 +144,12 @@ late.ready()
 assert(late.registrationCount()==1,"late tooltip initialization failed")
 assert(next(late.frame().events)==nil,"late event handler not removed")
 assert(late.hover(0)=="Item name|Item attributes")
+late.auction(true)
+assert(late.hover(0):find("Sell Price: 1g"), "late tooltip API must respect auction visibility")
 late.frame().onEvent(late.frame(),"PLAYER_LOGIN")
 assert(late.registrationCount()==1,"duplicate pre-hook on repeated load")
 
 local alt=session(false,false)
 assert(alt.hover(0):find("Sell Price: 1g"),"fresh character should show prices by default")
 
-io.write("PASS: merchant-only item sell prices, dynamic toggles, fallback, isolation, late loading\n")
+io.write("PASS: vendor prices at merchants, optional modern/legacy auction exception, RP opt-out, dynamic toggles and late loading\n")

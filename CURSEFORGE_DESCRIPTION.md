@@ -26,10 +26,10 @@ Six independent, optional settings:
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list without losing your journal or quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters when hovering over creatures and objects.
 - 🎯 **Hide Quest NPC Names** — Stop floating NPC names from revealing which creatures are quest targets.
-- 💰 **Hide Item Sell Prices** — Discover what your loot is worth only when you visit a merchant.
+- 💰 **Hide Item Sell Prices** — Hide vendor sell values outside trading, with an optional exception at the auction house.
 - 🔕 **Hide Quest Progress Popups** — Remove yellow objective counters and completion messages without hiding other game notifications.
 
-**All settings are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
+**The six main features are independent and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
 
 ## 🧭 Need Help? Reveal Just One Quest.
 
@@ -56,13 +56,15 @@ On your first visit with a new character, choose a playstyle:
 
 - **As in Blizzard:** keep your game settings; nothing is hidden.
 - **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
-- **Full immersion:** hide quest guidance and discover item sell prices only at a merchant.
+- **Full immersion:** hide quest guidance and item sell prices outside trading; auction visibility is a separate preference.
 
 Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
 
 ## ⚙️ Settings
 
 Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints** and **Additional immersion**, with explanations on hover.
+
+**Show at auction** is a separate checkbox under item prices, enabled by default. It reveals the item’s **vendor sell value** while the auction house is open, not its auction market price. Disable it for stricter roleplay; prices at merchants remain visible. The preference is saved per character and is retained when changing playstyles.
 
 | Command | Action |
 |---|---|

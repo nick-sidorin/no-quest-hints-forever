@@ -54,6 +54,9 @@ local function initialize()
     if character.onboardingComplete == nil then
         character.onboardingComplete = next(character) ~= nil
     end
+    -- A permissive sub-option of price hiding, not another hiding feature.
+    -- Add this only AFTER detecting first-run/legacy data above.
+    if character.showAuctionSellPrices == nil then character.showAuctionSellPrices = true end
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
     -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
@@ -213,6 +216,11 @@ local function setSellPriceHidden(hidden)
     -- TooltipDataProcessor reads this dynamically; vendor UI remains native.
 end
 
+local function setAuctionSellPriceShown(shown)
+    if not character then return end
+    character.showAuctionSellPrices = shown == true
+end
+
 local function setQuestProgressHidden(hidden)
     if not character then return end
     character.hideQuestProgressMessages = hidden == true
@@ -262,12 +270,14 @@ api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
+api.IsAuctionSellPriceShown = function() return not character or character.showAuctionSellPrices ~= false end
 api.IsQuestProgressHidden = function() return character and character.hideQuestProgressMessages == true end
 api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames == true end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
 api.SetTooltipHintsHidden = setTooltipHintsHidden
 api.SetSellPriceHidden = setSellPriceHidden
+api.SetAuctionSellPriceShown = setAuctionSellPriceShown
 api.SetQuestProgressHidden = setQuestProgressHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.UpdateTracker = updateTracker
@@ -348,6 +358,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
         printMessage((L.SELL_PRICE_STATUS or "Hide item sell prices: ") .. (character.hideSellPrices == true and statusOn or statusOff))
+        printMessage((L.AUCTION_PRICE_STATUS or "Show vendor prices at auction: ") .. (api.IsAuctionSellPriceShown() and statusOn or statusOff))
         printMessage((L.PROGRESS_STATUS or "Hide quest progress popups: ") .. (character.hideQuestProgressMessages == true and statusOn or statusOff))
         for _, name in ipairs(cvars) do
             local value = getCVar(name)
