@@ -269,3 +269,17 @@ s.click(s.cards()[1]); s.click(NoQuestHintsForeverWelcome.Apply)
 assert(#s.writes==0 and not s.api.IsOnboardingPending())
 
 io.write("PASS: consent-only presets, migration, grouped playstyles, retired commands, restore retry, logout/reload and native welcome art\n")
+
+-- The welcome command reopens the chooser without resetting saved preferences.
+local welcomeChar = { onboardingComplete=true, hideQuestLevels=true, hideAuctionSellPrices=true }
+s=session(welcomeChar,{})
+assert(not NoQuestHintsForeverWelcome)
+SlashCmdList.NOQUESTHINTSFOREVER("welcome")
+assert(NoQuestHintsForeverWelcome.shown and NoQuestHintsForeverWelcomeBlocker.shown)
+assert(welcomeChar.onboardingComplete and welcomeChar.hideQuestLevels and welcomeChar.hideAuctionSellPrices)
+s.api.HideWelcome()
+s.setCombat(true)
+SlashCmdList.NOQUESTHINTSFOREVER("welcome")
+assert(not NoQuestHintsForeverWelcome.shown)
+s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
+assert(NoQuestHintsForeverWelcome.shown and welcomeChar.hideQuestLevels)

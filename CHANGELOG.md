@@ -2,6 +2,16 @@
 
 ## [1.4.0] — unreleased development build
 
+- Localize all UI text for every official WoW client locale, including both English/Spanish variants. Add complete German, French, Spanish, Italian, Brazilian Portuguese, Korean and Simplified/Traditional Chinese dictionaries, selected by GetLocale with English fallback.
+- Distinguish fix-only update notices from upgrades spanning feature releases, including skipped versions. Mark newly added checkbox rows with Blizzard's native New widget through addon-owned initializers; persist unseen/viewed state per account without modifying Blizzard's feature registries.
+
+- Announce a version upgrade once per account at login, inviting players to explore new settings with `/nqh`. Read actual addon metadata, preserve preferences, avoid repeat notices on reload/alts/downgrades, and keep first installs silent. Existing installations without a version baseline receive one notice. Localized in ruRU/enUS.
+
+- Stop stationary map-pin tooltips from repeatedly dispatching hover-entry events and rebuilding the quest journal. Keep unchanged selective pins across repeated quest events; still refresh changed permissions, positions, styles, selections and maps. Tooltip content refreshes on actual re-entry.
+- Require confirmation before the Settings restore button clears a custom configuration. Cancel/Escape or unavailable confirmation UI leaves all settings intact. The explicit `/nqh restore` command remains immediate.
+
+- Add a bottom Support section with a localized Report a problem button and native copyable GitHub link dialog. Add `/nqh welcome` to reopen the playstyle chooser without changing settings until confirmation; defer opening in combat.
+
 - Move the entire Playstyle and restoration section above individual checkboxes so both actions are immediately accessible when opening Settings.
 
 - Add an optional **Bags → Hide quest item borders** checkbox, localized in ruRU/enUS, saved per character and OFF in every preset. Hide only native carried-bag quest borders; preserve quest-start markers, quality/new-item overlays and Blizzard visibility. Restore original alpha on disable/restore or slot reuse, defer in combat and cover pooled/late-loaded bags. Custom bag overlays are outside this initial integration.

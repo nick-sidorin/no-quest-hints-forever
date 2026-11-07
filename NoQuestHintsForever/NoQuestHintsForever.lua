@@ -42,10 +42,15 @@ end
 
 -- Do not capture SavedVariables until ADDON_LOADED: WoW loads them after Lua.
 local character, account
+local existingInstallation
 local enforcing = false
 local loggingOut = false
 
 local function initialize()
+    if existingInstallation == nil then
+        existingInstallation = (type(NoQuestHintsForeverChar) == "table" and next(NoQuestHintsForeverChar) ~= nil)
+            or (type(NoQuestHintsForeverAccount) == "table" and next(NoQuestHintsForeverAccount) ~= nil)
+    end
     if type(NoQuestHintsForeverChar) ~= "table" then NoQuestHintsForeverChar = {} end
     if type(NoQuestHintsForeverAccount) ~= "table" then NoQuestHintsForeverAccount = {} end
     character, account = NoQuestHintsForeverChar, NoQuestHintsForeverAccount
@@ -68,6 +73,68 @@ local function initialize()
     -- Hide quest lines on unit/object tooltips is a new independent,
     -- opt-in option. Existing 1.2.0 users retain all their preferences.
     -- Both hideTracker and hideQuestTooltips default to false.
+end
+
+-- Compare TOC versions, including the alpha/beta forms used by publication.
+-- Keep the highest seen version account-wide so alts, reloads and downgrades
+-- do not repeat an upgrade notice. Unknown metadata is not a real version.
+local function versionParts(version)
+    if type(version) ~= "string" then return end
+    local major, minor, patch, suffix = version:match("^v?(%d+)%.(%d+)%.(%d+)(.*)$")
+    if not major then return end
+    local stage, serial = 3, 0
+    if suffix ~= "" then
+        local label, number = suffix:match("^%-(%a+)%.(%d+)$")
+        if not label then label = suffix:match("^%-(%a+)$") end
+        local ranks = { alpha=0, beta=1, rc=2 }
+        if ranks[label] == nil then return end
+        stage, serial = ranks[label], tonumber(number) or 0
+    end
+    return {tonumber(major), tonumber(minor), tonumber(patch), stage, serial}
+end
+
+local function newerVersion(a, b)
+    for index, value in ipairs(a) do
+        if value ~= b[index] then return value > b[index] end
+    end
+    return false
+end
+
+-- Add an entry only when features ship, never for a fixes-only release. Checking
+-- the whole interval handles players who skip one or more feature versions.
+local featureReleases = {
+    {version="1.4.0", settings={"NQH_HIDE_QUEST_LEVELS", "NQH_HIDE_QUEST_DIFFICULTY",
+        "NQH_HIDE_AUCTION_SELL_PRICES", "NQH_HIDE_QUEST_ITEM_HIGHLIGHT"}},
+}
+
+local function notifyVersionUpgrade()
+    if not account then return end
+    local getter = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    if type(getter) ~= "function" then return end
+    local ok, version = pcall(getter, ADDON_NAME, "Version")
+    local current = ok and versionParts(version)
+    if not current then return end
+    local previous = account.lastSeenVersion
+    local old = versionParts(previous)
+    local upgrading = old and newerVersion(current, old)
+        or (previous == nil and existingInstallation == true)
+    if old and not upgrading then return end
+    account.lastSeenVersion = version
+    if not upgrading then return end
+    local hasFeatures = false
+    local baseline = old or versionParts("0.0.0")
+    for _, release in ipairs(featureReleases) do
+        local introduced = versionParts(release.version)
+        if newerVersion(introduced, baseline) and not newerVersion(introduced, current) then
+            hasFeatures = true
+            if type(account.newSettings) ~= "table" then account.newSettings = {} end
+            for _, variable in ipairs(release.settings) do account.newSettings[variable] = true end
+        end
+    end
+    local message = hasFeatures and (L.VERSION_FEATURES or
+        "Updated to version %s! Open /nqh to explore new features in settings.")
+        or (L.VERSION_UPDATED or "Updated to version %s.")
+    printMessage(string.format(message, version))
 end
 
 local function enforceMapHints()
@@ -389,6 +456,12 @@ api.SetQuestDifficultyHidden = setQuestDifficultyHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.IsQuestItemHighlightHidden = function() return character and character.hideQuestItemHighlight == true end
 api.SetQuestItemHighlightHidden = setQuestItemHighlightHidden
+api.IsSettingNew = function(variable)
+    return account and type(account.newSettings) == "table" and account.newSettings[variable] == true
+end
+api.MarkSettingSeen = function(variable)
+    if account and type(account.newSettings) == "table" then account.newSettings[variable] = nil end
+end
 api.UpdateTracker = updateTracker
 api.RefreshNavigation = enforceMapHints
 
@@ -468,6 +541,8 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         if type(api.OpenOptions) ~= "function" or api.OpenOptions() ~= true then
             printMessage(L.UNAVAILABLE or "Addon settings are unavailable.")
         end
+    elseif command == "welcome" then
+        if type(api.ShowWelcome) == "function" then api.ShowWelcome() end
     elseif command == "restore" then
         local restored = api.RestoreGameSettings()
         printMessage(restored and (L.RESTORED or "Saved game settings restored.") or (L.RESTORE_PENDING or "Restore incomplete; saved backups retained. Retry /nqh restore."))
@@ -488,7 +563,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
             printMessage(name .. " = " .. (value == nil and (L.VALUE_UNAVAILABLE or "unavailable") or tostring(value)))
         end
     else
-        printMessage(L.COMMANDS or "Commands: /nqh, /nqh restore, /nqh status")
+        printMessage(L.COMMANDS or "Commands: /nqh, /nqh welcome, /nqh restore, /nqh status")
     end
 end
 
@@ -515,6 +590,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
         if not character then initialize() end
+        notifyVersionUpgrade()
         if character.enabled == true then
             enforceMapHints()
         else

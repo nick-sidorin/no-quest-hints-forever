@@ -60,11 +60,15 @@ On your first visit with a new character, choose a playstyle:
 - **Immersion:** hide the five forms of quest guidance while keeping item prices visible.
 - **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading. Difficulty colors and auction prices remain visible unless you hide them separately.
 
+After a version upgrade, a one-time login message shows the new version. When your upgrade includes new features, it also points to `/nqh`, where newly added checkboxes carry Blizzard's **New** marker until viewed. Fix-only updates use a neutral message. Your existing settings remain intact.
+
 Select a card and confirm to begin. Or customize individual options. You can change your playstyle later in settings.
 
 ## ⚙️ Settings
 
 Open **Options → AddOns → No Quest Hints** directly with `/nqh`, or select it from Blizzard's AddOns settings list. The checkboxes appear directly on that page, grouped into **Quest hints**, **Item prices** and **Bags**, with explanations on hover.
+
+The **Playstyle and restoration** buttons appear first. At the bottom, **Support → Report a problem** provides a copyable GitHub project link; open it in your browser and choose **Issues → New issue** for reports or suggestions.
 
 The optional **Bags → Hide quest item borders** control hides yellow quest-item borders in native carried bags. Quality borders, new-item highlights and quest-start exclamation marks remain. It is OFF in every playstyle and must be enabled manually. Custom bag addons may draw independent borders.
 
@@ -73,15 +77,18 @@ The **Item prices** section has two equal-rank checkboxes: **Hide outside tradin
 | Command | Action |
 |---|---|
 | `/nqh` | Open addon settings |
+| `/nqh welcome` | Reopen the playstyle chooser |
 | `/nqh restore` | Turn off all features and restore saved original game settings |
 | `/nqh status` | Show current settings |
+
+The **Restore game settings** button asks for confirmation before clearing your current configuration. Cancel or Escape keeps it. The explicit `/nqh restore` command restores immediately.
 
 **Before disabling or removing the addon**, use **Restore game settings** or `/nqh restore`. This restores your saved personal settings, rather than resetting all of Blizzard’s options. If already removed and settings remain changed, reinstall with saved settings intact and run the restore command. The older map-only `on`/`off` commands have been removed.
 
 ## ℹ️ Good to Know
 
 - Designed specifically for **World of Warcraft: Forever**.
-- Supports **English and Russian**.
+- Automatically uses the client language: **English, Russian, German, French, Spanish, Italian, Brazilian Portuguese, Korean, Simplified Chinese or Traditional Chinese**. Both English and Spanish client variants are supported. Unknown locales fall back to English.
 - Uses native Blizzard quest and tooltip information.
 - Does not change quest progress, item prices or selling mechanics.
 - Some special NPC names may also be hidden by the quest-name setting because Blizzard groups them together.

@@ -27,7 +27,7 @@ Remember when finding a quest objective meant reading the description, looking a
 - **Hide quest progress popups:** Suppress the six native yellow quest objective progress/completion messages while preserving ordinary status messages and red combat/UI errors. Uses Blizzard `UIErrorsFrame:SetMessageTypeEnabled` and original visibility restoration instead of parsing translated strings.
 - **Selective quest hints:** While built-in quest map hints are hidden, open a quest and click **Show hint** next to the **Back** button in the journal, or right-click a quest in either the journal or objective tracker. The addon uses the **original blue Blizzard objective areas** and attempts to show Blizzard's own '?' / progress icons only for chosen quests. Use **Hide hint** to remove them. Multiple quests may be allowed, with their IDs saved per character. **Context-menu actions do not open the map**; clicking a quest normally still opens its details. When permission is granted, that quest becomes Blizzard's super-tracked navigation target (without adding it to the right-side watch list), enabling the native world-space diamond and distance if the client can navigate to it.
 
-The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface automatically uses **Russian** when the WoW client locale is `ruRU`; otherwise it uses English.
+The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface follows the client language automatically: English (`enUS`/`enGB`), Russian, German, French, Spanish (`esES`/`esMX`), Italian, Brazilian Portuguese, Korean, Simplified Chinese and Traditional Chinese. Unknown locales/keys fall back to English.
 
 **Remove the directions, not the adventure.**
 
@@ -44,6 +44,7 @@ World of Warcraft/
         └── AddOns/
             └── NoQuestHintsForever/
                 ├── NoQuestHintsForever.toc
+                ├── LocaleTranslations.lua
                 ├── Localization.lua
                 ├── NoQuestHintsForever.lua
                 ├── Options.lua
@@ -76,6 +77,10 @@ Clicking a card only selects it. **Begin adventure** confirms the choice. Closin
 
 Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the ten checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
 
+After an upgrade, one localized login message per account shows the new addon version. Fix-only updates use a neutral message. If any feature release lies between the last seen and installed version (even when versions were skipped), the message also points to `/nqh` for new options. Ordinary reloads, alts and downgrades do not repeat it; a first install uses onboarding instead. Existing installations without version bookkeeping receive one notice, then keep a baseline in account SavedVariables. Test builds with the same TOC version do not count as separate upgrades.
+
+Newly introduced checkboxes use Blizzard's native **New** marker. Each marker is recorded as viewed when its row is displayed; unseen rows remain marked across reloads and later patches. Viewed markers stay dismissed across characters. Fresh installs do not mark everything as an upgrade. The feature introduction list in the core must be updated only for genuine feature releases, never inferred from a minor/patch number.
+
 ### Open settings
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
@@ -102,17 +107,22 @@ The merchant always shows native values. Elsewhere, the active context selects t
 
 The second option is independent of the first: you can keep the task list while hiding map hints, or hide both. **The quest hint allowlist is also independent of objective tracking** — the right-side list can stay hidden even when selected quest areas are visible on the map.
 
+The final **Support → Report a problem** button opens a selected, copyable GitHub project URL. Copy it into your browser, then use **Issues → New issue** for bug reports or suggestions. Include the Forever build, addon version and reproduction steps. WoW does not launch a browser from this button.
+
 ### Slash commands
 
 | Command | What it does |
 | --- | --- |
 | `/nqh` | Open the native Blizzard AddOns settings category. |
+| `/nqh welcome` | Reopen the playstyle chooser without changing settings until confirmation. |
 | `/nqh restore` | Turn off all ten hiding controls and restore saved pre-addon game settings. |
 | `/nqh status` | Display all ten checkbox states and targeted CVars. |
 
 The ambiguous map-only `on`/`off` commands have been removed in this preview. They now show command help without changing anything.
 
 ### Restoring settings before disabling or removing the addon
+
+The **Restore game settings** button asks for confirmation before clearing your current checkbox combination. Cancel or Escape leaves it intact. The explicit `/nqh restore` command restores immediately.
 
 Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All ten hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All ten checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
 
@@ -147,6 +157,8 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
 - **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, ten equal-rank `Settings.RegisterProxySetting` values (seven quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
+
+Selective circular map pins keep their native real hover/click behavior. Their tooltip content refreshes on re-entry; periodic synthetic hover callbacks are disabled because Forever also rebuilds the journal through that callback. Unchanged quest events preserve existing pins, while changed permissions, position, style, selection or map refresh them.
 
 ### Quest title presentation
 
@@ -183,7 +195,8 @@ The addon normally suppresses available hint CVars using `0`. The exception is `
 ```text
 NoQuestHintsForever/
 ├── NoQuestHintsForever.toc    # Interface, version, SavedVariables and load order
-├── Localization.lua          # Russian UI, English fallback
+├── Localization.lua          # English/Russian base and English fallback
+├── LocaleTranslations.lua    # Additional official WoW client locales
 ├── NoQuestHintsForever.lua    # CVar/navigation and tracker controls; slash commands
 ├── Options.lua               # Grouped native Settings page and restoration actions
 ├── Onboarding.lua            # Three consent-based first-run playstyles
@@ -202,7 +215,7 @@ tests/
 ├── test_quest_markers.lua    # Native quest progress/turn-in pin tests
 ├── test_inline_hints.lua     # Journal/tracker title badges, secure/deferred layout
 ├── test_navigation.lua       # Selective in-world diamond and CVar restoration
-├── test_localization.lua     # Russian and English UI translations
+├── test_localization.lua     # All official locales, full keys and format tokens
 ├── test_quest_presentation.lua # Quest title metadata, prefixes, color and restoration
 ├── test_tracker_input.lua    # Descendant mouse input and combat recovery
 ├── test_quest_tooltips.lua   # Tooltip callback, late load and isolation
