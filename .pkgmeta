@@ -9,6 +9,8 @@ ignore:
   - tests
   - scripts
   - .github
+  - AGENTS.md
+  - PROJECT_CONTEXT.md
   - README.md
   - CHANGELOG.md
   - CURSEFORGE_DESCRIPTION.md

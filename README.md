@@ -137,7 +137,7 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 
 ### Onboarding art
 
-Only game textures are used; no Wowhead images are bundled. The cards use the Forever `Preset-Selection-Card-Regular` atlas if available in-game, otherwise the native gold dialog border/background. Portraits use the native circular alpha mask when supported. Glue-only templates and account/realm rules are not modified.
+Only game textures are used; no Wowhead images are bundled. The cards use the exact Forever realm-rule `Mode-Selection-Card-Regular` atlas and its matching selection glow at their authored sizes; the native 260 × 530 card layout leaves a 180px text column. The gold dialog fallback is used only when that atlas is unavailable, so borders are never doubled. Portraits use the native 64px icons, circular mask and beveled `Mode-Selection-Ring`. Glue-only templates and account/realm rules are not modified.
 
 | Card | Game texture | Reference |
 | --- | --- | --- |
@@ -145,7 +145,7 @@ Only game textures are used; no Wowhead images are bundled. The cards use the Fo
 | Immersion | `icon_treasuremap` | [Chosen treasure map](https://www.wowhead.com/icon=1064187/icon-treasuremap) |
 | Full immersion | `Achievement_Zone_ElwynnForest` | [Elwynn Forest](https://www.wowhead.com/icons?filter=na=achievement_zone_elwynnforest) |
 
-Visual parity with the realm-selection screenshot, atlas availability and text fit require the in-game smoke test; mocked UI tests cannot establish the final rendering.
+The visual follow-up uses the [Forever SuperDistrict card assets and layout](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_GlueXML/Mainline/SuperDistrict.xml), two header text styles and a large primary confirmation button above plain secondary actions. The owner reported general functionality working on the first preview; the revised rendering and text fit still require in-game review; mocked UI tests cannot establish the final rendering.
 
 ### Map and navigation CVars
 
@@ -251,6 +251,8 @@ Please report the Forever build, version, `/nqh status` output, steps to reprodu
 **CurseForge:** The project uses GitHub source-based Automatic Packaging and a GitHub webhook. The tag push requests packaging through the configured webhook; CurseForge handles its own file approval. Do not add a second upload through Actions, and **never commit CurseForge author tokens**. The [.pkgmeta](.pkgmeta) tells CurseForge which files to package.
 
 The original [`release.yml`](.github/workflows/release.yml) still builds ZIPs for direct, manually pushed tags. Tags created by `publish.yml` use the release action in that same workflow, because GitHub Actions does not automatically trigger another workflow from a tag push made with the default `GITHUB_TOKEN`.
+
+For repository work and continuation in a new chat, read [AGENTS.md](AGENTS.md) and the dated [project context](PROJECT_CONTEXT.md). Keep decisions and validation results in the repository rather than only in chat.
 
 See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 

@@ -2,6 +2,8 @@
 
 ## [1.4.0] — unreleased development build
 
+- Refine onboarding after the first in-game review: use the exact native realm-rule card/ring atlases at authored sizes, remove duplicate borders, use native icon sizing and padded text, simplify the header, and emphasize the large confirmation button above plain secondary actions.
+
 - Add a consent-based first-run chooser: As in Blizzard (no hiding), Immersion (five quest features), Full immersion (all six, including merchant-only prices). Native game-art cards and circular icons; no changes before confirmation.
 - Preserve existing users' preferences; unfinished onboarding persists separately per character and can be reopened from Settings.
 - Group native Settings into Quest hints and Additional immersion; explanations remain hover-only. Add playstyle and restoration buttons.

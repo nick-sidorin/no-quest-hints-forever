@@ -2,14 +2,21 @@
 local mapNames = { "questPOI", "showQuestObjectivesOnMap", "questPOILocalStory",
     "minimapShowQuestBlobs", "showInGameNavigation" }
 local npc = "UnitNameFriendlySpecialNPCName"
-local function session(char, account, suppliedValues, combat, locale)
+local function session(char, account, suppliedValues, combat, locale, withoutAtlases)
     local values = suppliedValues or { [npc] = "1" }
     for _, name in ipairs(mapNames) do if values[name] == nil then values[name] = "1" end end
     local frames, writes, failed = {}, {}, {}
     NoQuestHintsForeverChar, NoQuestHintsForeverAccount, NoQuestHintsForeverAPI = nil, nil, nil
     NoQuestHintsForeverWelcome, ObjectiveTrackerFrame, Settings = nil, nil, nil
     SlashCmdList, UISpecialFrames = {}, {}
-    C_Texture = { GetAtlasInfo = function(name) return name == "Preset-Selection-Card-Regular" end }
+    C_Texture = { GetAtlasInfo = function(name)
+        if withoutAtlases then return nil end
+        if name == "Mode-Selection-Card-Regular" or name == "Mode-Selection-Card-Regular-yellow-glow" then
+            return { width=300, height=600 }
+        elseif name == "Mode-Selection-Ring" or name == "CircleMask" then
+            return { width=80, height=80 }
+        end
+    end }
     local function region()
         local obj = {}
         function obj:SetSize(w,h) self.width,self.height=w,h end
@@ -21,7 +28,14 @@ local function session(char, account, suppliedValues, combat, locale)
         function obj:SetJustifyH() end
         function obj:SetJustifyV() end
         function obj:SetTexture(value) self.texture=value; return true end
-        function obj:SetAtlas(value) self.atlas=value end
+        function obj:SetAtlas(value, useAtlasSize)
+            self.atlas=value; self.useAtlasSize=useAtlasSize
+            if useAtlasSize then
+                local info=C_Texture.GetAtlasInfo(value)
+                self:SetSize(info.width,info.height)
+            end
+        end
+        function obj:SetAlpha(value) self.alpha=value end
         function obj:SetColorTexture(...) self.color={...} end
         function obj:SetTexCoord(...) self.coords={...} end
         function obj:AddMaskTexture(mask) self.mask=mask end
@@ -45,6 +59,8 @@ local function session(char, account, suppliedValues, combat, locale)
         function obj:RegisterEvent(event) self.events[event]=true end
         function obj:SetScript(event,callback) self.scripts[event]=callback end
         function obj:GetName() return self.name end
+        function obj:SetNormalFontObject(value) self.normalFont=value end
+        function obj:SetHighlightFontObject(value) self.highlightFont=value end
         function obj:Enable() self.disabled=false end
         function obj:Disable() self.disabled=true end
         function obj:Show() self.shown=true end
@@ -100,7 +116,7 @@ local function session(char, account, suppliedValues, combat, locale)
     local function cards()
         local result={}
         for _,f in ipairs(frames) do
-            if f.parent==NoQuestHintsForeverWelcome and f.width==286 then result[#result+1]=f end
+            if f.parent==NoQuestHintsForeverWelcome and f.width==260 and f.height==530 then result[#result+1]=f end
         end
         return result
     end
@@ -118,8 +134,13 @@ assert(welcome.Apply.disabled, "confirm must wait for a selection")
 s.click(s.cards()[2])
 assert(#s.writes==0 and not welcome.Apply.disabled, "selection applied before confirmation")
 local art=s.cards()[2].textures
-assert(art[1].atlas=="Preset-Selection-Card-Regular")
-assert(art[4].texture=="Interface\\Icons\\icon_treasuremap" and art[4].mask,
+assert(art[1].atlas=="Mode-Selection-Card-Regular" and art[1].useAtlasSize
+    and art[1].width==300 and art[1].height==600,
+    "native card art must retain authored dimensions")
+assert(not s.cards()[2].backdrop, "native card must not also draw a backdrop border")
+assert(art[3].atlas=="Mode-Selection-Ring" and art[3].useAtlasSize,
+    "portrait must use the native beveled ring")
+assert(art[2].texture=="Interface\\Icons\\icon_treasuremap" and art[2].mask,
     "immersion icon must be the chosen map, with a circular mask")
 s.click(welcome.Apply)
 assert(not welcome.shown and char.onboardingComplete==true)
@@ -200,5 +221,12 @@ s.event("PLAYER_LOGOUT")
 assert(interrupted.original.questPOI=="1" and backups.npcNameOriginal=="1")
 s=session(interrupted,backups,s.values)
 assert(s.api.RestoreGameSettings() and s.values.questPOI=="1" and s.values[npc]=="1")
+
+-- Older clients keep one usable fallback frame when realm-rule atlases are
+-- unavailable. The first-run decision and restore behavior stay the same.
+s=session({}, {}, nil, false, "enUS", true)
+assert(s.cards()[1].FallbackBorder and s.cards()[1].backdrop)
+s.click(s.cards()[1]); s.click(NoQuestHintsForeverWelcome.Apply)
+assert(#s.writes==0 and not s.api.IsOnboardingPending())
 
 io.write("PASS: consent-only presets, migration, grouped playstyles, retired commands, restore retry, logout/reload and native welcome art\n")
