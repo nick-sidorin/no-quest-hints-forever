@@ -168,7 +168,7 @@ local function createWindow()
         end
         highlight:SetAlpha(0.45)
         card.Choice = text(card, "", "GameFontNormal", 180,
-            "BOTTOM", card, "BOTTOM", 0, 24)
+            "BOTTOM", card, "BOTTOM", 0, 60)
         setSelected(card, false)
         card:SetScript("OnClick", function()
             selected = preset.id
