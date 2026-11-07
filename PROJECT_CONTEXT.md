@@ -131,6 +131,10 @@ Final owner-approved composition: white Welcome to No Quest Hints; gold Read the
 
 The owner tested the earlier automatic-opening fix in Forever and confirmed the chooser appears immediately after world loading without an observed delay. The owner also approved the final text composition and requested stable release 1.4.1; PR #25 has been merged.
 
+## Separate bug-report destination
+
+The owner requested a direct Issues link in the full CurseForge description, separate from Source Code, because many players are unfamiliar with GitHub. The final footer labels are Report a Bug or Suggest a Feature → https://github.com/nick-sidorin/no-quest-hints-forever/issues and Source Code → repository root. Include a short instruction to click New issue for either a problem or an idea; ask for client/addon version and reproduction steps only for bug reports. This supersedes the earlier combined Source Code & Bug Reports label while preserving both destinations and the agreed feature-first structure. It changes public description copy only, not in-game support UI or release metadata.
+
 ## Maintenance policy
 
 This document should remain a **decision record with a short, dated handoff**, not a transcript, running debug log or endless list of intermediate artifacts and SHAs. Keep precise bug evidence in Issues, implementation/change discussions in PRs, user instructions in README, version history in CHANGELOG, and enforceable contributor rules in AGENTS. Update this file only when product intent, a material trade-off or the handoff state truly changes.

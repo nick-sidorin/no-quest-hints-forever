@@ -1,6 +1,6 @@
 # CurseForge — No Quest Hints
 
-> **Maintainer note:** Copy the Short description and Full description content into the corresponding CurseForge fields. Preserve the established feature-first structure and prominent Source Code & Bug Reports link when updating facts for a release. The release workflow does not update the project description automatically.
+> **Maintainer note:** Copy the Short description and Full description content into the corresponding CurseForge fields. Preserve the established feature-first structure and separate bug-report and source-code links when updating facts for a release. The release workflow does not update the project description automatically.
 
 Maintainer links (not part of the public description):
 
@@ -89,9 +89,11 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 
 **Known issue:** An intermittent Blizzard protected-action warning is under investigation. See [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
-**[Source Code & Bug Reports](https://github.com/nick-sidorin/no-quest-hints-forever)**
+**[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 
-For feedback, open **Issues → New issue** on the project page. Include your Forever build, addon version and steps to reproduce. The **Support → Report a problem** button in settings provides a copyable project link.
+Click **New issue** to report a problem or share an idea. For bug reports, include your Forever build, addon version and steps to reproduce.
+
+**[Source Code](https://github.com/nick-sidorin/no-quest-hints-forever)**
 
 ---
 
