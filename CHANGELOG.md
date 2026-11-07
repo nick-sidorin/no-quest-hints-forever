@@ -1,12 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.1] — 2026-11-07
 
 - Identify the addon in the white welcome headline, keep the slogan in the gold second line, and use a short static Choose your playstyle instruction below the cards. Remove duplicated selected-status text while retaining the selected card marker and Begin adventure action. Use informal Russian address throughout the chooser; update all locales without changing typography or spacing.
 
 - Deliver version-upgrade chat notices after loading-screen completion, outside the event stack, to keep them out of the initial login-message burst. Update the seen-version baseline only at delivery; interrupted loading/logout retains the notice for a later attempt.
 
 - Defer automatic onboarding until the loading screen has finished, then open it outside the loading event stack. Preserve explicit pending state, combat retry and once-per-session dismissal. Fix the reported case where `pending=true, complete=false` survived a full restart but no chooser appeared.
+
+- The owner verified automatic startup and approved the final welcome layout in Forever before requesting release. All 15 Lua 5.1 suites, source syntax, TOC integrity and the 16-file package pass validation.
 
 ## [1.4.0] — 2026-11-07
 
