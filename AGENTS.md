@@ -58,7 +58,7 @@ Repository-wide instructions for contributors and coding agents. Before substant
 ## Unresolved protected-action error
 
 - [Issue #3 — `ADDON_ACTION_BLOCKED`](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3) remains open. The map/journal is involved in reports, but no specific hook is proven guilty. Collect the action before the warning, combat status and `taint.log`; avoid broad changes based only on guesses. Do not close because mock tests passed.
-- Keep selective map providers lazy: no registration or blob-pin acquisition until map hiding is enabled and at least one valid quest is explicitly revealed. Public refresh paths must initialize them on demand without requiring a reload. This prevents unused map-layer initialization; it does not by itself prove the waypoint-copy taint is fixed.
+- Keep selective map providers lazy: no registration or blob-pin acquisition until map hiding is enabled and at least one valid quest is explicitly revealed. Public refresh paths must initialize them on demand without requiring a reload. On 2026-11-08 the owner tested PR #31 and confirmed the all-options-OFF waypoint-copy block after reload no longer reproduced across repeated cases. This verifies that scenario; broader Issue #3 taint reports still need matching evidence.
 
 ## Keeping context usable
 
