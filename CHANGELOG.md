@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Add an independent Hide minimap quest icons option for native quest pickup/turn-in markers, requested in Issue #29. Use the native QuestPOIs tracking filter, preserve the original per-character/account-scoped state, leave other tracking filters and NPC overhead symbols alone, and retry pending recovery after combat or late API initialization. Full immersion enables it; As in Blizzard and Immersion leave it OFF. Existing settings are not changed on upgrade.
+
 ## [1.4.1] — 2026-11-07
 
 - Identify the addon in the white welcome headline, keep the slogan in the gold second line, and use a short static Choose your playstyle instruction below the cards. Remove duplicated selected-status text while retaining the selected card marker and Begin adventure action. Use informal Russian address throughout the chooser; update all locales without changing typography or spacing.

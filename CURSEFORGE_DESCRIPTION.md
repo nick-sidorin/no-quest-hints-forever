@@ -21,9 +21,10 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 ## ✨ Features at a Glance
 
-Ten independent, optional controls:
+Eleven independent, optional controls:
 
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
+- 📍 **Hide Minimap Quest Icons** — Hide quest pickup and turn-in markers on the minimap while keeping symbols above NPCs.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters from NPC and object tooltips.
 - 🎯 **Hide Quest NPC Names** — Hide floating names that reveal quest targets.
@@ -58,7 +59,7 @@ After the loading screen finishes, choose a playstyle on first setup, or reopen 
 
 - **As in Blizzard:** keep your current game settings; nothing is hidden.
 - **Immersion:** hide the five forms of quest guidance.
-- **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading.
+- **Full immersion:** everything in Immersion, plus hidden numeric quest levels, minimap quest icons and item sell prices outside trading.
 
 Select a card and confirm to apply it. Customize any option afterward. Difficulty colors, auction prices and quest-item borders remain visible in every preset unless you hide them manually.
 

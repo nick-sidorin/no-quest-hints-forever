@@ -391,6 +391,14 @@ local function setQuestItemHighlightHidden(hidden)
     end
 end
 
+local function setMinimapQuestMarkersHidden(hidden)
+    if not character then return end
+    character.hideMinimapQuestMarkers = hidden == true
+    if NoQuestHintsForeverAPI.RefreshMinimapQuestMarkers then
+        NoQuestHintsForeverAPI.RefreshMinimapQuestMarkers()
+    end
+end
+
 local function setQuestProgressHidden(hidden)
     if not character then return end
     character.hideQuestProgressMessages = hidden == true
@@ -456,6 +464,8 @@ api.SetQuestDifficultyHidden = setQuestDifficultyHidden
 api.SetQuestNPCNamesHidden = setQuestNPCNamesHidden
 api.IsQuestItemHighlightHidden = function() return character and character.hideQuestItemHighlight == true end
 api.SetQuestItemHighlightHidden = setQuestItemHighlightHidden
+api.IsMinimapQuestMarkersHidden = function() return character and character.hideMinimapQuestMarkers == true end
+api.SetMinimapQuestMarkersHidden = setMinimapQuestMarkersHidden
 api.IsSettingNew = function(variable)
     return account and type(account.newSettings) == "table" and account.newSettings[variable] == true
 end
@@ -476,6 +486,7 @@ end
 -- Do not erase quest permissions or the player's choices during shutdown.
 -- Restore only successful writes; failed/unavailable CVars keep their backup.
 local function restorePersistentValues()
+    if api.RestoreMinimapQuestMarkers then api.RestoreMinimapQuestMarkers() end
     restoreMapValues(character and character.original)
     restoreMapValues(account and account.original)
     if account and account.npcNameOriginal ~= nil then
@@ -491,6 +502,7 @@ function api.RestoreGameSettings()
     if not character then return false end
     api.CompleteOnboarding()
     setMapHints(false)
+    setMinimapQuestMarkersHidden(false)
     setTrackerHidden(false)
     setTooltipHintsHidden(false)
     setQuestNPCNamesHidden(false)
@@ -502,9 +514,10 @@ function api.RestoreGameSettings()
     setQuestItemHighlightHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
+    local minimapRestored = not api.RestoreMinimapQuestMarkers or api.RestoreMinimapQuestMarkers()
     local itemsRestored = not api.RestoreQuestItemHighlight or api.RestoreQuestItemHighlight()
     local presentationRestored = not api.RestoreQuestPresentation or api.RestoreQuestPresentation()
-    return itemsRestored and presentationRestored and next(character.original) == nil and next(account.original) == nil
+    return minimapRestored and itemsRestored and presentationRestored and next(character.original) == nil and next(account.original) == nil
         and account.npcNameOriginal == nil and next(trackerInputs) == nil
 end
 
@@ -515,6 +528,7 @@ function api.ApplyPreset(preset)
     api.CompleteOnboarding()
     local hide = preset ~= "blizzard"
     setMapHints(hide)
+    setMinimapQuestMarkersHidden(preset == "full")
     setTrackerHidden(hide)
     setTooltipHintsHidden(hide)
     setQuestNPCNamesHidden(hide)
@@ -549,6 +563,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     elseif command == "status" then
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.MINIMAP_QUEST_STATUS or "Hide minimap quest icons: ") .. (api.IsMinimapQuestMarkersHidden() and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
