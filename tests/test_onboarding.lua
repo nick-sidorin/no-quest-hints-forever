@@ -2,10 +2,39 @@
 local mapNames = { "questPOI", "showQuestObjectivesOnMap", "questPOILocalStory",
     "minimapShowQuestBlobs", "showInGameNavigation" }
 local npc = "UnitNameFriendlySpecialNPCName"
-local function session(char, account, suppliedValues, combat, locale, withoutAtlases, pauseBeforeWorld)
+local function session(char, account, suppliedValues, combat, locale, withoutAtlases, pauseBeforeWorld, controller)
     local values = suppliedValues or { [npc] = "1" }
     for _, name in ipairs(mapNames) do if values[name] == nil then values[name] = "1" end end
     local frames, writes, failed = {}, {}, {}
+    InputUtil, GamepadMode, SmartNavigation, GamepadSecureBaseDialogMixin, C_XMLUtil = nil, nil, nil, nil, nil
+    if controller then
+        controller.previous = {}
+        controller.current = controller.previous
+        controller.shows, controller.hides = 0, 0
+        InputUtil = {IsGamepadUIEnabled=function() return controller.enabled ~= false end}
+        GamepadMode = {FrameControlsManager={
+            FrameShown=function(_, window)
+                if controller.enabled==false then return end
+                assert(not combat)
+                controller.shows=controller.shows+1
+                controller.current=window
+                return true
+            end,
+            FrameHidden=function(_, window)
+                if controller.enabled==false then return end
+                controller.hides=controller.hides+1
+                if controller.current==window then controller.current=controller.previous end
+                return true
+            end,
+        }}
+        C_XMLUtil={GetTemplateInfo=function(name)
+            assert(name=="GamepadSecureBaseDialogTemplate")
+            if not controller.withoutTemplate then return {type="Frame"} end
+        end}
+        SmartNavigation = {SetTargetButtonForFrame=function(_, panel, button)
+            controller.panel, controller.target = panel, button
+        end}
+    end
     local deferred={}
     C_Timer={After=function(delay,fn) assert(delay==0);deferred[#deferred+1]=fn end}
     local function flush()
@@ -74,12 +103,24 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         function obj:GetHeight() return self.height end
         function obj:RegisterEvent(event) self.events[event]=true end
         function obj:SetScript(event,callback) self.scripts[event]=callback end
+        function obj:HookScript(event,callback)
+            local original=self.scripts[event]
+            self.scripts[event]=function(...)
+                if original then original(...) end
+                callback(...)
+            end
+        end
         function obj:GetName() return self.name end
         function obj:SetNormalFontObject(value) self.normalFont=value end
         function obj:SetHighlightFontObject(value) self.highlightFont=value end
         function obj:Enable() self.disabled=false end
         function obj:Disable() self.disabled=true end
-        function obj:Show() self.shown=true end
+        function obj:IsShown() return self.shown == true end
+        function obj:Show()
+            local wasShown=self.shown
+            self.shown=true
+            if not wasShown and self.scripts.OnShow then self.scripts.OnShow(self) end
+        end
         function obj:Hide()
             local wasShown=self.shown
             self.shown=false
@@ -94,6 +135,10 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         end
         function obj:CreateMaskTexture() return region() end
         function obj:CreateFontString() return region() end
+        if template and template:find("GamepadSecureBaseDialogTemplate",1,true) then
+            obj.scripts.OnShow=function(self) GamepadMode.FrameControlsManager:FrameShown(self) end
+            obj.scripts.OnHide=function(self) GamepadMode.FrameControlsManager:FrameHidden(self) end
+        end
         frames[#frames+1]=obj
         if name then _G[name]=obj end
         return obj
@@ -254,6 +299,53 @@ s=session({}, {}, nil, true, "ruRU")
 assert(not NoQuestHintsForeverWelcome)
 s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
 assert(NoQuestHintsForeverWelcome.shown)
+
+-- Native controller focus uses inherited secure dialog scripts, without addon bindings or
+-- preset changes from merely focusing the first card.
+local pad={}
+s=session({}, {}, nil, false, "enUS", false, false, pad)
+welcome=NoQuestHintsForeverWelcome
+assert(pad.shows==1 and pad.current==welcome and pad.target==s.cards()[1])
+assert(welcome.Apply.disabled and not s.api.IsMapHidden(),"controller focus applied a preset")
+assert(NoQuestHintsForeverWelcomeBlocker.smartNavigationIgnoredDontPropagate)
+s.event("GAME_PAD_ACTIVE_CHANGED")
+assert(pad.shows==1,"controller event registered the same popup twice")
+assert(welcome:SmartNavigationCloseHandler())
+assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown)
+assert(pad.hides==1 and pad.current==pad.previous,"Back did not restore native focus")
+
+for _, action in ipairs({"later","customize","confirm","hide","combat"}) do
+    pad={}
+    s=session({}, {}, nil, false, "enUS", false, false, pad)
+    welcome=NoQuestHintsForeverWelcome
+    if action=="later" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_LATER))
+    elseif action=="customize" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_SETTINGS))
+    elseif action=="confirm" then s.click(s.cards()[2]); s.click(welcome.Apply)
+    elseif action=="hide" then s.api.HideWelcome()
+    else
+        s.setCombat(true); s.event("PLAYER_REGEN_DISABLED")
+        assert(pad.hides==1,"inherited native OnHide was lost during combat closure")
+        s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
+    end
+    assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown,action.." left modal input blocked")
+    assert(pad.hides==1 and pad.current==pad.previous,action.." leaked native popup focus")
+end
+
+-- Closing before the deferred target request must not refocus a hidden dialog.
+pad={}
+s=session({onboardingComplete=true},{},nil,false,"enUS",false,false,pad)
+s.api.ShowWelcome(); s.api.HideWelcome(); s.flush()
+assert(pad.shows==1 and pad.hides==1 and pad.target==nil,"closed dialog stole focus from a delayed callback")
+pad={withoutTemplate=true}
+s=session({}, {}, nil, false, "enUS", false, false, pad)
+assert(NoQuestHintsForeverWelcome.shown and pad.shows==0,"missing secure template broke the mouse chooser")
+s.api.HideWelcome()
+pad={enabled=false}
+s=session({}, {}, nil, false, "enUS", false, false, pad)
+assert(pad.shows==0,"mouse/controller emulation registered native gamepad focus")
+s.api.HideWelcome();pad.enabled=true;s.api.ShowWelcome();s.flush()
+assert(pad.shows==1,"reopened native gamepad dialog was not focused")
+io.write("PASS: native secure gamepad dialog scripts, consent, Back and modal/combat exits\n")
 s.click(s.cards()[1]); s.click(NoQuestHintsForeverWelcome.Apply)
 assert(#s.writes==0 and not s.api.IsOnboardingPending(), "Blizzard first-run choice must write no CVars")
 s.api.ShowWelcome(); assert(NoQuestHintsForeverWelcome.shown)

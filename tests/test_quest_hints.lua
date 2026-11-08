@@ -145,6 +145,7 @@ local function session(char, hasNative, initialHidden)
     NoQuestHintsForeverAPI={
         IsMapHidden=function() return mapHidden end,
         RefreshNavigation=function() navRefreshes=navRefreshes+1 end,
+        GuardQuestMapPin=function(pin,interactive) assert(interactive==false);pin.controllerGuard=true end,
     }
 
     assert(loadfile(addon))()
@@ -194,6 +195,7 @@ assert(#trackerRoot.items==2 and trackerRoot.items[2].label=="Show hint",
     "right-click on quest 20 did not resolve the clicked quest")
 trackerRoot.items[2].click()
 assert(s.map.added==1,"first selective hint must install the native blob provider")
+assert(s.map.pin.controllerGuard,"native blob bypassed controller isolation")
 assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
 assert(s.core.IsQuestRevealed(20) and #s.opened==0,
     "tracker action must allow quest 20 without opening the map")

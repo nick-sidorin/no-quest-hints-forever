@@ -62,6 +62,7 @@ local function run(db, ready, initialHidden)
     NoQuestHintsForeverAPI={
         IsMapHidden=function() return hidden end,
         IsQuestRevealed=function(id) return db.revealedQuests and db.revealedQuests[id]==true end,
+        GuardQuestMapPin=function(pin,interactive) assert(interactive==true);pin.controllerGuard=true end,
     }
     assert(loadfile("NoQuestHintsForever/QuestMarkers.lua"))()
     local api=NoQuestHintsForeverAPI
@@ -77,6 +78,7 @@ end
 local db={revealedQuests={[14]=true,[15]=true,[18]=true,[21]=true}}
 local s=run(db,true)
 assert(s.map.count==1)
+for _,pin in ipairs(s.map.pins) do assert(pin.controllerGuard,"native quest marker bypassed controller isolation") end
 assert(#s.map.pins==3 and s.map.pins[1].id==14 and s.map.pins[2].id==15
     and s.map.pins[3].id==21,"filter, duplicate or waypoint incorrect")
 assert(s.map.pins[2].style=="turnin","turn-in style lost")

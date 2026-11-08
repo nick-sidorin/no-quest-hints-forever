@@ -340,6 +340,7 @@ installProvider = function()
     function candidate:OnAdded(map)
         MapCanvasDataProviderMixin.OnAdded(self, map)
         self.pin = map:AcquirePin(PIN_TEMPLATE)
+        if api.GuardQuestMapPin then api.GuardQuestMapPin(self.pin, false) end
         self.pin.dataProvider = self
         self.pin:SetPosition(0.5, 0.5)
         self:OnMapChanged()

@@ -139,6 +139,10 @@ The owner requested a direct Issues link in the full CurseForge description, sep
 
 The owner requested implementing safe per-character allowlist cleanup in a separate PR, with no release. Use native QUEST_TURNED_IN and QUEST_REMOVED quest IDs only after loading-screen completion; never scan an incomplete/filtered journal to infer removals or sweep old saved entries. Removing a permission must not retarget or clear native SuperTrack. UI/navigation refreshes are deferred and coalesced, wait for combat/loading to end, and must not run after logout. Keep the lazy map-provider fix from 1.4.2. The TOC, release request, feature history and presets remain unchanged. Client turn-in/abandon, reload and waypoint-copy smoke tests remain required before merge.
 
+## Controller compatibility preview (2026-11-08)
+
+The owner authorized one PR for controller onboarding plus the scoped Questie-style map-cursor guard after an unspecific public CurseForge controller-conflict report. No hardware reproduction or exact commenter symptom is available. Use the registered native secure gamepad dialog template for onboarding; preserve inherited lifecycle scripts and confirmation-only presets. Exclude only NQH pins from the native gamepad cursor list; draw allowed quest title/objective tooltips on a separate tooltip without native hover callbacks or shared GameTooltip. Native gamepad crosshair focus/details pin actions are unavailable with this scoped guard, so retain journal access and document the limitation. Mouse behavior and native Blizzard pins remain intact. No new strings/controls, version bump or release is requested. Keep the PR a preview pending controller feedback; do not claim the reported conflict is fixed.
+
 ## Maintenance policy
 
 ### Waypoint-copy investigation (2026-11-08)

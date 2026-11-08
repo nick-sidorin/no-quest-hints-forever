@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add controller onboarding through Forever's native secure gamepad dialog template, preserving inherited focus/cleanup scripts and explicit preset confirmation.
+- Isolate addon-owned quest pins from the native gamepad cursor list and provide a private crosshair tooltip for allowed quest titles/objectives. Preserve mouse behavior and Blizzard pins. Under the native gamepad crosshair, use the journal for quest focus/details actions. Physical controller verification is pending; this does not claim to resolve every reported controller conflict.
+
 - Remove a quest's saved Show hint permission after a confirmed native turn-in/removal event during play. Preserve active permissions across loading, reload and character changes without guessing from an empty or filtered journal. Refresh hint visuals and navigation outside the event callback and combat, preserving Blizzard's selected target.
 
 ## [1.4.2] — 2026-11-08
