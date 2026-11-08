@@ -135,6 +135,10 @@ The owner tested the earlier automatic-opening fix in Forever and confirmed the 
 
 The owner requested a direct Issues link in the full CurseForge description, separate from Source Code, because many players are unfamiliar with GitHub. The final footer labels are Report a Bug or Suggest a Feature → https://github.com/nick-sidorin/no-quest-hints-forever/issues and Source Code → repository root. Include a short instruction to click New issue for either a problem or an idea; ask for client/addon version and reproduction steps only for bug reports. This supersedes the earlier combined Source Code & Bug Reports label while preserving both destinations and the agreed feature-first structure. It changes public description copy only, not in-game support UI or release metadata.
 
+## Revealed-quest cleanup preview — Issue #5
+
+The owner requested implementing safe per-character allowlist cleanup in a separate PR, with no release. Use native QUEST_TURNED_IN and QUEST_REMOVED quest IDs only after loading-screen completion; never scan an incomplete/filtered journal to infer removals or sweep old saved entries. Removing a permission must not retarget or clear native SuperTrack. UI/navigation refreshes are deferred and coalesced, wait for combat/loading to end, and must not run after logout. Keep the lazy map-provider fix from 1.4.2. The TOC, release request, feature history and presets remain unchanged. Client turn-in/abandon, reload and waypoint-copy smoke tests remain required before merge.
+
 ## Maintenance policy
 
 ### Waypoint-copy investigation (2026-11-08)

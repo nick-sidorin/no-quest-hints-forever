@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Remove a quest's saved Show hint permission after a confirmed native turn-in/removal event during play. Preserve active permissions across loading, reload and character changes without guessing from an empty or filtered journal. Refresh hint visuals and navigation outside the event callback and combat, preserving Blizzard's selected target.
+
 ## [1.4.2] — 2026-11-08
 
 - Fix the reported protected-action warning that prevented Shift-clicking a native map waypoint from copying coordinates after `/reload`, even with all hiding controls OFF. Create selective quest map providers only when map hiding is enabled and a valid quest hint is revealed, avoiding unused map initialization.

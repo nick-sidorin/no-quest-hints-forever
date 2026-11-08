@@ -134,6 +134,8 @@ At normal logout or `/reload` the addon also attempts to restore the persistent 
 
 ## Per-character settings and persistence
 
+- In the unreleased cleanup preview, a quest's saved **Show hint** permission is removed after a native turn-in or removal/abandon event during play. Loading, logout, reload, progress updates and an empty/filtered journal do not trigger cleanup. Active permissions survive; old saved IDs are not swept based on guessed journal membership. The resulting hint/navigation refresh waits until loading and combat have ended without changing Blizzard's selected target.
+
 - Settings are stored in `NoQuestHintsForeverChar` using `SavedVariablesPerCharacter`. The existing `enabled` flag is retained as the **Hide quest map hints** value so existing users keep their preference. New hiding options default to **false**, preserving existing users' choices. Existing Full immersion users must explicitly reselect that preset or enable Hide quest levels to adopt its new numeric-level restriction.
 - CVar baselines are saved before the addon modifies them. A separate `NoQuestHintsForeverAccount` SavedVariable tracks original values for CVars treated as shared across characters.
 - While map hint suppression is enabled, relevant `CVAR_UPDATE` events trigger re-enforcement. When disabled, the addon restores the saved baselines and stops enforcing.
