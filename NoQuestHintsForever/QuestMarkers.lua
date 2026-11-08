@@ -1,12 +1,41 @@
 -- Selective native Blizzard quest POI icons ("..." / "?") for revealed quests.
 -- This data provider is independent from NQH's blue objective-area provider.
--- It uses Blizzard's own QuestPinMixin/QuestDataProviderMixin:AddQuest()
+-- It uses Blizzard's own QuestPinMixin widgets and initialization sequence
 -- instead of inventing textures, locations, click actions or styles.
 local api = NoQuestHintsForeverAPI
 if not api then return end
 
 local TEMPLATE = "NQHQuestMarkerPinTemplate"
 local provider
+
+-- POIButtonUtil.GetStyle and POIButtonMixin:GetQuestClassification populate
+-- Blizzard's shared QuestCache. Creating its entries from addon execution
+-- taints later native journal/map updates. Read live C APIs instead, and
+-- override classification ONLY on widgets created for NQH.
+local function readBool(fn, id)
+    if type(fn) ~= "function" then return false end
+    local ok, value = pcall(fn, id)
+    return ok and value == true
+end
+
+function api.GetQuestPOIStyle(id)
+    local styles = POIButtonUtil and POIButtonUtil.Style
+    if not styles then return end
+    local log = C_QuestLog or {}
+    if readBool(log.IsComplete or log.ReadyForTurnIn, id) then return styles.QuestComplete end
+    if readBool(log.IsQuestDisabledForSession, id) then return styles.QuestDisabled end
+    return styles.QuestInProgress
+end
+
+local function getQuestClassification(self)
+    local id = self:GetQuestID()
+    local fn = C_QuestInfoSystem and C_QuestInfoSystem.GetQuestClassification
+    if id and type(fn) == "function" then return fn(id) end
+end
+
+function api.ConfigureQuestPOI(button)
+    button.GetQuestClassification = getQuestClassification
+end
 
 local function permitted(questID)
     return type(questID) == "number"
@@ -21,12 +50,7 @@ end
 
 local function getMapQuestInfo(mapID)
     local sources = {}
-    -- The native cached query is what Blizzard QuestDataProvider uses.
-    if type(GetQuestsOnMapCached) == "function" then
-        local ok, list = pcall(GetQuestsOnMapCached, mapID)
-        if ok and type(list) == "table" then sources[#sources + 1] = list end
-    end
-    -- Some Forever clients return POI results via C_QuestLog instead.
+    -- Do not seed Blizzard's shared Lua map-query cache from addon code.
     if C_QuestLog and type(C_QuestLog.GetQuestsOnMap) == "function" then
         local ok, list = pcall(C_QuestLog.GetQuestsOnMap, mapID)
         if ok and type(list) == "table" then sources[#sources + 1] = list end
@@ -50,6 +74,34 @@ local function installProvider()
 
     local candidate = CreateFromMixins(QuestDataProviderMixin)
     function candidate:GetPinTemplate() return TEMPLATE end
+
+    -- Same native widgets/initialization as QuestDataProviderMixin:AddQuest,
+    -- with cache-free style/classification reads on this unique pin template.
+    function candidate:AddQuest(id, x, y, offset, waypoint)
+        local pin = self:GetMap():AcquirePin(TEMPLATE)
+        api.ConfigureQuestPOI(pin)
+        pin:SetQuestID(id)
+        pin.dataProvider = self
+        local tracked = C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID
+            and C_SuperTrack.GetSuperTrackedQuestID() == id or false
+        pin.isSuperTracked = tracked
+        if tracked then
+            pin:UseFrameLevelType("PIN_FRAME_LEVEL_SUPER_TRACKED_QUEST")
+        else
+            pin:UseFrameLevelType("PIN_FRAME_LEVEL_ACTIVE_QUEST", offset)
+        end
+        pin.Display:ClearAllPoints()
+        pin.Display:SetPoint("CENTER")
+        pin:SetSelected(tracked)
+        pin:SetStyle(waypoint and POIButtonUtil.Style.Waypoint or api.GetQuestPOIStyle(id))
+        pin:UpdateButtonStyle()
+        pin:EvaluateManagedHighlight()
+        if type(MapPinHighlight_CheckHighlightPin) == "function" then
+            MapPinHighlight_CheckHighlightPin(pin:GetHighlightType(), pin, pin.NormalTexture)
+        end
+        pin:SetPosition(x, y)
+        return pin
+    end
 
     -- Do not call QuestDataProviderMixin.OnAdded: it builds a quantizer
     -- intended for the full, global quest set. We display only a few pins.
@@ -77,8 +129,7 @@ local function installProvider()
         if not mapID then self:RemoveAllData(); return end
         local seen, entries = {}, {}
         local function add(id, x, y, waypoint)
-            local style = POIButtonUtil and type(POIButtonUtil.GetStyle) == "function"
-                and POIButtonUtil.GetStyle(id)
+            local style = api.GetQuestPOIStyle(id)
             local tracked = C_SuperTrack and type(C_SuperTrack.GetSuperTrackedQuestID) == "function"
                 and C_SuperTrack.GetSuperTrackedQuestID() == id or false
             entries[#entries + 1] = {id=id, x=x, y=y, waypoint=waypoint, style=style, tracked=tracked}

@@ -13,40 +13,45 @@ local function run(db, ready, initialHidden)
     CreateFromMixins=function(proto) local o={};for k,v in pairs(proto) do o[k]=v end;return o end
     local styles={[15]="turnin"}
     local tracked=15
-    POIButtonUtil={GetStyle=function(id) return styles[id] or "progress" end}
+    POIButtonUtil={Style={QuestComplete="turnin",QuestDisabled="disabled",QuestInProgress="progress",Waypoint="waypoint"},
+        GetStyle=function() error("shared QuestCache helper used") end}
     C_SuperTrack={GetSuperTrackedQuestID=function() return tracked end}
+    C_QuestInfoSystem={GetQuestClassification=function(id) return "normal" end}
+    function map:AcquirePin(template)
+        assert(template=="NQHQuestMarkerPinTemplate")
+        local pin={Display={ClearAllPoints=function() end,SetPoint=function() end}}
+        function pin:SetQuestID(id) self.id=id end
+        function pin:GetQuestID() return self.id end
+        function pin:UseFrameLevelType(kind,offset) self.level=kind end
+        function pin:SetSelected(value) self.selected=value end
+        function pin:SetStyle(value) self.style=value;self.waypoint=value=="waypoint" end
+        function pin:UpdateButtonStyle() assert(self:GetQuestClassification()=="normal") end
+        function pin:EvaluateManagedHighlight() end
+        function pin:SetPosition(x,y) self.x,self.y=x,y end
+        function pin:OnMouseEnter() map.enters=map.enters+1;map.tooltipRenders=map.tooltipRenders+1 end
+        function pin:OnMouseLeave() map.leaves=map.leaves+1 end
+        pin.UpdateTooltip=pin.OnMouseEnter
+        self.pins[#self.pins+1]=pin
+        return pin
+    end
     local function native()
         return {
-            -- Blizzard QuestDataProviderMixin inherits MapCanvasDataProviderMixin.
             GetMap=function(self) return self.map end,
             RemoveAllData=function(self) self:GetMap().releases=self:GetMap().releases+1;self:GetMap().pins={} end,
-            AddQuest=function(self,id,x,y,index,waypoint)
-                assert(self:GetPinTemplate()=="NQHQuestMarkerPinTemplate")
-                assert(x>=0 and x<=1 and y>=0 and y<=1)
-                local pins=self:GetMap().pins
-                local pin={id=id,x=x,y=y,waypoint=waypoint,style=POIButtonUtil.GetStyle(id)}
-                function pin:OnMouseEnter()
-                    -- Forever uses this same function for periodic tooltip updates;
-                    -- its registry event rebuilds and scrolls the quest journal.
-                    map.enters=map.enters+1
-                    map.tooltipRenders=map.tooltipRenders+1
-                end
-                function pin:OnMouseLeave() map.leaves=map.leaves+1 end
-                pin.UpdateTooltip=pin.OnMouseEnter
-                pins[#pins+1]=pin
-                return pin
-            end,
+            AddQuest=function() error("native AddQuest seeds shared QuestCache") end,
         }
     end
     QuestDataProviderMixin=ready and native() or nil
     local x14=.1
-    GetQuestsOnMapCached=function(id)
-        if id~=9 then return {} end
-        return {{questID=14,x=x14,y=.2},{questID=15,x=.7,y=.5},{questID=16,x=.4,y=.4},
-            {questID=18,x=10,y=.4}}
-    end
+    GetQuestsOnMapCached=function() error("shared map query cache used") end
     C_QuestLog={
-        GetQuestsOnMap=function(id) return id==9 and {{questID=15,x=.7,y=.5}} or {} end,
+        IsComplete=function(id) return styles[id]=="turnin" end,
+        IsQuestDisabledForSession=function(id) return styles[id]=="disabled" end,
+        GetQuestsOnMap=function(id)
+            if id~=9 then return {} end
+            return {{questID=14,x=x14,y=.2},{questID=15,x=.7,y=.5},{questID=16,x=.4,y=.4},
+                {questID=18,x=10,y=.4},{questID=15,x=.7,y=.5}}
+        end,
         GetNextWaypointForMap=function(id,mapID)
             if id==21 and mapID==9 then return .3,.6 end
         end,
@@ -94,6 +99,9 @@ assert(s.map.pins[2]==hovered and s.map.releases==releases,
     "unchanged quest events recycled the hovered pin")
 s.styles[15]="progress";s.api.RefreshQuestMarkers()
 assert(s.map.pins[2]~=hovered and s.map.pins[2].style=="progress", "quest style change was ignored")
+s.styles[15]="disabled";s.api.RefreshQuestMarkers()
+assert(s.map.pins[2].style=="disabled", "disabled quest style was lost")
+s.styles[15]="progress";s.api.RefreshQuestMarkers()
 hovered=s.map.pins[2];s.track(14);s.event("SUPER_TRACKING_CHANGED")
 assert(s.map.pins[2]~=hovered, "supertrack selection change was ignored")
 hovered=s.map.pins[2];s.move(.25);s.event("QUEST_POI_UPDATE")

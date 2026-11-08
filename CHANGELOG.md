@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Address the additional waypoint-copy taint path with active selective hints after reload: read quest styles/classification and map queries without filling Blizzard's shared Lua caches. Reconcile private native-template journal/tracker badges instead of rebuilding the native journal from addon execution. Candidate fix pending Forever verification; no version bump or release.
+
 - Remove a quest's saved Show hint permission after a confirmed native turn-in/removal event during play. Preserve active permissions across loading, reload and character changes without guessing from an empty or filtered journal. Refresh hint visuals and navigation outside the event callback and combat, preserving Blizzard's selected target.
 
 ## [1.4.2] — 2026-11-08
