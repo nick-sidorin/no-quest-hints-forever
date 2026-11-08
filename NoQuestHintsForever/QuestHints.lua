@@ -10,6 +10,7 @@ local PIN_TEMPLATE = "NQHQuestBlobPinTemplate"
 NQHQuestBlobPinMixin = NQHQuestBlobPinMixin or {}
 
 local provider, pinMixinReady, menusInstalled = nil, false, false
+local installProvider
 local journalButtons = {}
 local journalHooked, popupHooked, selectedHooked = false, false, false
 
@@ -30,6 +31,7 @@ local function isRevealed(id)
 end
 
 local function refreshMap()
+    installProvider()
     if provider and provider.pin and type(provider.pin.Refresh) == "function" then
         -- Use a protected refresh while the map changes/loads.
         pcall(provider.pin.Refresh, provider.pin)
@@ -278,8 +280,15 @@ local function initializeNativePin()
     return true
 end
 
-local function installProvider()
-    if provider or not initializeNativePin() then return end
+installProvider = function()
+    if provider or not api.IsMapHidden or api.IsMapHidden() ~= true then return end
+    local hasRevealedQuest = false
+    for id, enabled in pairs(allowed() or {}) do
+        if enabled == true and validQuestID(id) then hasRevealedQuest = true; break end
+    end
+    -- Even an empty QuestPOIFrame participates in the native map lifecycle.
+    -- Do not create one until selective hint rendering is actually needed.
+    if not hasRevealedQuest or not initializeNativePin() then return end
     if type(MapCanvasDataProviderMixin) ~= "table"
         or not WorldMapFrame or type(WorldMapFrame.AddDataProvider) ~= "function" then return end
 

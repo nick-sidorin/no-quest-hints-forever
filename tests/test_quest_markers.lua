@@ -1,7 +1,7 @@
 -- Native QuestPinTemplate regression tests, Lua 5.1.
-local function run(db, ready)
+local function run(db, ready, initialHidden)
     NoQuestHintsForeverChar = db
-    local hidden=true
+    local hidden=initialHidden ~= false
     local map={id=9,pins={},count=0,releases=0,enters=0,leaves=0,tooltipRenders=0}
     function map:GetMapID() return self.id end
     function map:AddDataProvider(p) self.provider=p;self.count=self.count+1;p:OnAdded(self) end
@@ -119,4 +119,19 @@ local later=run({revealedQuests={[15]=true}},false)
 assert(later.map.count==0)
 later.ready()
 assert(later.map.count==1 and #later.map.pins==1)
+for _, saved in ipairs({{}, {revealedQuests={[15]=true}}}) do
+    local idle=run(saved,true,false)
+    idle.event("PLAYER_LOGIN"); idle.event("PLAYER_ENTERING_WORLD")
+    idle.event("QUEST_POI_UPDATE"); idle.api.RefreshQuestMarkers()
+    assert(idle.map.count==0,"disabled map hints registered a native provider")
+    idle.hide()
+    if not saved.revealedQuests then
+        assert(idle.map.count==0,"empty allowlist registered a native provider")
+        saved.revealedQuests={[15]=true}
+        idle.api.RefreshQuestMarkers()
+    end
+    assert(idle.map.count==1 and #idle.map.pins==1,"lazy marker initialization failed")
+    idle.api.RefreshQuestMarkers()
+    assert(idle.map.count==1,"lazy marker initialization duplicated provider")
+end
 io.write("PASS: Blizzard pin templates, turn-in/progress, per-quest map filtering and late load\n")

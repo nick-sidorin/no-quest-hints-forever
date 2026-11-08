@@ -137,4 +137,8 @@ The owner requested a direct Issues link in the full CurseForge description, sep
 
 ## Maintenance policy
 
+### Waypoint-copy investigation (2026-11-08)
+
+The owner isolated Issue #3 outside combat with every hiding checkbox already OFF at login: placing a native user waypoint and Shift-clicking copies coordinates successfully, but Shift-clicking after `/reload` produces the protected-action warning and no clipboard text. No selective quest hint was enabled. This is evidence against requiring a visible quest pin or an active hiding checkbox; it does not identify the first taint source. The preview registers selective providers lazily instead of creating an unused blob pin at startup. It is based on published 1.4.1, separate from the unsuccessful minimap icon experiment. Keep Issue #3 open until a real-client retest and trace establish the result.
+
 This document should remain a **decision record with a short, dated handoff**, not a transcript, running debug log or endless list of intermediate artifacts and SHAs. Keep precise bug evidence in Issues, implementation/change discussions in PRs, user instructions in README, version history in CHANGELOG, and enforceable contributor rules in AGENTS. Update this file only when product intent, a material trade-off or the handoff state truly changes.

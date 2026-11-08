@@ -38,6 +38,15 @@ local function installProvider()
     if provider or not WorldMapFrame or not QuestDataProviderMixin
         or not MapCanvasDataProviderMixin or not CreateFromMixins
         or type(WorldMapFrame.AddDataProvider) ~= "function" then return end
+    if not api.IsMapHidden or api.IsMapHidden() ~= true then return end
+    local hasRevealedQuest = false
+    local db = NoQuestHintsForeverChar
+    local list = type(db) == "table" and db.revealedQuests
+    for id, enabled in pairs(type(list) == "table" and list or {}) do
+        if enabled == true and permitted(id) then hasRevealedQuest = true; break end
+    end
+    -- Leave native map provider/pin pools alone while this layer is unused.
+    if not hasRevealedQuest then return end
 
     local candidate = CreateFromMixins(QuestDataProviderMixin)
     function candidate:GetPinTemplate() return TEMPLATE end
@@ -136,6 +145,7 @@ local function installProvider()
 end
 
 function api.RefreshQuestMarkers()
+    installProvider()
     if provider and type(provider.RefreshAllData) == "function" then
         pcall(provider.RefreshAllData, provider)
     end
