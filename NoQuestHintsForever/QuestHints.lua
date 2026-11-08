@@ -58,6 +58,51 @@ local function updateJournalButtons()
     end
 end
 
+local function refreshRevealed()
+    updateJournalButtons()
+    refreshMap()
+    if type(api.RefreshNavigation) == "function" then
+        api.RefreshNavigation()
+    end
+end
+
+-- Only authoritative quest removal/turn-in events may prune permissions.
+-- Never infer removal from an empty or filtered quest log during loading.
+local cleanupReady, cleanupDirty, cleanupQueued = false, false, false
+local cleanupStopped = false
+
+local function cleanupInCombat()
+    return type(InCombatLockdown) == "function" and InCombatLockdown()
+end
+
+local function flushCleanup()
+    cleanupQueued = false
+    if not cleanupDirty or not cleanupReady or cleanupInCombat() then return end
+    cleanupDirty = false
+    -- Re-evaluate the current native target without clearing/replacing it.
+    refreshRevealed()
+end
+
+local function queueCleanup()
+    if cleanupQueued or not cleanupDirty or not cleanupReady or cleanupInCombat() then return end
+    if C_Timer and type(C_Timer.After) == "function" then
+        cleanupQueued = true
+        C_Timer.After(0, flushCleanup)
+    else
+        flushCleanup()
+    end
+end
+
+local function pruneRevealed(id)
+    if not cleanupReady or not validQuestID(id) then return end
+    local db = NoQuestHintsForeverChar
+    local list = type(db) == "table" and db.revealedQuests
+    if type(list) ~= "table" or list[id] == nil then return end
+    list[id] = nil
+    cleanupDirty = true
+    queueCleanup()
+end
+
 local function setRevealed(id, value)
     local list = allowed()
     if not list or not validQuestID(id) then return false end
@@ -72,11 +117,7 @@ local function setRevealed(id, value)
     else
         list[id] = nil
     end
-    updateJournalButtons()
-    refreshMap()
-    if type(api.RefreshNavigation) == "function" then
-        api.RefreshNavigation()
-    end
+    refreshRevealed()
     return true
 end
 
@@ -334,8 +375,28 @@ lifecycle:RegisterEvent("PLAYER_LOGIN")
 lifecycle:RegisterEvent("PLAYER_ENTERING_WORLD")
 lifecycle:RegisterEvent("QUEST_LOG_UPDATE")
 lifecycle:RegisterEvent("QUEST_POI_UPDATE")
-lifecycle:SetScript("OnEvent", function(_, event)
-    if event == "ADDON_LOADED" or event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
+lifecycle:RegisterEvent("QUEST_REMOVED")
+lifecycle:RegisterEvent("QUEST_TURNED_IN")
+lifecycle:RegisterEvent("LOADING_SCREEN_ENABLED")
+lifecycle:RegisterEvent("LOADING_SCREEN_DISABLED")
+lifecycle:RegisterEvent("PLAYER_LEAVING_WORLD")
+lifecycle:RegisterEvent("PLAYER_LOGOUT")
+lifecycle:RegisterEvent("PLAYER_REGEN_ENABLED")
+lifecycle:SetScript("OnEvent", function(_, event, questID, wasReplayQuest)
+    if event == "PLAYER_LOGOUT" then
+        cleanupReady, cleanupStopped = false, true
+    elseif cleanupStopped then
+        return
+    elseif event == "LOADING_SCREEN_ENABLED" or event == "PLAYER_LEAVING_WORLD" then
+        cleanupReady = false
+    elseif event == "LOADING_SCREEN_DISABLED" then
+        cleanupReady = true
+        queueCleanup()
+    elseif event == "QUEST_REMOVED" or event == "QUEST_TURNED_IN" then
+        if event ~= "QUEST_REMOVED" or wasReplayQuest ~= true then pruneRevealed(questID) end
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        queueCleanup()
+    elseif event == "ADDON_LOADED" or event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
         installProvider()
         installJournal()
         installMenus()
