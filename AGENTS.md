@@ -55,9 +55,9 @@ Repository-wide instructions for contributors and coding agents. Before substant
 - Keep unrelated changes out of PRs. Do not create tags, bump versions, publish, or change `.github/release-request.txt` without a release request. Use existing `publish.yml` and CurseForge webhook; do not add another uploader or credentials.
 - Release only after green final-code CI and a real Forever smoke test. Update `CHANGELOG.md` and `CURSEFORGE_DESCRIPTION.md` for user-facing changes; include refreshed short/full CurseForge listing text in the release handoff. GitHub Release success does not establish CurseForge publication.
 
-## Unresolved protected-action error
+## Protected-action regression
 
-- [Issue #3 — `ADDON_ACTION_BLOCKED`](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3) remains open. The map/journal is involved in reports, but no specific hook is proven guilty. Collect the action before the warning, combat status and `taint.log`; avoid broad changes based only on guesses. Do not close because mock tests passed.
+- [Issue #3 — `ADDON_ACTION_BLOCKED`](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3) has a real-client-verified fix for the reproduced native waypoint Shift-click clipboard block after reload with every hiding control OFF (PR #31, hotfix 1.4.2). The owner approved closing the resolved report after publication. Do not generalize this to every protected-action warning: if another scenario occurs, collect the preceding action, combat status and taint.log, and reopen or file a separate report as appropriate. Mock tests alone do not establish taint safety.
 - Keep selective map providers lazy: no registration or blob-pin acquisition until map hiding is enabled and at least one valid quest is explicitly revealed. Public refresh paths must initialize them on demand without requiring a reload. On 2026-11-08 the owner tested PR #31 and confirmed the all-options-OFF waypoint-copy block after reload no longer reproduced across repeated cases. This verifies that scenario; broader Issue #3 taint reports still need matching evidence.
 
 ## Keeping context usable

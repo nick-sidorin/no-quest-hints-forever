@@ -87,7 +87,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Known issue:** An intermittent Blizzard protected-action warning is under investigation. See [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Hotfix 1.4.2:** Fixes the reported Blizzard protected-action warning when Shift-clicking a map waypoint to copy coordinates after `/reload`, including when all hiding options are off. See [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 

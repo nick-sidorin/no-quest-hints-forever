@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Hotfix 1.4.2:** Fixes the reported native map waypoint Shift-click clipboard block after `/reload`, including with every hiding option OFF. The owner verified the fix in Forever. Selective quest map layers initialize only when needed; saved choices remain intact.
+
 > **Version 1.4.0:** Native settings, three playstyles, restoration, all official client locales and upgrade notifications. Existing characters keep their preferences.
 
 **Independent, per-character** options:
