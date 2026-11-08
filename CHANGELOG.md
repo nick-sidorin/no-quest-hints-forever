@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## [1.4.2] — 2026-11-08
 
-- Defer selective quest map provider registration until map hiding is enabled and a valid quest hint is revealed. Avoid creating an unused native quest blob pin at startup. The owner verified that the reported native waypoint Shift-click clipboard block after `/reload`, with every hiding control OFF, no longer reproduces. Broader protected-action reports in Issue #3 remain under investigation.
+- Fix the reported protected-action warning that prevented Shift-clicking a native map waypoint from copying coordinates after `/reload`, even with all hiding controls OFF. Create selective quest map providers only when map hiding is enabled and a valid quest hint is revealed, avoiding unused map initialization.
+- The owner verified the fix in Forever across repeated cases before approving publication. Preserve saved preferences and on-demand selective hints. This is a fix-only release; it adds no options or feature notifications. The experimental minimap questgiver-icon option is not included.
 
 ## [1.4.1] — 2026-11-07
 
