@@ -15,12 +15,12 @@ local function newFrame()
     return f
 end
 
-local function session(char, hasNative)
+local function session(char, hasNative, initialHidden)
     NoQuestHintsForeverAPI = nil
     NoQuestHintsForeverChar = char
     NQHQuestBlobPinMixin = nil
     local events, menus, buttons = {}, {}, {}
-    local mapHidden = true
+    local mapHidden = initialHidden ~= false
     local map = {mapID=301, added=0}
     function map:GetMapID() return self.mapID end
     function map:AddDataProvider(p)
@@ -177,9 +177,7 @@ end
 
 -- Capture the event frame while leaving every method functional.
 local s=session({},true)
-assert(s.map.added==1,"native blob data provider not installed")
-assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
-assert(#s.map.pin.drawn==0,"default must show no hint areas")
+assert(s.map.added==0 and not s.map.pin,"empty allowlist must not register a provider or acquire a map pin")
 assert(#s.buttons==2,"both journal layouts need a button")
 assert(s.buttons[1].width==94 and s.buttons[1].position[1]=="LEFT" and s.buttons[1].position[2]==s.detail.BackFrame.BackButton,"journal button should align with Blizzard Back button")
 assert(s.menus.MENU_QUEST_MAP_LOG_TITLE,"journal right click menu missing")
@@ -195,6 +193,8 @@ s.menus.MENU_QUEST_OBJECTIVE_TRACKER({},trackerRoot)
 assert(#trackerRoot.items==2 and trackerRoot.items[2].label=="Show hint",
     "right-click on quest 20 did not resolve the clicked quest")
 trackerRoot.items[2].click()
+assert(s.map.added==1,"first selective hint must install the native blob provider")
+assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
 assert(s.core.IsQuestRevealed(20) and #s.opened==0,
     "tracker action must allow quest 20 without opening the map")
 ObjectiveTrackerBlockHeaderMixin.OnClick(s.trackerHeader,"RightButton")
@@ -253,11 +253,25 @@ local reload=session(saved,true)
 assert(reload.core.IsQuestRevealed(10) and #reload.map.pin.drawn==2,
     "reload did not restore saved whitelist")
 local alt=session({},true)
-assert(#alt.map.pin.drawn==0 and not alt.core.IsQuestRevealed(10),
+assert(not alt.map.pin and not alt.core.IsQuestRevealed(10),
     "another character inherited whitelist")
 
-local late=session({},false)
+local late=session({revealedQuests={[10]=true}},false)
 assert(late.map.added==0,"provider registered before native module exists")
 late.enableNative()
 assert(late.map.added==1,"late loading Blizzard provider not detected")
+-- All-off startup/reload and an empty Full immersion allowlist stay out of
+-- native map pools. Opting in later must work without a UI reload.
+for _, saved in ipairs({{}, {revealedQuests={[10]=true}}}) do
+    local idle=session(saved,true,false)
+    idle.fire("PLAYER_LOGIN"); idle.fire("PLAYER_ENTERING_WORLD")
+    idle.fire("QUEST_LOG_UPDATE"); idle.core.RefreshQuestHintPins()
+    assert(idle.map.added==0 and not idle.map.pin,"disabled map filtering touched native pin pools")
+    idle.core.SetQuestRevealed(20,true)
+    assert(idle.map.added==0,"allowlist editing with global hiding off created pins")
+    idle.setMapHidden(true)
+    assert(idle.map.added==1 and idle.map.pin,"enabling selective hints after login failed")
+    idle.core.RefreshQuestHintPins()
+    assert(idle.map.added==1,"lazy initialization registered a duplicate provider")
+end
 print("PASS: native Blizzard quest blob, independent whitelist, journal/menu, reload and alt\n")

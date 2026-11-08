@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Defer selective quest map provider registration until map hiding is enabled and a valid quest hint is revealed. Avoid creating an unused native quest blob pin at startup. The owner verified that the reported native waypoint Shift-click clipboard block after `/reload`, with every hiding control OFF, no longer reproduces. Broader protected-action reports in Issue #3 remain under investigation.
+
 ## [1.4.1] — 2026-11-07
 
 - Identify the addon in the white welcome headline, keep the slogan in the gold second line, and use a short static Choose your playstyle instruction below the cards. Remove duplicated selected-status text while retaining the selected card marker and Begin adventure action. Use informal Russian address throughout the chooser; update all locales without changing typography or spacing.
