@@ -19,3 +19,4 @@ SellPrices.lua
 QuestProgressMessages.lua
 QuestPresentation.lua
 QuestItemHighlight.lua
+MinimapQuestMarkers.lua

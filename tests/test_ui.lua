@@ -211,37 +211,37 @@ assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
     "/nqh did not navigate to native Settings category")
 assert(NoQuestHintsForeverOptionsFrame == nil,
     "legacy floating settings window must never be created")
-assert(#s.proxySettings == 10, "each option needs a native proxy setting")
+assert(#s.proxySettings == 11, "each option needs a native proxy setting")
 for _, control in ipairs(s.checks) do
     assert(type(control.tooltip) == "string" and #control.tooltip > 0,
         "native checkbox description must be shown in tooltip")
 end
-assert(#s.checks == 10, "expected ten independent controls")
-assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
-    and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
-    and s.checks[8]:GetChecked() == false and s.checks[5]:GetChecked() == false,
+assert(#s.checks == 11, "expected eleven independent controls")
+assert(s.checks[1]:GetChecked() == true and s.checks[3]:GetChecked() == false
+    and s.checks[4]:GetChecked() == false and s.checks[5]:GetChecked() == false
+    and s.checks[9]:GetChecked() == false and s.checks[6]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
-s.checks[2]:SetChecked(true)
-s.checks[2].scripts.OnClick(s.checks[2])
-assert(original.hideTracker == true, "tracker setting not stored per character")
-assert(s.tracker:GetAlpha() == 0 and not s.tracker:IsMouseEnabled(), "tracker not hidden")
 s.checks[3]:SetChecked(true)
 s.checks[3].scripts.OnClick(s.checks[3])
-assert(original.hideQuestTooltips == true,
-    "new tooltip setting not persisted per character")
+assert(original.hideTracker == true, "tracker setting not stored per character")
+assert(s.tracker:GetAlpha() == 0 and not s.tracker:IsMouseEnabled(), "tracker not hidden")
 s.checks[4]:SetChecked(true)
 s.checks[4].scripts.OnClick(s.checks[4])
+assert(original.hideQuestTooltips == true,
+    "new tooltip setting not persisted per character")
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
 assert(original.hideQuestNPCNames == true, "NPC name override not saved per character")
 assert(s.current.UnitNameFriendlySpecialNPCName == "0", "quest/special names CVar not suppressed")
 assert(shared.npcNameOriginal == "1", "account baseline not preserved")
 assert(s.current.UnitNameHostleNPC == "0" and s.current.UnitNameNPC == "0",
     "NPC name override changed unrelated name categories")
-s.checks[8]:SetChecked(true)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(true)
+s.checks[9].scripts.OnClick(s.checks[9])
 assert(original.hideSellPrices == true and NoQuestHintsForeverAPI.IsSellPriceHidden() == true,
     "sell price preference not enabled per character")
-s.checks[5]:SetChecked(true)
-s.checks[5].scripts.OnClick(s.checks[5])
+s.checks[6]:SetChecked(true)
+s.checks[6].scripts.OnClick(s.checks[6])
 assert(original.hideQuestProgressMessages == true
     and NoQuestHintsForeverAPI.IsQuestProgressHidden() == true,
     "quest progress messages preference not enabled independently")
@@ -281,12 +281,12 @@ s.checks[1]:SetChecked(false)
 s.checks[1].scripts.OnClick(s.checks[1])
 assert(original.enabled == false and original.hideTracker == true, "map checkbox modified tracker")
 assert(s.current.questPOI == "1", "map checkbox did not restore CVars")
-s.checks[2]:SetChecked(false)
-s.checks[2].scripts.OnClick(s.checks[2])
-assert(original.hideTracker == false, "tracker option not turned OFF")
-assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled(), "tracker state not restored")
 s.checks[3]:SetChecked(false)
 s.checks[3].scripts.OnClick(s.checks[3])
+assert(original.hideTracker == false, "tracker option not turned OFF")
+assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled(), "tracker state not restored")
+s.checks[4]:SetChecked(false)
+s.checks[4].scripts.OnClick(s.checks[4])
 assert(original.hideQuestTooltips == false and original.hideTracker == false
     and original.enabled == false and original.hideQuestNPCNames == true,
     "tooltip option changed unrelated settings")
@@ -295,15 +295,15 @@ s.current.UnitNameFriendlySpecialNPCName = "1"
 s.event("CVAR_UPDATE", "UnitNameFriendlySpecialNPCName")
 assert(s.current.UnitNameFriendlySpecialNPCName == "0",
     "CVAR_UPDATE did not re-enforce the user-selected name override")
-s.checks[4]:SetChecked(false)
-s.checks[4].scripts.OnClick(s.checks[4])
+s.checks[5]:SetChecked(false)
+s.checks[5].scripts.OnClick(s.checks[5])
 assert(original.hideQuestNPCNames == false and shared.npcNameOriginal == nil
     and s.current.UnitNameFriendlySpecialNPCName == "1",
     "disabling NPC override must restore account baseline")
+s.checks[5]:SetChecked(true)
+s.checks[5].scripts.OnClick(s.checks[5])
 s.checks[4]:SetChecked(true)
 s.checks[4].scripts.OnClick(s.checks[4])
-s.checks[3]:SetChecked(true)
-s.checks[3].scripts.OnClick(s.checks[3])
 s.command("")
 assert(#s.opened == 2, "/nqh should navigate to the category again")
 
@@ -311,32 +311,32 @@ assert(#s.opened == 2, "/nqh should navigate to the category again")
 s.setCombat(true)
 s.command("")
 assert(#s.opened == 3, "native Settings should remain accessible")
-s.checks[2]:SetChecked(true)
-s.checks[2].scripts.OnClick(s.checks[2])
+s.checks[3]:SetChecked(true)
+s.checks[3].scripts.OnClick(s.checks[3])
 assert(s.tracker:GetAlpha() == 0 and s.tracker:IsMouseEnabled(), "combat tracker alpha should be hidden")
 s.setCombat(false)
 s.event("PLAYER_REGEN_ENABLED")
 assert(not s.tracker:IsMouseEnabled(), "mouse input not updated after combat")
-s.checks[2]:SetChecked(false)
-s.checks[2].scripts.OnClick(s.checks[2])
+s.checks[3]:SetChecked(false)
+s.checks[3].scripts.OnClick(s.checks[3])
 assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled())
 
 -- The price option is independent, and toggling it is reversible.
-s.checks[8]:SetChecked(false)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(false)
+s.checks[9].scripts.OnClick(s.checks[9])
 assert(original.hideSellPrices == false
     and NoQuestHintsForeverAPI.IsSellPriceHidden() == false,
     "turning off price concealment did not restore native behavior")
-s.checks[8]:SetChecked(true)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(true)
+s.checks[9].scripts.OnClick(s.checks[9])
 
-s.checks[5]:SetChecked(false)
-s.checks[5].scripts.OnClick(s.checks[5])
+s.checks[6]:SetChecked(false)
+s.checks[6].scripts.OnClick(s.checks[6])
 assert(original.hideQuestProgressMessages == false
     and not NoQuestHintsForeverAPI.IsQuestProgressHidden(),
     "popup suppression did not restore native behavior")
-s.checks[5]:SetChecked(true)
-s.checks[5].scripts.OnClick(s.checks[5])
+s.checks[6]:SetChecked(true)
+s.checks[6].scripts.OnClick(s.checks[6])
 
 -- Reload: stored tracker option should be reapplied, without changing map.
 original.enabled = false
@@ -348,9 +348,9 @@ NoQuestHintsForeverAPI.SetMapHidden(false)
 assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
 assert(#reload.opened == 1, "/nqh must open native settings after reload")
-assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
-    and reload.checks[4]:GetChecked() == true and reload.checks[8]:GetChecked() == true
-    and reload.checks[5]:GetChecked() == true,
+assert(reload.checks[3]:GetChecked() == true and reload.checks[4]:GetChecked() == true
+    and reload.checks[5]:GetChecked() == true and reload.checks[9]:GetChecked() == true
+    and reload.checks[6]:GetChecked() == true,
     "UI did not reflect loaded tracker/tooltip settings")
 
 -- Different character starts without any suppression.
@@ -370,7 +370,7 @@ assert(alt.current.UnitNameFriendlySpecialNPCName == "1" and shared.npcNameOrigi
 local localized = session({}, {}, true, false, "ruRU")
 assert(localized.checks[1].setting.name == "Скрывать подсказки на карте",
     "native controls ignored the selected WoW locale")
-assert(localized.checks[4].tooltip:find("Blizzard", 1, true) ~= nil,
+assert(localized.checks[5].tooltip:find("Blizzard", 1, true) ~= nil,
     "Russian NPC name tooltip lost the Blizzard limitation warning")
 localized.command("")
 assert(#localized.opened == 1, "/nqh did not open Russian native settings")
@@ -399,8 +399,8 @@ assert(type(category.rows[2].click) == "function" and type(category.rows[3].clic
 assert(category.rows[4].header == "Подсказки заданий")
 assert(category.rows[5].header == "Цены предметов")
 assert(category.rows[6].header == "Сумки")
-assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
-assert(localized.checks[8].setting.variable == "NQH_HIDE_SELL_PRICES")
+assert(localized.checks[6].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
+assert(localized.checks[9].setting.variable == "NQH_HIDE_SELL_PRICES")
 
 local reset = session({}, {}, true, true)
 local notifications = {}
@@ -414,12 +414,12 @@ assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
 reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
 assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
 local count=0; for _ in pairs(notifications) do count=count+1 end
-assert(count==10, "preset/restore must refresh every native checkbox")
+assert(count==11, "preset/restore must refresh every native checkbox")
 
 -- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
 local auctionUI = session(priceChar, {}, true, false)
-local auctionCheck = auctionUI.checks[9]
+local auctionCheck = auctionUI.checks[10]
 assert(auctionCheck.setting.variable == "NQH_HIDE_AUCTION_SELL_PRICES")
 assert(auctionCheck.setting.defaultValue == false and not auctionCheck:GetChecked())
 assert(not auctionCheck.parentInitializer and not auctionCheck.modifyPredicate,
@@ -428,7 +428,7 @@ auctionCheck:SetChecked(true); auctionCheck.scripts.OnClick(auctionCheck)
 assert(priceChar.hideAuctionSellPrices and not NoQuestHintsForeverAPI.IsSellPriceHidden(),
     "auction hiding must work with outside-trading hiding OFF")
 auctionUI = session(priceChar, {}, true, false)
-assert(auctionUI.checks[9]:GetChecked(), "independent auction choice lost on reload")
+assert(auctionUI.checks[10]:GetChecked(), "independent auction choice lost on reload")
 NoQuestHintsForeverAPI.ApplyPreset("full")
 assert(NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
     "Full immersion must keep auction values visible as requested")
@@ -437,7 +437,7 @@ NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
     "restore must clear both independent hiding contexts")
 local auctionAlt = session({}, {}, true, false)
-assert(not auctionAlt.checks[9]:GetChecked(), "new alt must not inherit another character's hiding")
+assert(not auctionAlt.checks[10]:GetChecked(), "new alt must not inherit another character's hiding")
 
 -- Preview migration preserves effective price visibility and removes the old
 -- positive/dependent field; it must not override a new-format explicit choice.
@@ -457,8 +457,8 @@ session(currentFormat, {}, true, false)
 assert(currentFormat.hideAuctionSellPrices and currentFormat.showAuctionSellPrices == nil)
 
 local presentation = session({}, {}, true, false)
-assert(presentation.checks[6].setting.variable == "NQH_HIDE_QUEST_LEVELS")
-assert(presentation.checks[7].setting.variable == "NQH_HIDE_QUEST_DIFFICULTY")
+assert(presentation.checks[7].setting.variable == "NQH_HIDE_QUEST_LEVELS")
+assert(presentation.checks[8].setting.variable == "NQH_HIDE_QUEST_DIFFICULTY")
 NoQuestHintsForeverAPI.ApplyPreset("full")
 assert(NoQuestHintsForeverAPI.IsQuestLevelsHidden() and not NoQuestHintsForeverAPI.IsQuestDifficultyHidden())
 assert(not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden())
@@ -472,13 +472,13 @@ assert(not NoQuestHintsForeverAPI.IsQuestLevelsHidden() and not NoQuestHintsFore
 -- Bag highlighting is a manual per-character option, OFF in every preset.
 local bagChar = {}
 local bags = session(bagChar, {}, true, false)
-local bagCheck = bags.checks[10]
+local bagCheck = bags.checks[11]
 assert(bagCheck.setting.variable == "NQH_HIDE_QUEST_ITEM_HIGHLIGHT")
 assert(not bagCheck:GetChecked())
 bagCheck:SetChecked(true); bagCheck.scripts.OnClick(bagCheck)
 assert(bagChar.hideQuestItemHighlight and NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
 bags = session(bagChar, {}, true, false)
-assert(bags.checks[10]:GetChecked(), "manual bag preference lost on reload")
+assert(bags.checks[11]:GetChecked(), "manual bag preference lost on reload")
 for _, preset in ipairs({ "blizzard", "immersion", "full" }) do
     NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
     NoQuestHintsForeverAPI.ApplyPreset(preset)
@@ -488,7 +488,7 @@ NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
 NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
 local altBags = session({}, {}, true, false)
-assert(not altBags.checks[10]:GetChecked())
+assert(not altBags.checks[11]:GetChecked())
 
 -- The last Settings action presents a copyable project URL, with no browser API
 -- assumptions. Exercise the native GetEditBox shape and legacy frame fields.
@@ -565,10 +565,10 @@ assert(restores==1 and not custom.enabled and not custom.hideQuestLevels
 -- altering game-version feature registries; only viewed rows are marked seen.
 local markerAccount={newSettings={NQH_HIDE_QUEST_LEVELS=true,NQH_HIDE_QUEST_DIFFICULTY=true}}
 local marked=session({},markerAccount,true,false)
-assert(marked.checks[6]:IsNewTagShown() and marked.checks[7]:IsNewTagShown())
+assert(marked.checks[7]:IsNewTagShown() and marked.checks[8]:IsNewTagShown())
 assert(not marked.checks[1]:IsNewTagShown())
-marked.checks[6]:MarkSettingAsSeen()
-assert(not marked.checks[6]:IsNewTagShown() and marked.checks[7]:IsNewTagShown())
+marked.checks[7]:MarkSettingAsSeen()
+assert(not marked.checks[7]:IsNewTagShown() and marked.checks[8]:IsNewTagShown())
 assert(markerAccount.newSettings.NQH_HIDE_QUEST_LEVELS==nil)
 
 local frenchSettings=session({}, {}, true, false, "frFR")
@@ -577,3 +577,21 @@ assert(frenchSettings.panels[1].rows[1].header=="Style de jeu et restauration")
 assert(frenchSettings.panels[1].rows[#frenchSettings.panels[1].rows].button=="Signaler un problème")
 local germanSettings=session({}, {}, true, false, "deDE")
 assert(germanSettings.checks[1].setting.name=="Questkartenhinweise ausblenden")
+
+-- Minimap quest icons are independent, OFF for upgrades/new characters, and
+-- enabled only when the owner explicitly applies Full immersion.
+local minimapChar={enabled=true,onboardingComplete=true}
+local mm=session(minimapChar,{},true,false)
+assert(mm.checks[2].setting.variable=="NQH_HIDE_MINIMAP_QUEST_MARKERS")
+assert(not mm.checks[2]:GetChecked() and minimapChar.hideMinimapQuestMarkers==nil)
+for _,preset in ipairs({"blizzard","immersion","full"}) do
+ NoQuestHintsForeverAPI.ApplyPreset(preset)
+ assert(NoQuestHintsForeverAPI.IsMinimapQuestMarkersHidden()==(preset=="full"))
+end
+mm.checks[2]:SetChecked(false);mm.checks[2].scripts.OnClick(mm.checks[2])
+assert(not minimapChar.hideMinimapQuestMarkers and minimapChar.enabled)
+mm.checks[2]:SetChecked(true);mm.checks[2].scripts.OnClick(mm.checks[2])
+mm=session(minimapChar,{},true,false)
+assert(mm.checks[2]:GetChecked(),"minimap preference did not survive reload")
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(not NoQuestHintsForeverAPI.IsMinimapQuestMarkersHidden())

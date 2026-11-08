@@ -135,6 +135,14 @@ The owner tested the earlier automatic-opening fix in Forever and confirmed the 
 
 The owner requested a direct Issues link in the full CurseForge description, separate from Source Code, because many players are unfamiliar with GitHub. The final footer labels are Report a Bug or Suggest a Feature → https://github.com/nick-sidorin/no-quest-hints-forever/issues and Source Code → repository root. Include a short instruction to click New issue for either a problem or an idea; ask for client/addon version and reproduction steps only for bug reports. This supersedes the earlier combined Source Code & Bug Reports label while preserving both destinations and the agreed feature-first structure. It changes public description copy only, not in-game support UI or release metadata.
 
+## Minimap quest markers — pending Issue #29 preview
+
+Community suggestion #29 asks to hide minimap quest pickup/turn-in locations. The owner approved an independent checkbox plus enabling it in Full immersion only, and explicitly requested a branch, PR and installable test ZIP. As in Blizzard and Immersion leave it OFF. Do not force it onto existing users who previously selected Full; they opt in or reselect. No release/version bump is requested.
+
+Forever source exposes C_Minimap.GetTrackingFilter/GetTrackingInfo/SetTracking and Enum.MinimapTrackingFilter.QuestPOIs. Camelot treats QuestPOIs as an always-on menu filter, but the C API exposes its state. The preview identifies the enum dynamically, controls just that filter, and preserves its actual original boolean using reported CVar scope. It does not overwrite the whole minimapTrackedInfov4 bitfield, mutate ALWAYS_ON_FILTERS or alter NPC overhead symbols. The native filter may include other quest POI icons; client verification of pickups/turn-ins remains necessary. Selective world-map hints/navigation remain independent; no individual minimap exceptions are added.
+
+New MinimapQuestMarkers.lua handles late APIs, tracking-list reordering, native tracking/CVar events, combat deferral, failed restores, reload, normal logout and shared/per-character recovery across alts. Core restore reports pending recovery. All eleven preferences persist independently; all locales now have 81 keys. The first shipping feature version/marker will be registered only when a release is requested, not in this same-version preview. Keep the PR draft pending the owner's Forever smoke test.
+
 ## Maintenance policy
 
 This document should remain a **decision record with a short, dated handoff**, not a transcript, running debug log or endless list of intermediate artifacts and SHAs. Keep precise bug evidence in Issues, implementation/change discussions in PRs, user instructions in README, version history in CHANGELOG, and enforceable contributor rules in AGENTS. Update this file only when product intent, a material trade-off or the handoff state truly changes.

@@ -30,6 +30,8 @@ local controls = {
       "IsQuestDifficultyHidden", "SetQuestDifficultyHidden" },
     { "NQH_HIDE_QUEST_ITEM_HIGHLIGHT", "ITEM_HIGHLIGHT", "ITEM_HIGHLIGHT_DESC",
       "IsQuestItemHighlightHidden", "SetQuestItemHighlightHidden" },
+    { "NQH_HIDE_MINIMAP_QUEST_MARKERS", "MINIMAP_QUEST_MARKERS", "MINIMAP_QUEST_MARKERS_DESC",
+      "IsMinimapQuestMarkersHidden", "SetMinimapQuestMarkersHidden" },
 }
 
 local PROJECT_URL = "https://github.com/nick-sidorin/no-quest-hints-forever"
@@ -127,7 +129,7 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 2, 3, 4, 6, 8, 9, 5, 7, 10 }
+    local order = { 1, 11, 2, 3, 4, 6, 8, 9, 5, 7, 10 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end

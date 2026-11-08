@@ -17,6 +17,7 @@ Remember when finding a quest objective meant reading the description, looking a
 **Independent, per-character** options:
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
+- **Hide minimap quest icons (preview):** Hide native minimap quest pickup/turn-in markers using the client's quest tracking filter. Preserve symbols above NPCs and unrelated tracking. Default OFF; enabled by Full immersion when explicitly selected.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
 - **Hide quest NPC names:** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
@@ -56,6 +57,7 @@ World of Warcraft/
                 ├── QuestPresentation.lua     # Numeric title levels and difficulty-color filtering
                 ├── QuestTooltips.lua
                 ├── SellPrices.lua
+                ├── MinimapQuestMarkers.lua  # Native QuestPOIs filter and scoped recovery
                 ├── QuestItemHighlight.lua   # Optional native bag quest borders
                 ├── QuestProgressMessages.lua
                 └── LICENSE
@@ -71,11 +73,11 @@ After the loading screen finishes, a new character sees three realm-rule-style c
 | --- | --- |
 | **As in Blizzard** | None; keep your personal game settings |
 | **Immersion** | Original five quest concealment options; numeric levels and difficulty colors remain unchanged |
-| **Full immersion** | Immersion plus hidden numeric quest levels and prices outside trading; difficulty colors and auction prices remain visible |
+| **Full immersion** | Immersion plus hidden numeric quest levels, minimap quest icons and prices outside trading; difficulty colors and auction prices remain visible |
 
 Clicking a card only selects it. **Begin adventure** confirms the choice. Closing the window, choosing **Later**, or opening **Customize settings…** applies no preset. An unfinished first run reappears on the next login; editing a checkbox completes setup. Existing characters keep their saved choices and do not see onboarding after upgrading.
 
-Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the ten checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
+Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the eleven checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
 
 After an upgrade, one localized message per account shows the new addon version after the loading screen has finished. Fix-only updates use a neutral message. If any feature release lies between the last seen and installed version (even when versions were skipped), the message also points to `/nqh` for new options. Ordinary reloads, alts and downgrades do not repeat it; a first install uses onboarding instead. Existing installations without version bookkeeping receive one notice, then keep a baseline in account SavedVariables. Test builds with the same TOC version do not count as separate upgrades.
 
@@ -84,13 +86,14 @@ Newly introduced checkboxes use Blizzard's native **New** marker. Each marker is
 ### Open settings
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
-- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All ten checkboxes live directly on that page; no separate popup window.
+- Or open **Esc → Options → AddOns → No Quest Hints** yourself. All eleven checkboxes live directly on that page; no separate popup window.
 
-The **Playstyle and restoration** section appears first, with both playstyle selection and restore buttons. Below it, the native Blizzard settings category groups seven checkboxes under **Quest hints** and two equal-rank controls under **Item prices**, plus one manual option under **Bags**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
+The **Playstyle and restoration** section appears first, with both playstyle selection and restore buttons. Below it, the native Blizzard settings category groups eight checkboxes under **Quest hints** and two equal-rank controls under **Item prices**, plus one manual option under **Bags**. Both price controls mean hiding and are independently editable; neither is indented or dependent on the other. Labels are kept compact; the descriptions appear **only when hovering** over the controls, like other WoW addon settings:
 
 | Checkbox | Behavior | Default for new characters |
 | --- | --- | --- |
 | Hide quest map hints | Hide the supported built-in map/minimap markers and navigation | Off |
+| Hide minimap quest icons | Hide native quest pickup/turn-in markers on the minimap; keep overhead symbols | Off |
 | Hide objective tracker | Hide the on-screen right-side task list | Off |
 | Hide quest hints in tooltips | Hide quest titles and progress on NPC/object mouseover, not in quest journal | Off |
 | Hide quest NPC names | Also hides some special/friendly NPC names due to Blizzard's shared CVar | Off |
@@ -115,8 +118,8 @@ The final **Support → Report a problem** button opens a selected, copyable Git
 | --- | --- |
 | `/nqh` | Open the native Blizzard AddOns settings category. |
 | `/nqh welcome` | Reopen the playstyle chooser without changing settings until confirmation. |
-| `/nqh restore` | Turn off all ten hiding controls and restore saved pre-addon game settings. |
-| `/nqh status` | Display all ten checkbox states and targeted CVars. |
+| `/nqh restore` | Turn off all eleven hiding controls and restore saved pre-addon game settings. |
+| `/nqh status` | Display all eleven checkbox states and targeted CVars. |
 
 The ambiguous map-only `on`/`off` commands have been removed in 1.4.0. They now show command help without changing anything.
 
@@ -124,7 +127,7 @@ The ambiguous map-only `on`/`off` commands have been removed in 1.4.0. They now 
 
 The **Restore game settings** button asks for confirmation before clearing your current checkbox combination. Cancel or Escape leaves it intact. The explicit `/nqh restore` command restores immediately.
 
-Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All ten hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All ten checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
+Use **Restore game settings** in the addon settings or run `/nqh restore` **before disabling/removing the addon**. All eleven hiding controls turn off; map/navigation and NPC-name CVars return to their saved personal values, rather than invented Blizzard defaults. Your per-quest hint permissions are kept. All eleven checkbox defaults are OFF; choosing the immersion preset is an explicit first-run decision.
 
 At normal logout or `/reload` the addon also attempts to restore the persistent CVars, without turning off your saved preferences. At the next login with the addon enabled it reapplies those preferences. Failed writes retain their backups for a later restore; an incomplete explicit restore reports that it needs another attempt. A tracker mouse change may wait until combat ends.
 
@@ -155,7 +158,7 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, ten equal-rank `Settings.RegisterProxySetting` values (seven quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, eleven equal-rank `Settings.RegisterProxySetting` values (eight quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
 
 Selective circular map pins keep their native real hover/click behavior. Their tooltip content refreshes on re-entry; periodic synthetic hover callbacks are disabled because Forever also rebuilds the journal through that callback. Unchanged quest events preserve existing pins, while changed permissions, position, style, selection or map refresh them.
@@ -245,8 +248,8 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 
 ## Validation checklist for Forever 1.4.0
 
-1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing seven quest checkboxes, two equal-rank item price checkboxes and one bag checkbox (no floating window).
-2. Open the same category manually from the AddOns list: all ten controls must appear directly in the page; hover each to see its explanation without a permanent description line.
+1. Run `/nqh`: confirm Blizzard **Options → AddOns → No Quest Hints** opens, containing eight quest checkboxes, two equal-rank item price checkboxes and one bag checkbox (no floating window).
+2. Open the same category manually from the AddOns list: all eleven controls must appear directly in the page; hover each to see its explanation without a permanent description line.
 3. Verify that enabling **Hide quest map hints** removes the built-in quest areas/markers but does not hide the objective tracker.
 4. Enable **Hide objective tracker**: verify the full right-side list disappears; journal, quest text and NPC exclamation marks remain.
 5. Uncheck the tracker option: its original display returns. Check quest updates and world-map opening while it is hidden, and check whether it stays hidden.
@@ -262,11 +265,11 @@ Mocked tests check Lua loading order, CVar restoration, independent checkboxes, 
 15. Toggle **Hide quest hints in tooltips** and **Hide quest NPC names**; normal combat information should remain.
 16. Test all four combinations of Hide outside trading / Hide at auction: away from trading only the first applies, at auction only the second applies, and at a merchant prices are always visible. Close each window and re-hover. Test reload, another character and migration from the previous Show at auction preview. Both checkbox rows must have equal rank/size and remain editable.
 17. Toggle **Hide quest progress popups**; quest counts disappear but ordinary warnings and status messages remain.
-18. Change characters and reload to check the ten independent settings.
+18. Change characters and reload to check the eleven independent settings.
 19. On a fresh character, verify three cards, round icons, readable ruRU/enUS text and layout at different UI scales. Selecting a card or closing the window must not change settings. No default card is selected.
 20. Confirm each preset, especially that Immersion leaves prices visible and Full immersion hides them outside trading while keeping the auction control OFF. Then enable Hide at auction manually to check strict RP. Reopen via Choose playstyle. Test Customize settings and first checkbox edit.
 21. Upgrade an existing character (including all options OFF) and verify no first-run popup or changed preferences. On a new character, choose Later and reload: the chooser should reappear.
-22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all ten checkbox effects are off and the original values return. Restore twice; try while in combat and finish after combat.
+22. Record personal CVar values, apply Full immersion, and run `/nqh restore`; verify all eleven checkbox effects are off and the original values return. Restore twice; try while in combat and finish after combat.
 23. Apply a preset, disable the addon and reload through the normal addon UI. Verify game settings remain restored without the addon. Re-enable it and verify your saved mode returns. Repeat with normal logout/relogin and switching characters. This client test is required before claiming automatic uninstall cleanup works.
 24. With the chooser open, move/click/scroll over background action bars, quests and screen edges: no background tooltip or action should occur. Test Esc, Later, Customize settings, confirmation and combat; the background must become interactive again when the chooser closes. Check the primary button label and the aligned secondary buttons in ruRU/enUS.
 25. Hide the tracker and hover/click/scroll across its former quest rows; no quest tooltip or quest action should fire. Add/track another quest while hidden, then restore the tracker and verify interaction returns. Test mixed input states, combat and existing tooltip dismissal.
@@ -300,3 +303,11 @@ See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 Bag-border smoke test: enable **Bags → Hide quest item borders**, move quest and ordinary items between individual/combined native bags, obtain/complete a quest and reload. Quest borders should disappear; quality/new-item overlays and quest-start exclamation marks should remain. Disable or restore to recover original alpha/visibility. Check combat-end retry. Custom bag overlays require separate compatibility work.
 
 To test automatic first-run presentation on an existing character, run `/run NoQuestHintsForeverChar.onboardingComplete=false; ReloadUI()`. This preserves the checkbox configuration and reopens the chooser after loading; choices change only after confirmation. `pending=true, complete=false` means setup is incomplete, whether the chooser is visible or awaiting a safe opening time.
+
+### Minimap quest icons — unreleased preview (Issue #29)
+
+Open `/nqh` and enable **Hide minimap quest icons**, immediately below map hints. As in Blizzard and Immersion leave it OFF; reselecting Full immersion enables it. Existing Full immersion users retain their old configuration until explicitly reselecting it or checking the new option. The preference is per-character and independent of map/navigation hints. The native QuestPOIs filter is identified by enum, never by translated names or a cached index. Other tracking filters are untouched. Overhead NPC symbols, world-map hints and quest data are not modified by this option. While active, the native minimap quest filter remains hidden even for individually revealed quests; selective world-map areas/navigation remain governed by their own controls.
+
+The original active state is stored before the first write, using the reported minimapTrackedInfov4 CVar scope (shared recovery when unknown). Disabling/restoring returns that exact boolean, preserving changes to unrelated filters. Login reapplies the preference; normal logout attempts recovery without clearing the preference. Failed or combat-blocked restores retain the backup for retry. The implementation does not replace the whole tracking bitfield or Blizzard's ALWAYS_ON_FILTERS table. Native pickup/turn-in rendering still requires the owner's Forever test.
+
+Smoke test: stand near both an available quest and a completed quest, toggle hiding and reload. Confirm minimap symbols disappear/return, overhead !/? remain, and mailbox/vendor/resource tracking stays unchanged. Try a reordered tracking list, switching characters, combat-end recovery and `/nqh restore`. Test all three presets. The preview retains TOC 1.4.1; no release is requested yet.
