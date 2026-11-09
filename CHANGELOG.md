@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Show Blizzard's treasure-map icon beside No Quest Hints in the native addon list.
+
 - Skip unmaterialized native bag item buttons during border scans, including when border hiding is OFF. Prevent the logged nil-object Lua error and its native gamepad error-window path; The owner could no longer reproduce the map-close/movement warning with Gamepad Beta enabled and mouse/keyboard after this fix; physical controller behavior remains unverified.
 
 - Add controller onboarding through Forever's native secure gamepad dialog template, preserving inherited focus/cleanup scripts and explicit preset confirmation.
