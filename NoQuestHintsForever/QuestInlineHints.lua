@@ -4,8 +4,9 @@
 local api = NoQuestHintsForeverAPI
 if not api then return end
 
-local journalHooked, blockHooked = false, false
-local refreshingJournal, refreshingTracker = false, false
+local journalHooked, blockHooked, freeHooked = false, false, false
+local refreshingTracker = false
+local journalIcons, trackerIcons = {}, {}
 local queued = {}
 
 local function shouldShow(questID)
@@ -13,87 +14,111 @@ local function shouldShow(questID)
         and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)
 end
 
--- WoW's journal normally calls GetButtonForQuest(), which refuses to create
--- any POI icon when questPOI=0. Use the exact same pooled Blizzard POIButton
--- through its lower-level method, but ONLY for whitelisted quest IDs.
+-- Own the native-template widgets instead of borrowing Blizzard's pools.
+-- A native rebuild from addon code seeds shared QuestCache entries for every
+-- row, even with questPOI=0. Reconcile only our own badges here.
+local function inCombat()
+    return type(InCombatLockdown) == "function" and InCombatLockdown()
+end
+
+local function hideIcon(icon)
+    if icon then icon:Hide() end
+end
+
+local function iconFor(icons, owner, template)
+    local icon = icons[owner]
+    if not icon and type(api.ConfigureQuestPOI) == "function" then
+        local ok, frame = pcall(CreateFrame, "Button", nil, owner, template)
+        if not ok or not frame then return end
+        api.ConfigureQuestPOI(frame)
+        icon = frame
+        icons[owner] = icon
+    end
+    return icon
+end
+
+local function updateIcon(icon, id, style)
+    if not icon or not style then return end
+    icon:SetQuestID(id)
+    icon:SetStyle(style)
+    local styles = POIButtonUtil and POIButtonUtil.Style
+    if type(icon.SetEnabled) == "function" then
+        icon:SetEnabled(not styles or style ~= styles.QuestDisabled)
+    end
+    local tracked = C_SuperTrack and type(C_SuperTrack.GetSuperTrackedQuestID) == "function"
+        and C_SuperTrack.GetSuperTrackedQuestID() == id or false
+    icon:SetSelected(tracked)
+    icon:UpdateButtonStyle()
+    icon:Show()
+end
+
 local function updateJournalIcons()
-    if not api.IsMapHidden or api.IsMapHidden() ~= true then return end
-    if not QuestScrollFrame or not QuestScrollFrame.titleFramePool
-        or not QuestScrollFrame.Contents or not POIButtonUtil then return end
-
-    local owner = QuestScrollFrame.Contents
-    if type(owner.GetButtonForQuestInternal) ~= "function"
-        or type(owner.PostInitButtonInternal) ~= "function"
-        or type(owner.FindButtonByQuestID) ~= "function" then return end
-
-    for button in QuestScrollFrame.titleFramePool:EnumerateActive() do
-        local questID = button and button.questID
-        if shouldShow(questID) and not owner:FindButtonByQuestID(questID) then
-            local okStyle, style = pcall(POIButtonUtil.GetStyle, questID)
-            if okStyle and style then
-                local ok, icon = pcall(owner.GetButtonForQuestInternal, owner, questID, style)
-                if ok and icon then
-                    pcall(owner.PostInitButtonInternal, owner, icon)
-                    if type(icon.ClearAllPoints) == "function" then icon:ClearAllPoints() end
-                    if type(icon.SetPoint) == "function" then
-                        icon:SetPoint("TOPLEFT", button, 6, -4)
-                    end
-                    icon.parent = button
+    if inCombat() then return end
+    local seen = {}
+    local scroll = QuestScrollFrame
+    local owner = scroll and scroll.Contents
+    if scroll and scroll.titleFramePool and owner then
+        for row in scroll.titleFramePool:EnumerateActive() do
+            local id = row and row.questID
+            seen[row] = true
+            -- Native icons win when the native UI already supplies this row.
+            local native = type(owner.FindButtonByQuestID) == "function"
+                and owner:FindButtonByQuestID(id)
+            if shouldShow(id) and not native and api.GetQuestPOIStyle then
+                local icon = iconFor(journalIcons, row, "POIButtonTemplate")
+                if icon then
+                    icon.smartNavigationIgnored = true
+                    icon.parent = row
+                    icon:ClearAllPoints()
+                    icon:SetPoint("TOPLEFT", row, 6, -4)
+                    updateIcon(icon, id, api.GetQuestPOIStyle(id))
                 end
+            else
+                hideIcon(journalIcons[row])
             end
         end
     end
-end
-
-local function refreshJournal()
-    if refreshingJournal then return end
-    if not QuestScrollFrame or not QuestMapFrame then return end
-    if type(QuestLogQuests_Update) ~= "function" then return end
-    -- Full native rebuild releases old pooled icons when a quest is hidden.
-    -- The secure post-hook then restores only the permitted quest icons.
-    refreshingJournal = true
-    pcall(QuestLogQuests_Update)
-    refreshingJournal = false
-end
-
-local function safeBool(func, id)
-    if type(func) ~= "function" then return false end
-    local ok, value = pcall(func, id)
-    return ok and value == true
+    for row, icon in pairs(journalIcons) do
+        if not seen[row] then hideIcon(icon) end
+    end
 end
 
 local function applyTrackerIcon(block)
-    if not block or not api.IsMapHidden or api.IsMapHidden() ~= true then return end
-    -- The native OnLayout() releases its POI under questPOI=0. That may
-    -- clear poiQuestID entirely, so recover the quest from the active block.
+    if not block or inCombat() then return end
     local id = block.id
-    if type(id) ~= "number" or id <= 0 then return end
-    if shouldShow(id) then
-        if not block.poiButton and type(block.AddPOIButton) == "function" then
-            if not block.poiQuestID and type(block.SetPOIInfo) == "function" then
-                local ready = C_QuestLog and safeBool(C_QuestLog.ReadyForTurnIn, id)
-                local worldQuest = C_QuestLog and safeBool(C_QuestLog.IsWorldQuest, id)
-                local isSuperTracked = C_SuperTrack
-                    and type(C_SuperTrack.GetSuperTrackedQuestID) == "function"
-                    and C_SuperTrack.GetSuperTrackedQuestID() == id
-                pcall(block.SetPOIInfo, block, id, ready == true, isSuperTracked == true, worldQuest == true)
-            end
-            -- Original Blizzard method sets QuestInProgress / QuestComplete
-            -- and anchors the native POI directly beside the header.
-            if block.poiQuestID then pcall(block.AddPOIButton, block) end
+    if block.parentModule == QuestObjectiveTracker and type(id) == "number" and id > 0 and shouldShow(id)
+        and not block.poiButton and block.HeaderText and api.GetQuestPOIStyle then
+        local icon = iconFor(trackerIcons, block, "ObjectiveTrackerPOIButtonTemplate")
+        if icon then
+            icon:ClearAllPoints()
+            icon:SetPoint("TOPRIGHT", block.HeaderText, "TOPLEFT", -7, 5)
+            -- Only our own button state changes; do not alter native POI data,
+            -- block ownership, watch lists or Blizzard's shared frame pools.
+            local styles = POIButtonUtil and POIButtonUtil.Style
+            local world = C_QuestLog and C_QuestLog.IsWorldQuest
+            local style = type(world) == "function" and world(id) and styles and styles.WorldQuest
+                or api.GetQuestPOIStyle(id)
+            updateIcon(icon, id, style)
         end
-    elseif block.poiButton and type(block.CheckAndReleasePOIButton) == "function" then
-        pcall(block.CheckAndReleasePOIButton, block)
+    else
+        hideIcon(trackerIcons[block])
     end
 end
 
 local function refreshTracker()
     if refreshingTracker then return end
-    if not QuestObjectiveTracker or type(QuestObjectiveTracker.usedBlocks) ~= "table" then return end
     refreshingTracker = true
-    for _, blocks in pairs(QuestObjectiveTracker.usedBlocks) do
+    local seen = {}
+    local used = QuestObjectiveTracker and QuestObjectiveTracker.usedBlocks
+    for _, blocks in pairs(type(used) == "table" and used or {}) do
         for _, block in pairs(blocks) do
+            seen[block] = true
             applyTrackerIcon(block)
+        end
+    end
+    if not inCombat() then
+        for block, icon in pairs(trackerIcons) do
+            if not seen[block] then hideIcon(icon) end
         end
     end
     refreshingTracker = false
@@ -127,17 +152,19 @@ local function installHooks()
         blockHooked = pcall(hooksecurefunc, ObjectiveTrackerQuestPOIBlockMixin,
             "OnLayout", queueTrackerBlock)
     end
+    if not freeHooked and type(ObjectiveTrackerQuestPOIBlockMixin) == "table"
+        and type(ObjectiveTrackerQuestPOIBlockMixin.Free) == "function"
+        and type(hooksecurefunc) == "function" then
+        freeHooked = pcall(hooksecurefunc, ObjectiveTrackerQuestPOIBlockMixin, "Free", function(block)
+            if not inCombat() then hideIcon(trackerIcons[block]) end
+        end)
+    end
 end
 
 function api.RefreshQuestInlineHints()
     installHooks()
-    refreshJournal()
+    updateJournalIcons()
     refreshTracker()
-    if QuestObjectiveTracker and type(QuestObjectiveTracker.MarkDirty) == "function" then
-        -- Blizzard will repopulate block.poiQuestID on the next refresh
-        -- even if CheckAndReleasePOIButton() cleared it when hiding.
-        pcall(QuestObjectiveTracker.MarkDirty, QuestObjectiveTracker)
-    end
 end
 
 local events = CreateFrame("Frame")
@@ -147,6 +174,7 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:SetScript("OnEvent", function(_, event)
     if event == "PLAYER_REGEN_ENABLED" then
+        updateJournalIcons()
         refreshTracker()
     else
         installHooks()
