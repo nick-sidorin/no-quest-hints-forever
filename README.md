@@ -12,7 +12,9 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-> **Version 1.4.3:** Native Gamepad Beta chooser/map compatibility, fixes for selective-hint waypoint copying and missing bag buttons, confirmed quest-permission cleanup, and a treasure-map addon icon. Saved choices remain intact.
+> **Version 1.4.4:** Restores opening the playstyle chooser after the 1.4.3 regression. Use mouse input inside the chooser, including in Gamepad Beta; native controller navigation there is not supported. Saved choices and the earlier map/controller fixes remain intact.
+
+> **Version 1.4.3:** Native Gamepad Beta map compatibility, fixes for selective-hint waypoint copying and missing bag buttons, confirmed quest-permission cleanup, and a treasure-map addon icon. Saved choices remain intact.
 
 > **Version 1.4.0:** Native settings, three playstyles, restoration, all official client locales and upgrade notifications. Existing characters keep their preferences.
 
@@ -86,7 +88,7 @@ Newly introduced checkboxes use Blizzard's native **New** marker. Each marker is
 
 ### Open settings
 
-**Native Gamepad Beta compatibility (1.4.3):** the chooser uses Forever's native secure gamepad dialog template when available, preserving navigation/confirm/back handlers and native focus cleanup. Focusing a card does not apply a preset. Clients lacking the template keep the mouse chooser.
+**Native Gamepad Beta compatibility:** the playstyle chooser uses an ordinary addon frame and mouse input in either interface mode. The 1.4.3 native-dialog integration prevented it from opening; 1.4.4 removes that forbidden template. Native controller navigation inside the chooser needs a separately validated implementation.
 
 NQH-owned quest pins/areas stay out of Blizzard's native gamepad cursor list. A private tooltip shows the nearest revealed quest title and unfinished objectives under the crosshair, respecting the game's tooltip toggle. **Select or focus these quests through the journal:** native gamepad pin focus/details actions on NQH pins are unavailable. Mouse pin actions and Blizzard-owned pins retain their native paths. Area drawing continues while the independent shared-tooltip tick is suppressed in gamepad interface mode. No bindings or global input functions are replaced.
 

@@ -64,7 +64,7 @@ Select a card and confirm to apply it. Customize any option afterward. Difficult
 
 ## 🎮 Native Gamepad Beta
 
-The playstyle chooser uses Blizzard's native controller navigation and prompts. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
+The playstyle chooser currently uses mouse input, including with Gamepad Beta enabled. Native controller navigation inside the chooser is not currently supported. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
 
 The map-close/movement warning was checked with Gamepad Beta enabled and mouse/keyboard. Physical controller testing is ongoing.
 
@@ -93,7 +93,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Update 1.4.3:** Improves native Gamepad Beta compatibility, fixes the reported waypoint-copy warning with revealed quests after `/reload`, handles missing bag buttons safely, and adds a treasure-map addon icon. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.4.4:** Restores automatic onboarding, `/nqh welcome` and the settings playstyle button after a 1.4.3 regression. The chooser uses mouse input in either interface mode. Saved choices and the earlier map/controller fixes are preserved. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 
