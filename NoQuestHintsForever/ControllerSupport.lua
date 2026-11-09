@@ -13,6 +13,7 @@ local function gamepadUI()
     return InputUtil and type(InputUtil.IsGamepadUIEnabled) == "function"
         and InputUtil.IsGamepadUIEnabled()
 end
+api.IsNativeGamepadUI = gamepadUI
 
 local function inCombat()
     return type(InCombatLockdown) == "function" and InCombatLockdown()

@@ -141,9 +141,15 @@ The owner requested implementing safe per-character allowlist cleanup in a separ
 
 ## Controller compatibility preview (2026-11-08)
 
+Reporter follow-up (2026-11-09): Forever 1.60.1 native Gamepad Beta consistently blocks an action on world-map close, with all other addons disabled. Both controller and mouse/keyboard open/close reproduce while gamepad UI is enabled; disabling NQH removes it. This narrows the report to interface mode, not physical input. No blocked function/taint trace or map-hiding/reveal settings were supplied. PR #34 now includes the separate #35 cache-isolation candidate for joint testing and suppresses the owned blob's independent native tooltip update in gamepad mode; the private crosshair tooltip remains. Neither client taint safety nor the reporter's resolution is confirmed.
+
 The owner authorized one PR for controller onboarding plus the scoped Questie-style map-cursor guard after an unspecific public CurseForge controller-conflict report. No hardware reproduction or exact commenter symptom is available. Use the registered native secure gamepad dialog template for onboarding; preserve inherited lifecycle scripts and confirmation-only presets. Exclude only NQH pins from the native gamepad cursor list; draw allowed quest title/objective tooltips on a separate tooltip without native hover callbacks or shared GameTooltip. Native gamepad crosshair focus/details pin actions are unavailable with this scoped guard, so retain journal access and document the limitation. Mouse behavior and native Blizzard pins remain intact. No new strings/controls, version bump or release is requested. Keep the PR a preview pending controller feedback; do not claim the reported conflict is fixed.
 
 ## Maintenance policy
+
+### Active selective-hint waypoint-copy follow-up (2026-11-09)
+
+The owner reproduced the native waypoint Shift-click block on both controller preview #34 and published 1.4.2, after reload with map hiding and one revealed quest. This is outside the all-controls-OFF verification of #31. A level-4 trace shows QuestMarkers calling POIButtonUtil.GetStyle and QuestInlineHints calling a full QuestLogQuests_Update during startup, creating shared QuestCache entries under addon execution. Opening the native journal later reads those entries, taints mapID and the native waypoint pin's owningMap, and blocks CopyToClipboard. A separate candidate replaces shared cached reads and addon-triggered native journal rebuilds with C API state queries and private native-template badges. Preserve native widget appearance, actual clicks, saved permissions, controller PR separation and the existing lazy-provider guard. Client verification of this candidate remains required; no release is requested.
 
 ### Waypoint-copy investigation (2026-11-08)
 

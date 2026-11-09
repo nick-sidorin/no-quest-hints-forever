@@ -43,6 +43,7 @@ C_QuestLog={
 }
 assert(loadfile("NoQuestHintsForever/ControllerSupport.lua"))()
 local api=NoQuestHintsForeverAPI
+assert(api.IsNativeGamepadUI(),"native gamepad mode must be independent of the last input device")
 local function pin(id,px,py)
     local p={id=id,x=px,y=py,shown=true}
     function p:GetCenter() return self.x,self.y end
@@ -83,6 +84,7 @@ assert(not polling() and not tooltips[1].shown,"map close leaked tooltip/tick")
 WorldMapFrame.shown=true;WorldMapFrame.hooks.OnShow();tick()
 assert(polling() and tooltips[1].shown)
 pad=false;event("GAME_PAD_ACTIVE_CHANGED")
+assert(not api.IsNativeGamepadUI())
 assert(not polling() and a:GetCenter()==100 and b:GetCenter()==106,"mouse center/idle behavior changed")
 pad=true;event("GAME_PAD_ACTIVE_CHANGED");tick()
 combat=true;event("PLAYER_REGEN_DISABLED")
