@@ -2,16 +2,17 @@
 
 ## Unreleased
 
-- Show Blizzard's treasure-map icon beside No Quest Hints in the native addon list.
+## [1.4.3] — 2026-11-09
 
-- Skip unmaterialized native bag item buttons during border scans, including when border hiding is OFF. Prevent the logged nil-object Lua error and its native gamepad error-window path; The owner could no longer reproduce the map-close/movement warning with Gamepad Beta enabled and mouse/keyboard after this fix; physical controller behavior remains unverified.
+- Add native Gamepad Beta navigation to the playstyle chooser, preserving Blizzard's focus cleanup and explicit preset confirmation.
+- Improve native gamepad map compatibility: keep NQH-owned pins out of Blizzard's gamepad hover list and show allowed quest titles/objectives in a private crosshair tooltip. Skip the quest area's independent shared-tooltip tick in this mode while preserving native area drawing and mouse-interface tooltips.
+- Fix a Lua error when native bags enumerate a slot before its pooled item button exists, including when quest-item border hiding is OFF. The owner could no longer reproduce the map-close/movement warning with Gamepad Beta enabled and mouse/keyboard after this fix.
+- Fix the native waypoint Shift-click clipboard block after reload with active selective quest hints. Read quest state without filling shared Blizzard Lua caches and reconcile private native-template journal/tracker badges without rebuilding the native journal from addon execution. The owner verified the reported scenario in Forever.
+- Remove a quest's saved Show hint permission after a confirmed turn-in/removal event during play. Preserve active permissions through loading/reload and refresh hint visuals outside combat without replacing the native SuperTrack target.
+- Show Blizzard's treasure-map icon beside No Quest Hints in the native addon list; approved by the owner in-game.
+- Preserve saved settings, presets, localization and original native context-menu behavior. No new checkboxes or feature-badge entries.
 
-- Add controller onboarding through Forever's native secure gamepad dialog template, preserving inherited focus/cleanup scripts and explicit preset confirmation.
-- Suppress the owned quest area's independent native tooltip tick in gamepad UI mode, including mouse/keyboard map use, while retaining area drawing and mouse-mode tooltips. Joint preview includes the separate selective-cache fix; the reporter's map-close scenario still needs client verification.
-- Isolate addon-owned quest pins from the native gamepad cursor list and provide a private crosshair tooltip for allowed quest titles/objectives. Preserve mouse behavior and Blizzard pins. Under the native gamepad crosshair, use the journal for quest focus/details actions. Physical controller verification is pending; this does not claim to resolve every reported controller conflict.
-- Address the additional waypoint-copy taint path with active selective hints after reload: read quest styles/classification and map queries without filling Blizzard's shared Lua caches. Reconcile private native-template journal/tracker badges instead of rebuilding the native journal from addon execution. The owner confirmed the reported waypoint-copy scenario no longer reproduced on the #35 preview in Forever. No version bump or release.
-
-- Remove a quest's saved Show hint permission after a confirmed native turn-in/removal event during play. Preserve active permissions across loading, reload and character changes without guessing from an empty or filtered journal. Refresh hint visuals and navigation outside the event callback and combat, preserving Blizzard's selected target.
+**Gamepad limitation:** NQH-owned map pins provide information under the crosshair; select/focus the quest through the journal. Mouse pin actions are preserved. Physical controller navigation has not yet been verified; client checks used mouse/keyboard with Gamepad Beta enabled.
 
 ## [1.4.2] — 2026-11-08
 
