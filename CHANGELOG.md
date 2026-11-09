@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restore automatic onboarding, `/nqh welcome` and the settings playstyle button by removing a native forbidden dialog template introduced in 1.4.3. Saved settings, preset confirmation and map/controller fixes are preserved. The chooser currently uses mouse input in either interface mode; native controller navigation inside it needs a separately validated implementation.
+
 ## [1.4.3] — 2026-11-09
 
 - Add native Gamepad Beta navigation to the playstyle chooser, preserving Blizzard's focus cleanup and explicit preset confirmation.

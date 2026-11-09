@@ -135,9 +135,9 @@ local function session(char, account, suppliedValues, combat, locale, withoutAtl
         end
         function obj:CreateMaskTexture() return region() end
         function obj:CreateFontString() return region() end
+        -- Registration does not grant addon code permission to create this frame.
         if template and template:find("GamepadSecureBaseDialogTemplate",1,true) then
-            obj.scripts.OnShow=function(self) GamepadMode.FrameControlsManager:FrameShown(self) end
-            obj.scripts.OnHide=function(self) GamepadMode.FrameControlsManager:FrameHidden(self) end
+            error("CreateFrame(): Cannot create a forbidden frame from a tainted context.")
         end
         frames[#frames+1]=obj
         if name then _G[name]=obj end
@@ -300,52 +300,38 @@ assert(not NoQuestHintsForeverWelcome)
 s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
 assert(NoQuestHintsForeverWelcome.shown)
 
--- Native controller focus uses inherited secure dialog scripts, without addon bindings or
--- preset changes from merely focusing the first card.
-local pad={}
-s=session({}, {}, nil, false, "enUS", false, false, pad)
-welcome=NoQuestHintsForeverWelcome
-assert(pad.shows==1 and pad.current==welcome and pad.target==s.cards()[1])
-assert(welcome.Apply.disabled and not s.api.IsMapHidden(),"controller focus applied a preset")
-assert(NoQuestHintsForeverWelcomeBlocker.smartNavigationIgnoredDontPropagate)
-s.event("GAME_PAD_ACTIVE_CHANGED")
-assert(pad.shows==1,"controller event registered the same popup twice")
-assert(welcome:SmartNavigationCloseHandler())
-assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown)
-assert(pad.hides==1 and pad.current==pad.previous,"Back did not restore native focus")
-
-for _, action in ipairs({"later","customize","confirm","hide","combat"}) do
-    pad={}
+-- Regression: the client registers its secure dialog template in both input modes,
+-- but rejects its creation from addon code. Automatic and explicit opening must
+-- use an ordinary frame without native focus/binding manager calls.
+for _, enabled in ipairs({true, false}) do
+    local pad={enabled=enabled}
     s=session({}, {}, nil, false, "enUS", false, false, pad)
     welcome=NoQuestHintsForeverWelcome
-    if action=="later" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_LATER))
-    elseif action=="customize" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_SETTINGS))
-    elseif action=="confirm" then s.click(s.cards()[2]); s.click(welcome.Apply)
-    elseif action=="hide" then s.api.HideWelcome()
-    else
-        s.setCombat(true); s.event("PLAYER_REGEN_DISABLED")
-        assert(pad.hides==1,"inherited native OnHide was lost during combat closure")
-        s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
+    assert(welcome.shown and welcome.template=="BackdropTemplate")
+    assert(welcome.Apply.disabled and not s.api.IsMapHidden(), "opening applied a preset")
+    assert(pad.shows==0 and pad.target==nil, "chooser entered native focus management")
+    for _, action in ipairs({"later","customize","confirm","hide","combat"}) do
+        s.api.ShowWelcome()
+        if action=="later" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_LATER))
+        elseif action=="customize" then s.click(s.button(NoQuestHintsForeverLocale.WELCOME_SETTINGS))
+        elseif action=="confirm" then s.click(s.cards()[2]); s.click(welcome.Apply)
+        elseif action=="hide" then s.api.HideWelcome()
+        else
+            s.setCombat(true); s.event("PLAYER_REGEN_DISABLED")
+            s.setCombat(false); s.event("PLAYER_REGEN_ENABLED")
+        end
+        assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown,
+            action.." left modal input blocked")
+        assert(pad.hides==0 and pad.current==pad.previous, action.." changed native focus")
     end
-    assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown,action.." left modal input blocked")
-    assert(pad.hides==1 and pad.current==pad.previous,action.." leaked native popup focus")
+    SlashCmdList.NOQUESTHINTSFOREVER("welcome")
+    assert(welcome.shown and NoQuestHintsForeverWelcomeBlocker.shown, "slash command failed to reopen")
+    s.api.HideWelcome()
+    s.api.ShowWelcome(); s.api.HideWelcome(); s.flush()
+    assert(not welcome.shown and not NoQuestHintsForeverWelcomeBlocker.shown)
 end
-
--- Closing before the deferred target request must not refocus a hidden dialog.
-pad={}
-s=session({onboardingComplete=true},{},nil,false,"enUS",false,false,pad)
-s.api.ShowWelcome(); s.api.HideWelcome(); s.flush()
-assert(pad.shows==1 and pad.hides==1 and pad.target==nil,"closed dialog stole focus from a delayed callback")
-pad={withoutTemplate=true}
-s=session({}, {}, nil, false, "enUS", false, false, pad)
-assert(NoQuestHintsForeverWelcome.shown and pad.shows==0,"missing secure template broke the mouse chooser")
-s.api.HideWelcome()
-pad={enabled=false}
-s=session({}, {}, nil, false, "enUS", false, false, pad)
-assert(pad.shows==0,"mouse/controller emulation registered native gamepad focus")
-s.api.HideWelcome();pad.enabled=true;s.api.ShowWelcome();s.flush()
-assert(pad.shows==1,"reopened native gamepad dialog was not focused")
-io.write("PASS: native secure gamepad dialog scripts, consent, Back and modal/combat exits\n")
+io.write("PASS: forbidden-template regression in both input modes; automatic/slash/API opening and modal exits\n")
+s=session({}, {})
 s.click(s.cards()[1]); s.click(NoQuestHintsForeverWelcome.Apply)
 assert(#s.writes==0 and not s.api.IsOnboardingPending(), "Blizzard first-run choice must write no CVars")
 s.api.ShowWelcome(); assert(NoQuestHintsForeverWelcome.shown)

@@ -5,7 +5,6 @@ if not api then return end
 local L = NoQuestHintsForeverLocale
 local window, blocker, selected, shownThisSession, requested
 local cards = {}
-local nativeDialog, focusQueued
 -- Match the native Forever SuperDistrictButtonTemplate (260 x 530).
 -- Atlas artwork includes its own border/padding; never stretch it to the frame.
 local WINDOW_WIDTH, WINDOW_HEIGHT = 980, 806
@@ -21,31 +20,6 @@ local presets = {
 
 local function inCombat()
     return type(InCombatLockdown) == "function" and InCombatLockdown()
-end
-
-local function gamepadUI()
-    return InputUtil and type(InputUtil.IsGamepadUIEnabled) == "function"
-        and InputUtil.IsGamepadUIEnabled()
-end
-
-local function focusGamepad()
-    focusQueued = false
-    if not nativeDialog or not window:IsShown() or inCombat() or not gamepadUI() then return end
-    -- The inherited secure dialog owns registration and cleanup, including
-    -- combat closure. Only request the initial card through a wrapped API.
-    if SmartNavigation and type(SmartNavigation.SetTargetButtonForFrame) == "function" then
-        pcall(SmartNavigation.SetTargetButtonForFrame, SmartNavigation, window, cards[1])
-    end
-end
-
-local function queueGamepadFocus()
-    if focusQueued or not nativeDialog or not gamepadUI() then return end
-    if C_Timer and type(C_Timer.After) == "function" then
-        focusQueued = true
-        C_Timer.After(0, focusGamepad)
-    else
-        focusGamepad()
-    end
 end
 
 local function text(parent, value, font, width, point, relative, relativePoint, x, y)
@@ -130,8 +104,6 @@ local function createWindow()
     blocker:SetFrameStrata("FULLSCREEN_DIALOG")
     blocker:EnableMouse(true)
     blocker:EnableMouseWheel(true)
-    -- Ignore the shield itself, while allowing navigation into its children.
-    blocker.smartNavigationIgnoredDontPropagate = true
     if type(blocker.SetPropagateMouseClicks) == "function" then blocker:SetPropagateMouseClicks(false) end
     if type(blocker.SetPropagateMouseMotion) == "function" then blocker:SetPropagateMouseMotion(false) end
     blocker:SetScript("OnMouseDown", function() end)
@@ -142,14 +114,9 @@ local function createWindow()
     dim:SetAllPoints(blocker)
     dim:SetColorTexture(0, 0, 0, 0.88)
 
-    -- The secure mixin need not be exported into the addon's global environment.
-    -- Query the registered XML template rather than probing its private Lua table.
-    if C_XMLUtil and type(C_XMLUtil.GetTemplateInfo) == "function" then
-        local ok, info = pcall(C_XMLUtil.GetTemplateInfo, "GamepadSecureBaseDialogTemplate")
-        nativeDialog = ok and type(info) == "table"
-    end
-    local template = nativeDialog and "BackdropTemplate,GamepadSecureBaseDialogTemplate" or "BackdropTemplate"
-    window = CreateFrame("Frame", "NoQuestHintsForeverWelcome", blocker, template)
+    -- The registered GamepadSecureBaseDialogTemplate is forbidden to addon code.
+    -- Keep this chooser ordinary; native map/controller isolation is independent.
+    window = CreateFrame("Frame", "NoQuestHintsForeverWelcome", blocker, "BackdropTemplate")
     window:Hide()
     window:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     window:SetPoint("CENTER")
@@ -157,14 +124,7 @@ local function createWindow()
     window:SetFrameLevel(blocker:GetFrameLevel() + 1)
     window:SetClampedToScreen(true)
     window:EnableMouse(true)
-    if nativeDialog then
-        -- Preserve the template's secure OnShow/OnHide handlers.
-        window:HookScript("OnShow", queueGamepadFocus)
-        window:HookScript("OnHide", function() blocker:Hide() end)
-    else
-        window:SetScript("OnHide", function() blocker:Hide() end)
-    end
-    window.SmartNavigationCloseHandler = function(self) self:Hide(); return true end
+    window:SetScript("OnHide", function() blocker:Hide() end)
     local heading = text(window, L.WELCOME_TITLE, "GameFontHighlightHuge", 900,
         "TOP", window, "TOP", 0, -14)
     heading:SetHeight(32)
@@ -247,16 +207,11 @@ local function createWindow()
     end)
     local close = CreateFrame("Button", nil, window, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", window, "TOPRIGHT", -6, -4)
-    window.CloseButton = close
     window:RegisterEvent("UI_SCALE_CHANGED")
     window:RegisterEvent("DISPLAY_SIZE_CHANGED")
     window:RegisterEvent("PLAYER_REGEN_DISABLED")
     window:SetScript("OnEvent", function(_, event)
-        if event == "PLAYER_REGEN_DISABLED" then
-            window:Hide()
-        else
-            fit()
-        end
+        if event == "PLAYER_REGEN_DISABLED" then window:Hide() else fit() end
     end)
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, window:GetName()) end
 end

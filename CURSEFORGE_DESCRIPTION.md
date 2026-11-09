@@ -64,7 +64,7 @@ Select a card and confirm to apply it. Customize any option afterward. Difficult
 
 ## 🎮 Native Gamepad Beta
 
-The playstyle chooser uses Blizzard's native controller navigation and prompts. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
+The playstyle chooser currently uses mouse input, including with Gamepad Beta enabled. Native controller navigation inside the chooser is not supported by the pending onboarding fix. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
 
 The map-close/movement warning was checked with Gamepad Beta enabled and mouse/keyboard. Physical controller testing is ongoing.
 
