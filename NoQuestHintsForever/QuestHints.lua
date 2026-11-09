@@ -283,6 +283,16 @@ local function initializeNativePin()
     if type(QuestBlobPinMixin) ~= "table" or type(CreateFromMixins) ~= "function" then return false end
     for key, value in pairs(QuestBlobPinMixin) do NQHQuestBlobPinMixin[key] = value end
 
+    function NQHQuestBlobPinMixin:UpdateTooltip()
+        -- The blob has its own OnUpdate tooltip path, independent of the pin
+        -- scanner. Keep it out of shared GameTooltip in native gamepad mode,
+        -- even if the map was opened with mouse/keyboard. Drawing still runs.
+        if api.IsNativeGamepadUI and api.IsNativeGamepadUI() then return end
+        if type(QuestBlobPinMixin.UpdateTooltip) == "function" then
+            QuestBlobPinMixin.UpdateTooltip(self)
+        end
+    end
+
     function NQHQuestBlobPinMixin:OnShow()
         self:Refresh()
     end
@@ -340,6 +350,7 @@ installProvider = function()
     function candidate:OnAdded(map)
         MapCanvasDataProviderMixin.OnAdded(self, map)
         self.pin = map:AcquirePin(PIN_TEMPLATE)
+        if api.GuardQuestMapPin then api.GuardQuestMapPin(self.pin, false) end
         self.pin.dataProvider = self
         self.pin:SetPosition(0.5, 0.5)
         self:OnMapChanged()

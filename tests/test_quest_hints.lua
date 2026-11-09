@@ -75,7 +75,11 @@ local function session(char, hasNative, initialHidden)
                 self:UseFrameLevelType("PIN_FRAME_LEVEL_QUEST_BLOB")
             end,
             OnCanvasScaleChanged=function(self) self.dirty=true end,
-            OnUpdate=function(self) if self.dirty then self.dirty=nil; self:Refresh() end end,
+            OnUpdate=function(self)
+                if self.dirty then self.dirty=nil; self:Refresh() end
+                self:UpdateTooltip()
+            end,
+            UpdateTooltip=function(self) self.nativeTooltips=(self.nativeTooltips or 0)+1 end,
             OnMapChanged=function(self)
                 self.mapAllowsBlobs = self:GetMap():GetMapID()==301
                 self:SetMapID(self:GetMap():GetMapID())
@@ -145,6 +149,7 @@ local function session(char, hasNative, initialHidden)
     NoQuestHintsForeverAPI={
         IsMapHidden=function() return mapHidden end,
         RefreshNavigation=function() navRefreshes=navRefreshes+1 end,
+        GuardQuestMapPin=function(pin,interactive) assert(interactive==false);pin.controllerGuard=true end,
     }
 
     assert(loadfile(addon))()
@@ -194,6 +199,7 @@ assert(#trackerRoot.items==2 and trackerRoot.items[2].label=="Show hint",
     "right-click on quest 20 did not resolve the clicked quest")
 trackerRoot.items[2].click()
 assert(s.map.added==1,"first selective hint must install the native blob provider")
+assert(s.map.pin.controllerGuard,"native blob bypassed controller isolation")
 assert(s.map.pin.fill:find("UI%-QuestBlob%-Inside")~=nil,"native Blizzard art not configured")
 assert(s.core.IsQuestRevealed(20) and #s.opened==0,
     "tracker action must allow quest 20 without opening the map")
@@ -210,6 +216,17 @@ assert(s.selectedQuest()==10 and s.core.IsQuestNavigationAllowed(),
     "Show hint failed to select the allowed native SuperTrack quest")
 assert(s.navRefreshes()>0,"hint toggle did not refresh nav CVars")
 assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"only quest 10 must be drawn")
+local nativeTooltips=s.map.pin.nativeTooltips or 0
+s.core.IsNativeGamepadUI=function() return true end
+s.map.pin.dirty=true
+s.map.pin:OnUpdate()
+assert((s.map.pin.nativeTooltips or 0)==nativeTooltips,"gamepad blob tick touched shared native tooltip")
+assert(#s.map.pin.drawn==1 and s.map.pin.drawn[1]==10,"gamepad tooltip guard stopped blob drawing")
+s.map.pin:UpdateTooltip()
+assert((s.map.pin.nativeTooltips or 0)==nativeTooltips,"gamepad blob mouse entry bypassed tooltip guard")
+s.core.IsNativeGamepadUI=function() return false end
+s.map.pin:OnUpdate()
+assert(s.map.pin.nativeTooltips==nativeTooltips+1,"mouse blob tooltip stopped working")
 assert(s.buttons[1].text=="Hide hint")
 s.core.SetQuestRevealed(20,true)
 assert(#s.map.pin.drawn==2,"both opted-in quest blobs should be drawn")

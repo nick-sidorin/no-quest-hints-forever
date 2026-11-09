@@ -20,7 +20,7 @@ local function restore(texture)
 end
 
 local function hook(object, method)
-    if not hooksecurefunc or type(object[method]) ~= "function" then return end
+    if not object or not hooksecurefunc or type(object[method]) ~= "function" then return end
     local methods = hooked[object] or {}
     hooked[object] = methods
     if not methods[method] then methods[method] = pcall(hooksecurefunc, object, method, queue) end
@@ -33,10 +33,12 @@ local function refresh()
         for _, container in ContainerFrameUtil_EnumerateContainerFrames() do
             hook(container, "UpdateItems")
             hook(container, "Show")
-            if type(container.EnumerateValidItems) == "function" then
+            if container and type(container.EnumerateValidItems) == "function" then
                 for _, button in container:EnumerateValidItems() do
                     hook(button, "UpdateQuestItem")
-                    local texture = button.IconQuestTexture
+                    -- Native iteration can yield a slot index before its
+                    -- pooled item button exists. Keep scanning later slots.
+                    local texture = button and button.IconQuestTexture
                     if texture and type(texture.GetAlpha) == "function"
                         and type(texture.SetAlpha) == "function" then
                         local bag = type(button.GetBagID) == "function" and button:GetBagID()

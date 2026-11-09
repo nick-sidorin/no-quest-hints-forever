@@ -117,6 +117,7 @@ local function installProvider()
         self.snapshot = nil
         -- Unique template: never release Blizzard's own pins.
         QuestDataProviderMixin.RemoveAllData(self)
+        if api.RefreshControllerQuestPins then api.RefreshControllerQuestPins() end
     end
 
     function candidate:RefreshAllData()
@@ -178,6 +179,7 @@ local function installProvider()
             -- Keep the genuine native hover/click scripts and tooltip renderer.
             local pin = self:AddQuest(entry.id, entry.x, entry.y, index, entry.waypoint)
             if pin then
+                if api.GuardQuestMapPin then api.GuardQuestMapPin(pin, true) end
                 -- Forever assigns OnMouseEnter as the periodic tooltip callback.
                 -- That also emits MapCanvas.QuestPin.OnEnter, rebuilding/scrolling
                 -- the entire journal on every tooltip tick. Our unique pins show
@@ -186,6 +188,7 @@ local function installProvider()
             end
         end
         self.snapshot = {mapID=mapID, entries=entries}
+        if api.RefreshControllerQuestPins then api.RefreshControllerQuestPins() end
     end
 
     local ok = pcall(WorldMapFrame.AddDataProvider, WorldMapFrame, candidate)

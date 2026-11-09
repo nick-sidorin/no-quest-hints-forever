@@ -26,7 +26,13 @@ local function button(bag, slot, alpha)
 end
 local function container(items)
     local c={items=items}
-    function c:EnumerateValidItems() return ipairs(self.items) end
+    function c:EnumerateValidItems()
+        local last = self.slotCount or #self.items
+        return function(_,index)
+            index=index+1
+            if index<=last then return index,self.items[index] end
+        end,self,0
+    end
     function c:UpdateItems() for _, b in ipairs(self.items) do b:UpdateQuestItem() end end
     function c:Show() end
     return c
@@ -74,9 +80,14 @@ event('PLAYER_LOGIN')
 ContainerFrameUtil_EnumerateContainerFrames=function() return ipairs(frames) end
 event('ADDON_LOADED')
 assert(quest.IconQuestTexture.alpha==0.6)
+-- The client can enumerate an unmaterialized button between real slots,
+-- even when the hiding feature is OFF. A nil value does not end iteration.
+bags.items={[1]=quest,[3]=regular,[4]=starter};bags.slotCount=4
+event('BAG_UPDATE_DELAYED')
 hidden=true;api.RefreshQuestItemHighlight();flush()
 assert(quest.IconQuestTexture.alpha==0)
 assert(regular.IconQuestTexture.alpha==1 and starter.IconQuestTexture.alpha==0.8)
+bags.items={quest,regular,starter};bags.slotCount=nil
 assert(bank.IconQuestTexture.alpha==1, 'bank must remain native')
 assert(quest.quality.alpha==0.9 and quest.newItem.alpha==0.7, 'unrelated overlays changed')
 assert(quest.IconQuestTexture.shown, 'do not change native visibility')
@@ -111,4 +122,9 @@ assert(api.RestoreQuestItemHighlight() and late.IconQuestTexture.alpha==0.4)
 -- Missing container/item APIs are a passive no-op.
 C_Container=nil;hidden=true;event('BAG_UPDATE_DELAYED')
 assert(late.IconQuestTexture.alpha==0.4)
+-- A missing container entry is also harmless during native UI startup.
+ContainerFrameUtil_EnumerateContainerFrames=function()
+    return function(_,i) i=i+1;if i==1 then return i,nil elseif i==2 then return i,bags end end,nil,0
+end
+event('ADDON_LOADED')
 io.write('PASS: native bag quest borders, quest-start preservation, pool reuse, exact alpha restore and combat retry\n')

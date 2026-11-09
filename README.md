@@ -49,6 +49,7 @@ World of Warcraft/
                 ├── LocaleTranslations.lua
                 ├── Localization.lua
                 ├── NoQuestHintsForever.lua
+                ├── ControllerSupport.lua    # Scoped native gamepad cursor isolation
                 ├── Options.lua
                 ├── Onboarding.lua
                 ├── QuestHints.lua
@@ -84,6 +85,10 @@ After an upgrade, one localized message per account shows the new addon version 
 Newly introduced checkboxes use Blizzard's native **New** marker. Each marker is recorded as viewed when its row is displayed; unseen rows remain marked across reloads and later patches. Viewed markers stay dismissed across characters. Fresh installs do not mark everything as an upgrade. The feature introduction list in the core must be updated only for genuine feature releases, never inferred from a minor/patch number.
 
 ### Open settings
+
+**Controller compatibility preview (unreleased):** the chooser uses Forever's native secure gamepad dialog template when available, preserving its navigation/confirm/back handlers and native focus cleanup. Focusing a card does not apply its preset. Mouse input blocking and consent remain unchanged; clients lacking the template keep the existing mouse chooser.
+
+In native gamepad UI mode, NQH-owned quest pins/areas are excluded from Blizzard's gamepad cursor pin list to avoid the path reported in [Questie #7899](https://github.com/Questie/Questie/issues/7899) and addressed by [Questie #7922](https://github.com/Questie/Questie/pull/7922). A separate tooltip shows the nearest allowed quest title and unfinished objectives under the crosshair. It respects the game's gamepad tooltip toggle. **These addon-owned pins are informational under the native gamepad crosshair: native pin focus/details button actions are unavailable there; use the quest journal to select/read the quest.** Mouse clicks/hover and Blizzard-owned pins are unchanged. No binding overrides or new settings are added. The private tooltip updater runs only while a relevant map/controller view is active, outside combat. This preview has automated coverage but has not been verified with physical controller hardware; it is not a confirmed resolution of the CurseForge report. The reporter isolated consistent map-close blocking with Gamepad Beta enabled, even using mouse/keyboard and with all other addons disabled. This preview also includes the separate selective-cache fix from #35 and skips the quest area's independent shared-tooltip tick in gamepad UI mode; the owner could no longer reproduce the warning with mouse/keyboard and Gamepad Beta after the missing bag-button fix. Physical controller behavior remains unverified. Native context menus retain their original response behavior.
 
 - Type **`/nqh`** without arguments to open **Options → AddOns → No Quest Hints** directly.
 - Or open **Esc → Options → AddOns → No Quest Hints** yourself. All ten checkboxes live directly on that page; no separate popup window.

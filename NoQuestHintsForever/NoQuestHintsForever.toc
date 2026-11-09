@@ -8,6 +8,7 @@
 Localization.lua
 LocaleTranslations.lua
 NoQuestHintsForever.lua
+ControllerSupport.lua
 Options.lua
 Onboarding.lua
 QuestHints.lua
