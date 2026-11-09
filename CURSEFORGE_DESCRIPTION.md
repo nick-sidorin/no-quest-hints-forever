@@ -44,11 +44,11 @@ Ten independent, optional controls:
 The game restores its original guidance for the selected quest, where available:
 
 - Blue highlighted objective areas
-- Native interactive quest markers
+- Native quest markers
 - In-world navigation and distance
 - Native quest indicators in the journal and objective tracker
 
-Select **Hide hint** when you no longer need help. You can reveal multiple quests independently.
+Select **Hide hint** when you no longer need help. You can reveal multiple quests independently. Permissions are cleared when those quests are turned in or removed during play.
 
 **No external quest database. Just Blizzard's own guidance, under your control.**
 
@@ -61,6 +61,12 @@ After the loading screen finishes, choose a playstyle on first setup, or reopen 
 - **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading.
 
 Select a card and confirm to apply it. Customize any option afterward. Difficulty colors, auction prices and quest-item borders remain visible in every preset unless you hide them manually.
+
+## 🎮 Native Gamepad Beta
+
+The playstyle chooser uses Blizzard's native controller navigation and prompts. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
+
+The map-close/movement warning was checked with Gamepad Beta enabled and mouse/keyboard. Physical controller testing is ongoing.
 
 ## ⚙️ Settings
 
@@ -87,7 +93,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Hotfix 1.4.2:** Fixes the reported Blizzard protected-action warning when Shift-clicking a map waypoint to copy coordinates after `/reload`, including when all hiding options are off. See [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.4.3:** Improves native Gamepad Beta compatibility, fixes the reported waypoint-copy warning with revealed quests after `/reload`, handles missing bag buttons safely, and adds a treasure-map addon icon. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 
