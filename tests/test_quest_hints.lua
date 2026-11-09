@@ -15,12 +15,15 @@ local function newFrame()
     return f
 end
 
-local function session(char, hasNative, initialHidden)
+local function session(char, hasNative, initialHidden, deferredMenus)
     NoQuestHintsForeverAPI = nil
     NoQuestHintsForeverChar = char
     NQHQuestBlobPinMixin = nil
     local events, menus, buttons = {}, {}, {}
     local mapHidden = initialHidden ~= false
+    local timers, combat = {}, false
+    C_Timer = deferredMenus and {After=function(_,fn) timers[#timers+1]=fn end} or nil
+    InCombatLockdown=function() return combat end
     local map = {mapID=301, added=0}
     function map:GetMapID() return self.mapID end
     function map:AddDataProvider(p)
@@ -164,6 +167,8 @@ local function session(char, hasNative, initialHidden)
     fire("ADDON_LOADED")
     return {
         db=char, map=map, buttons=buttons, menus=menus, core=core, opened=opened,
+        flush=function() while #timers>0 do table.remove(timers,1)() end end,
+        setCombat=function(v) combat=v end,
         trackerHeader=trackerHeader,
         detail=detail, popup=popup, fire=fire,
         setMapHidden=function(v) mapHidden=v; core.RefreshQuestHintPins() end,
@@ -191,7 +196,7 @@ assert(s.menus.MENU_QUEST_OBJECTIVE_TRACKER,"tracker context menu not registered
 assert(s.trackerHeader.scripts.OnMouseDown,"tracker quest header lacks a right-click capture")
 local trackerRoot={items={}}
 function trackerRoot:CreateDivider() self.items[#self.items+1]={divider=true} end
-function trackerRoot:CreateButton(label,cb) self.items[#self.items+1]={label=label,click=cb} end
+function trackerRoot:CreateButton(label,cb,data) self.items[#self.items+1]={label=label,click=function() cb(data) end} end
 s.trackerHeader.scripts.OnMouseDown(s.trackerHeader,"RightButton")
 -- The owner is Blizzard's tracker container, *not* the quest block.
 s.menus.MENU_QUEST_OBJECTIVE_TRACKER({},trackerRoot)
@@ -242,7 +247,7 @@ assert(not s.core.SetQuestRevealed(-2,true),"invalid quest ID accepted")
 -- A menu entry is created only for the clicked quest and changes that quest.
 local root={items={}}
 function root:CreateDivider() self.items[#self.items+1]={divider=true} end
-function root:CreateButton(label,callback) self.items[#self.items+1]={label=label,click=callback} end
+function root:CreateButton(label,callback,data) self.items[#self.items+1]={label=label,click=function() callback(data) end} end
 s.menus.MENU_QUEST_MAP_LOG_TITLE({questID=10},root)
 assert(root.items[2].label=="Show hint")
 root.items[2].click()
@@ -291,4 +296,38 @@ for _, saved in ipairs({{}, {revealedQuests={[10]=true}}}) do
     idle.core.RefreshQuestHintPins()
     assert(idle.map.added==1,"lazy initialization registered a duplicate provider")
 end
-print("PASS: native Blizzard quest blob, independent whitelist, journal/menu, reload and alt\n")
+-- Native menu responder data survives owner reuse; UI work is deferred until
+-- after native response/close, with idempotent desired state and combat retry.
+local deferred=session({},true,true,true)
+local function menuFor(tag,id)
+    local owner={questID=id}
+    local root={items={}}
+    function root:CreateDivider() end
+    function root:CreateButton(label,fn,data)
+        self.items[#self.items+1]={label=label,pick=function() fn(data) end}
+    end
+    deferred.menus[tag](owner,root)
+    owner.questID=999 -- pooled row can change after the menu is generated
+    return root.items[1]
+end
+local show=menuFor("MENU_QUEST_MAP_LOG_TITLE",10)
+assert(show.label=="Show hint" and not deferred.core.IsQuestRevealed(10))
+show.pick();show.pick()
+assert(not deferred.core.IsQuestRevealed(10),"native menu responder refreshed UI before close")
+deferred.flush()
+assert(deferred.core.IsQuestRevealed(10) and not deferred.core.IsQuestRevealed(999))
+assert(deferred.core.MenuHintDiagnostics.responded==2 and deferred.core.MenuHintDiagnostics.applied==1,
+    "duplicate selection toggled the quest back or applied twice")
+show.pick();deferred.flush()
+assert(deferred.core.IsQuestRevealed(10),"replayed Show action became a Hide toggle")
+local hide=menuFor("MENU_QUEST_LOG_POPUP_DETAIL_FRAME",10)
+assert(hide.label=="Hide hint")
+deferred.setCombat(true);hide.pick();deferred.flush()
+assert(deferred.core.IsQuestRevealed(10),"combat menu action changed protected UI")
+deferred.setCombat(false);deferred.fire("PLAYER_REGEN_ENABLED");deferred.flush()
+assert(not deferred.core.IsQuestRevealed(10),"combat-end menu action was lost")
+assert(#deferred.opened==0,"deferred menu action opened the map")
+menuFor("MENU_QUEST_MAP_LOG_TITLE",20).pick()
+deferred.fire("PLAYER_LOGOUT");deferred.flush()
+assert(not deferred.core.IsQuestRevealed(20),"queued menu action ran during logout")
+print("PASS: native Blizzard quest blob, independent whitelist, deferred idempotent menu actions, reload and alt\n")

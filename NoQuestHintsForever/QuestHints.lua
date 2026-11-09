@@ -176,17 +176,55 @@ end
 
 local trackerContextQuestID
 local trackerHeaderHooked, trackerClicksHooked = false, false
+local pendingMenuHints, menuApplyQueued = {}, false
+local menuDiagnostics = {created=0, responded=0, applied=0}
+api.MenuHintDiagnostics = menuDiagnostics
+
+local function flushMenuHints()
+    menuApplyQueued = false
+    if cleanupStopped then pendingMenuHints = {}; return end
+    if cleanupInCombat() then return end
+    local actions = pendingMenuHints
+    pendingMenuHints = {}
+    for id, enabled in pairs(actions) do
+        -- Native menus may dispatch more than once. Apply the displayed action,
+        -- not another toggle, after their focus/binding teardown has finished.
+        if isRevealed(id) ~= enabled and setRevealed(id, enabled) then
+            menuDiagnostics.applied = menuDiagnostics.applied + 1
+        end
+    end
+end
+
+local function queueMenuHints()
+    if cleanupStopped or menuApplyQueued or not next(pendingMenuHints) or cleanupInCombat() then return end
+    if C_Timer and type(C_Timer.After) == "function" then
+        menuApplyQueued = true
+        C_Timer.After(0, flushMenuHints)
+    else
+        flushMenuHints()
+    end
+end
+
+local function respondMenuHint(action)
+    menuDiagnostics.responded = menuDiagnostics.responded + 1
+    if type(action) ~= "table" or not validQuestID(action.id) or type(action.enabled) ~= "boolean" then return end
+    menuDiagnostics.questID = action.id
+    pendingMenuHints[action.id] = action.enabled
+    queueMenuHints()
+end
+
+local function createMenuHint(root, id)
+    local enabled = not isRevealed(id)
+    menuDiagnostics.created = menuDiagnostics.created + 1
+    root:CreateDivider()
+    root:CreateButton(enabled and (L.SHOW_HINT or "Show hint") or (L.HIDE_HINT or "Hide hint"),
+        respondMenuHint, {id=id, enabled=enabled})
+end
 
 local function addMenuOption(owner, root)
     local id = owner and owner.questID
     if not validQuestID(id) then return end
-    root:CreateDivider()
-    root:CreateButton(isRevealed(id)
-        and (L.HIDE_HINT or "Hide hint")
-        or (L.SHOW_HINT or "Show hint"), function()
-        -- Menus change only the permission, never open the world map.
-        setRevealed(id, not isRevealed(id))
-    end)
+    createMenuHint(root, id)
 end
 
 -- Unlike quest-journal menu tags, MENU_QUEST_OBJECTIVE_TRACKER does not
@@ -238,13 +276,7 @@ end
 local function addTrackerMenuOption(_, root)
     local id = trackerContextQuestID
     if not validQuestID(id) then return end
-    root:CreateDivider()
-    root:CreateButton(isRevealed(id)
-        and (L.HIDE_HINT or "Hide hint")
-        or (L.SHOW_HINT or "Show hint"), function()
-        -- Menus change only the permission, never open the world map.
-        setRevealed(id, not isRevealed(id))
-    end)
+    createMenuHint(root, id)
 end
 
 local function installMenus()
@@ -407,6 +439,7 @@ lifecycle:SetScript("OnEvent", function(_, event, questID, wasReplayQuest)
         if event ~= "QUEST_REMOVED" or wasReplayQuest ~= true then pruneRevealed(questID) end
     elseif event == "PLAYER_REGEN_ENABLED" then
         queueCleanup()
+        queueMenuHints()
     elseif event == "ADDON_LOADED" or event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then
         installProvider()
         installJournal()

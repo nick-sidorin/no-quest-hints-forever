@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Skip unmaterialized native bag item buttons during border scans, including when border hiding is OFF. Prevent the logged nil-object Lua error and its native gamepad error-window path; controller client verification remains pending.
+- Defer quest hint context-menu actions until after native menu response/closure, carrying the quest ID and explicit Show/Hide state. Coalesce repeated responses and retry after combat. Candidate for the Gamepad Beta-only menu failure; client verification pending.
+
+- Skip unmaterialized native bag item buttons during border scans, including when border hiding is OFF. Prevent the logged nil-object Lua error and its native gamepad error-window path; The owner could no longer reproduce the map-close/movement warning with Gamepad Beta enabled and mouse/keyboard after this fix; physical controller behavior remains unverified.
 
 - Add controller onboarding through Forever's native secure gamepad dialog template, preserving inherited focus/cleanup scripts and explicit preset confirmation.
 - Suppress the owned quest area's independent native tooltip tick in gamepad UI mode, including mouse/keyboard map use, while retaining area drawing and mouse-mode tooltips. Joint preview includes the separate selective-cache fix; the reporter's map-close scenario still needs client verification.
