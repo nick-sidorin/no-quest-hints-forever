@@ -15,6 +15,7 @@ local function session(saved, initial, withNative, inCombat, missingAPI)
         function f:SetText(s) self.text=s end
         function f:Hide() self.shown=false end
         function f:IsShown() return self.shown end
+        function f:GetEffectiveAlpha() return self.alpha*(self.parent and self.parent:GetEffectiveAlpha() or 1) end
         function f:IsVisible() return self.shown and (not self.parent or self.parent:IsVisible()) end
         function f:Show()
             local was=self.shown;self.shown=true
@@ -37,8 +38,9 @@ local function session(saved, initial, withNative, inCombat, missingAPI)
     CreateFrame=frame
     UIParent=frame('Frame')
     NoQuestHintsForeverQuestTimers=nil
-    QuestTimerFrame=withNative and frame('Frame',nil,UIParent) or nil
-    ObjectiveTrackerFrame=nil
+    ObjectiveTrackerFrame=frame('Frame',nil,UIParent)
+    function ObjectiveTrackerFrame:GetEffectiveAlpha() return db.hideTracker and 0 or 1 end
+    QuestTimerFrame=withNative and frame('Frame',nil,ObjectiveTrackerFrame) or nil
     QuestMapFrame={DetailsFrame=frame('Frame',nil,UIParent)}
     QuestMapFrame.DetailsFrame.BackFrame=frame('Frame',nil,QuestMapFrame.DetailsFrame)
     QuestMapFrame.DetailsFrame.questID=1
@@ -132,6 +134,9 @@ assert(QuestTimerFrame.shown,'native timer not restored')
 assert(QuestTimerFrame.alpha==0.8,'timer changed native alpha')
 s.db.hideTracker=true;s.api.RefreshQuestTimers();s.flush()
 assert(NoQuestHintsForeverQuestTimers.shown,'hidden tracker swallowed remaining time')
+QuestTimerFrame.parent=UIParent;s.api.RefreshQuestTimers();s.flush()
+assert(not NoQuestHintsForeverQuestTimers.shown,'independent native timer duplicated under UIParent')
+QuestTimerFrame.parent=ObjectiveTrackerFrame;s.api.RefreshQuestTimers();s.flush()
 s.db.hideQuestTimers=true;s.combat(true);s.api.RefreshQuestTimers();s.flush()
 assert(not NoQuestHintsForeverQuestTimers.shown,'private timer must hide even in combat')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED');assert(not QuestTimerFrame.shown)

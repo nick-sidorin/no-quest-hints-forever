@@ -136,7 +136,12 @@ refresh=function()
     end
     -- Do not duplicate the native panel when it is usable outside the hidden tracker.
     local nativeVisible=native and read(native.IsVisible or native.IsShown,native)
-    draw(not hidden and next(timers)~=nil and (api.IsTrackerHidden() or not nativeVisible))
+    local alpha=native and read(native.GetEffectiveAlpha,native)
+    -- IsVisible can stay true under an alpha-zero tracker. Conversely, some
+    -- client layouts already keep the native timer directly under UIParent.
+    local nativeUsable=nativeVisible and (type(alpha)=="number" and alpha>0
+        or alpha==nil and not api.IsTrackerHidden())
+    draw(not hidden and next(timers)~=nil and not nativeUsable)
 end
 
 local events=CreateFrame("Frame")
