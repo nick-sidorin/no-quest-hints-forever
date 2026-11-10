@@ -4,6 +4,7 @@ local api = NoQuestHintsForeverAPI
 if not api then return end
 local L = NoQuestHintsForeverLocale
 local panel, label, detailsOwner, nativeHooked
+local offerLabel, offerOwner, offeredQuestID
 local rows, timers = {}, {}
 local states = setmetatable({}, {__mode="k"})
 local ready, stopped, queued = false, false, false
@@ -90,6 +91,32 @@ local function journal()
     if ready and timed(details.questID) then label:Show() else label:Hide() end
 end
 
+-- Offer metadata is separate from the selected journal quest. Never use a
+-- different active quest's timer to label a not-yet-accepted NPC offer.
+local function npcOffer()
+    local owner=QuestFrameDetailPanel
+    if owner~=offerOwner then
+        if offerLabel then offerLabel:Hide() end
+        offerLabel=nil;offerOwner=owner
+    end
+    if not owner or type(owner.CreateFontString)~="function" or combat() then return end
+    if not offerLabel then
+        offerLabel=owner:CreateFontString(nil,"OVERLAY","GameFontNormal")
+        -- The native panel leaves a band above the parchment/scroll frame.
+        -- Keep the note visible while scrolling without moving native content.
+        offerLabel:SetPoint("TOPLEFT",owner,"TOPLEFT",20,-42)
+        offerLabel:SetWidth(290);offerLabel:SetHeight(18);offerLabel:SetJustifyH("CENTER")
+        offerLabel:SetText(L.TIMED_QUEST)
+        if type(owner.HookScript)=="function" then
+            owner:HookScript("OnShow",queue)
+            owner:HookScript("OnHide",function() if offerOwner==owner and offerLabel then offerLabel:Hide() end end)
+        end
+    end
+    local current=read(GetQuestID)
+    if ready and offeredQuestID and current==offeredQuestID and timed(current)
+        and read(owner.IsShown,owner) then offerLabel:Show() else offerLabel:Hide() end
+end
+
 local function draw(show)
     if not show then if panel then panel:Hide() end;return end
     if not panel then
@@ -133,6 +160,7 @@ refresh=function()
             nativeHooked=native;native:HookScript("OnShow",queue)
         end
         journal()
+        npcOffer()
     end
     -- Do not duplicate the native panel when it is usable outside the hidden tracker.
     local nativeVisible=native and read(native.IsVisible or native.IsShown,native)
@@ -146,7 +174,8 @@ end
 
 local events=CreateFrame("Frame")
 for _, event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","LOADING_SCREEN_ENABLED",
-    "LOADING_SCREEN_DISABLED","QUEST_LOG_UPDATE","PLAYER_REGEN_ENABLED","PLAYER_LOGOUT"}) do
+    "LOADING_SCREEN_DISABLED","QUEST_LOG_UPDATE","PLAYER_REGEN_ENABLED","PLAYER_LOGOUT",
+    "QUEST_DETAIL","QUEST_FINISHED","QUEST_GREETING","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_DATA_LOAD_RESULT"}) do
     events:RegisterEvent(event)
 end
 local elapsed=0
@@ -176,6 +205,12 @@ local function install()
     end
 end
 events:SetScript("OnEvent",function(_,event)
+    if event=="QUEST_DETAIL" then offeredQuestID=read(GetQuestID)
+    elseif event=="QUEST_FINISHED" or event=="QUEST_GREETING" or event=="QUEST_PROGRESS"
+        or event=="QUEST_COMPLETE" or event=="LOADING_SCREEN_ENABLED" or event=="PLAYER_LOGOUT" then
+        offeredQuestID=nil
+        if offerLabel then offerLabel:Hide() end
+    end
     if event=="PLAYER_LOGOUT" then
         stopped=true;ready=false;events:SetScript("OnUpdate",nil);draw(false)
         if label then label:Hide() end

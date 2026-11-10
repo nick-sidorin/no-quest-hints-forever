@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add an independent Hide quest timers option, OFF by default and in every preset. Keep a client-sourced countdown visible in a separate native-styled panel when the objective tracker is hidden; use the existing native timer otherwise. Re-read current deadlines after reload/login instead of saving or restarting an addon countdown.
+- Show the duration-free timed-quest note above the NPC offer parchment when the client identifies that exact offered quest as timed; clear it on conversation changes. Pre-acceptance metadata availability still needs a live check.
 - Mark active timed quests in journal details without revealing a duration when countdowns are hidden. Real-client deadline recovery, native visibility and layout await preview testing.
 
 ## [1.4.4] — 2026-11-09

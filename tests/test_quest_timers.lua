@@ -13,7 +13,10 @@ local function session(saved, initial, withNative, inCombat, missingAPI)
         function f:SetPoint(...) self.point={...} end
         function f:SetJustifyH() end
         function f:SetText(s) self.text=s end
-        function f:Hide() self.shown=false end
+        function f:Hide()
+            local was=self.shown;self.shown=false
+            if was and self.scripts.OnHide then self.scripts.OnHide(self) end
+        end
         function f:IsShown() return self.shown end
         function f:GetEffectiveAlpha() return self.alpha*(self.parent and self.parent:GetEffectiveAlpha() or 1) end
         function f:IsVisible() return self.shown and (not self.parent or self.parent:IsVisible()) end
@@ -44,6 +47,10 @@ local function session(saved, initial, withNative, inCombat, missingAPI)
     QuestMapFrame={DetailsFrame=frame('Frame',nil,UIParent)}
     QuestMapFrame.DetailsFrame.BackFrame=frame('Frame',nil,QuestMapFrame.DetailsFrame)
     QuestMapFrame.DetailsFrame.questID=1
+    QuestFrameDetailPanel=frame('Frame',nil,UIParent)
+    QuestFrameDetailPanel:Hide()
+    local offerID
+    GetQuestID=function() return offerID end
     QuestMapFrame_ShowQuestDetails=function() end
     hooksecurefunc=function(name,fn) hooks[name]=fn end
     C_Timer={After=function(delay,fn) assert(delay==0);deferred[#deferred+1]=fn end}
@@ -89,6 +96,10 @@ local function session(saved, initial, withNative, inCombat, missingAPI)
         polling=function() return lifecycle.scripts.OnUpdate~=nil end,
         combat=function(v) inCombat=v end,queries=function() return queries end,
         select=function(id) QuestMapFrame.DetailsFrame.questID=id;hooks.QuestMapFrame_ShowQuestDetails();flush() end,
+        offer=function(id) offerID=id;QuestFrameDetailPanel:Show();event('QUEST_DETAIL') end,
+        offerLabel=function()
+            for _,f in ipairs(frames) do if f.parent==QuestFrameDetailPanel and f.text=='Timed quest' then return f end end
+        end,
     }
 end
 
@@ -148,4 +159,20 @@ s.event('PLAYER_ENTERING_WORLD')
 assert(not NoQuestHintsForeverQuestTimers and not s.label().shown,'missing API fabricated a timer')
 s=session({hideTracker=true},{{questID=1,questTimer=0},{questID=2,questTimer=-1},{questID=3,questTimer=math.huge},false})
 s.event('PLAYER_ENTERING_WORLD');assert(not NoQuestHintsForeverQuestTimers,'invalid/expired time rendered')
-io.write('PASS: client timer reload recovery, multiple quests, independent hiding, native restoration, combat/loading and timed metadata\n')
+-- NPC offers use the offered ID, not the selected journal quest or another
+-- active timer. Client metadata may be unavailable until acceptance.
+s=session({hideTracker=true,hideQuestTimers=true},{{questID=1,questTimer=120}})
+s.event('PLAYER_ENTERING_WORLD')
+s.offer(3) -- GetTimeAllowed can identify this offer without an active timer.
+assert(s.offerLabel().shown and s.offerLabel().text=='Timed quest')
+assert(not NoQuestHintsForeverQuestTimers,'hidden timers should not reveal seconds on an NPC offer')
+s.offer(2)
+assert(not s.offerLabel().shown,'unclassified offer inherited another quest timer')
+s.offer(1);assert(s.offerLabel().shown,'known active timed quest not identified at NPC')
+s.event('QUEST_FINISHED');assert(not s.offerLabel().shown,'offer label survived conversation end')
+s.offer(1);s.event('QUEST_PROGRESS');assert(not s.offerLabel().shown,'offer note leaked into turn-in UI')
+s.offer(1);QuestFrameDetailPanel:Hide();assert(not s.offerLabel().shown)
+s=session({}, {}, false, false, true)
+s.event('PLAYER_ENTERING_WORLD');s.offer(3)
+assert(not s.offerLabel().shown,'missing API fabricated a pre-acceptance timed flag')
+io.write('PASS: client timer reload recovery, multiple quests, independent hiding, native restoration, combat/loading, journal and NPC-offer metadata\n')
