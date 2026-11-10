@@ -6,6 +6,7 @@ package-as: NoQuestHintsForever
 enable-nolib-creation: no
 
 ignore:
+  - docs/standards
   - tests
   - scripts
   - .github
