@@ -339,12 +339,19 @@ updateTracker = function()
     end
     updateTrackerInput(frame, character.hideTracker == true)
     trackerApplying = false
+    if NoQuestHintsForeverAPI.RefreshQuestTimers then NoQuestHintsForeverAPI.RefreshQuestTimers() end
 end
 
 local function setTrackerHidden(hidden)
     if not character then return end
     character.hideTracker = hidden == true
     updateTracker()
+end
+
+local function setQuestTimersHidden(hidden)
+    if not character then return end
+    character.hideQuestTimers = hidden == true
+    if NoQuestHintsForeverAPI.RefreshQuestTimers then NoQuestHintsForeverAPI.RefreshQuestTimers() end
 end
 
 local function setTooltipHintsHidden(hidden)
@@ -438,6 +445,8 @@ local api = {}
 NoQuestHintsForeverAPI = api
 api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
+api.IsQuestTimersHidden = function() return character and character.hideQuestTimers == true end
+api.SetQuestTimersHidden = setQuestTimersHidden
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
 api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end
@@ -500,6 +509,7 @@ function api.RestoreGameSettings()
     setQuestLevelsHidden(false)
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
+    setQuestTimersHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
     local itemsRestored = not api.RestoreQuestItemHighlight or api.RestoreQuestItemHighlight()
@@ -525,6 +535,7 @@ function api.ApplyPreset(preset)
     setQuestLevelsHidden(preset == "full")
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
+    setQuestTimersHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -549,6 +560,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     elseif command == "status" then
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.TIMERS_STATUS or "Hide quest timers: ") .. (character.hideQuestTimers == true and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add an independent Hide quest timers option, OFF by default and in every preset. Keep a client-sourced countdown visible in a separate native-styled panel when the objective tracker is hidden; use the existing native timer otherwise. Re-read current deadlines after reload/login instead of saving or restarting an addon countdown.
+- Mark active timed quests in journal details without revealing a duration when countdowns are hidden. Real-client deadline recovery, native visibility and layout await preview testing.
+
 ## [1.4.4] — 2026-11-09
 
 - Restore automatic onboarding, `/nqh welcome` and the settings playstyle button by removing a native forbidden dialog template introduced in 1.4.3. Saved settings, preset confirmation and map/controller fixes are preserved. The chooser currently uses mouse input in either interface mode; native controller navigation inside it needs a separately validated implementation.

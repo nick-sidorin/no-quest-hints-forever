@@ -1,0 +1,146 @@
+-- Client-sourced countdowns, native isolation, timed detail labels and reload recovery.
+local function session(saved, initial, withNative, inCombat, missingAPI)
+    local list=initial or {}
+    local db=saved or {hideTracker=true}
+    local frames, deferred, hooks={}, {}, {}
+    local lifecycle
+    local function frame(kind,name,parent,template)
+        assert(not template or template=='BackdropTemplate','unexpected inherited timer template')
+        local f={parent=parent,shown=true,scripts={},events={},alpha=0.8}
+        function f:SetSize(w,h) self.width,self.height=w,h end
+        function f:SetHeight(h) self.height=h end
+        function f:SetWidth(w) self.width=w end
+        function f:SetPoint(...) self.point={...} end
+        function f:SetJustifyH() end
+        function f:SetText(s) self.text=s end
+        function f:Hide() self.shown=false end
+        function f:IsShown() return self.shown end
+        function f:IsVisible() return self.shown and (not self.parent or self.parent:IsVisible()) end
+        function f:Show()
+            local was=self.shown;self.shown=true
+            if not was and self.scripts.OnShow then self.scripts.OnShow(self) end
+        end
+        function f:EnableMouse(value) self.mouse=value end
+        function f:SetBackdrop() end
+        function f:SetBackdropColor() end
+        function f:SetScript(e,fn) self.scripts[e]=fn end
+        function f:HookScript(e,fn)
+            local old=self.scripts[e]
+            self.scripts[e]=function(...) if old then old(...) end;fn(...) end
+        end
+        function f:RegisterEvent(e) self.events[e]=true end
+        function f:CreateFontString() return frame('FontString',nil,self) end
+        frames[#frames+1]=f
+        if name then _G[name]=f end
+        return f
+    end
+    CreateFrame=frame
+    UIParent=frame('Frame')
+    NoQuestHintsForeverQuestTimers=nil
+    QuestTimerFrame=withNative and frame('Frame',nil,UIParent) or nil
+    ObjectiveTrackerFrame=nil
+    QuestMapFrame={DetailsFrame=frame('Frame',nil,UIParent)}
+    QuestMapFrame.DetailsFrame.BackFrame=frame('Frame',nil,QuestMapFrame.DetailsFrame)
+    QuestMapFrame.DetailsFrame.questID=1
+    QuestMapFrame_ShowQuestDetails=function() end
+    hooksecurefunc=function(name,fn) hooks[name]=fn end
+    C_Timer={After=function(delay,fn) assert(delay==0);deferred[#deferred+1]=fn end}
+    InCombatLockdown=function() return inCombat end
+    local api={
+        IsQuestTimersHidden=function() return db.hideQuestTimers==true end,
+        IsTrackerHidden=function() return db.hideTracker==true end,
+    }
+    NoQuestHintsForeverAPI=api
+    NoQuestHintsForeverLocale={TIMED_QUEST='Timed quest'}
+    local queries=0
+    C_QuestLog=not missingAPI and {
+        GetQuestTimers=function() queries=queries+1;return list end,
+        GetTitleForQuestID=function(id) return 'Quest '..id end,
+        GetTimeAllowed=function(id) if id==3 then return 600,30 end end,
+    } or nil
+    local before=#frames
+    assert(loadfile('NoQuestHintsForever/QuestTimers.lua'))()
+    lifecycle=frames[before+1]
+    local function flush()
+        local count=0
+        while #deferred>0 do count=count+1;assert(count<20,'timer refresh loop');table.remove(deferred,1)() end
+    end
+    local function event(e)
+        assert(lifecycle.events[e],e);lifecycle.scripts.OnEvent(lifecycle,e);flush()
+    end
+    local function clock(index)
+        local p=NoQuestHintsForeverQuestTimers
+        local titles,clocks={},{}
+        for _,f in ipairs(frames) do
+            if p and f.parent and f.parent.parent==p and f.text then
+                if f.text:match('^%d+:%d%d$') then clocks[#clocks+1]=f.text else titles[#titles+1]=f.text end
+            end
+        end
+        return clocks[index or 1],titles[index or 1]
+    end
+    local function label()
+        for _,f in ipairs(frames) do if f.parent==QuestMapFrame.DetailsFrame and f.text=='Timed quest' then return f end end
+    end
+    return {api=api,db=db,event=event,flush=flush,clock=clock,label=label,
+        update=function(value) list=value;event('QUEST_LOG_UPDATE') end,
+        tick=function(delta) if lifecycle.scripts.OnUpdate then lifecycle.scripts.OnUpdate(lifecycle,delta or 0.25) end;flush() end,
+        polling=function() return lifecycle.scripts.OnUpdate~=nil end,
+        combat=function(v) inCombat=v end,queries=function() return queries end,
+        select=function(id) QuestMapFrame.DetailsFrame.questID=id;hooks.QuestMapFrame_ShowQuestDetails();flush() end,
+    }
+end
+
+local saved={hideTracker=true}
+local s=session(saved,{{questID=1,questTimer=300}})
+s.event('LOADING_SCREEN_DISABLED')
+assert(NoQuestHintsForeverQuestTimers.shown and s.clock()=='5:00')
+assert(s.label().shown,'active timed quest not marked')
+assert(saved.hideQuestTimers==nil and saved.expiry==nil,'timer state must not persist')
+local queries=s.queries()
+s.tick(0.1);assert(s.queries()==queries,'timer API queried every frame')
+s.tick(0.15);assert(s.clock()=='5:00','addon invented elapsed time instead of reading the client')
+s.update({{questID=1,questTimer=258}})
+assert(s.clock()=='4:18','countdown did not re-read client time')
+s.event('PLAYER_LOGOUT')
+assert(not NoQuestHintsForeverQuestTimers.shown and not s.polling())
+-- A new Lua session (reload/full login) must reconstruct solely from current API data.
+s=session(saved,{{questID=1,questTimer=172}})
+s.event('PLAYER_ENTERING_WORLD')
+assert(s.clock()=='2:52','reload restarted a countdown instead of using client remaining time')
+s.event('LOADING_SCREEN_ENABLED')
+assert(not NoQuestHintsForeverQuestTimers.shown and not s.polling())
+s.event('LOADING_SCREEN_DISABLED');assert(s.clock()=='2:52')
+s.db.hideQuestTimers=true;s.api.RefreshQuestTimers();s.flush()
+assert(not NoQuestHintsForeverQuestTimers.shown and s.label().shown,'hiding time removed metadata')
+s.select(2);assert(not s.label().shown,'untimed quest marked')
+s.select(3);assert(s.label().shown,'GetTimeAllowed timed metadata ignored')
+s.select(1)
+s.update({{questID=2,questTimer=61},{questID=4,questTimer=30}})
+assert(not s.label().shown,'old quest marker leaked into changed list')
+s.db.hideQuestTimers=false;s.api.RefreshQuestTimers();s.flush()
+assert(s.clock(1)=='1:01' and s.clock(2)=='0:30','multiple timers are not client sourced')
+s.update({});assert(not NoQuestHintsForeverQuestTimers.shown and not s.polling(),'empty list kept UI/polling')
+
+s=session({hideTracker=false},{{questID=1,questTimer=100}},true)
+s.event('PLAYER_ENTERING_WORLD')
+assert(not NoQuestHintsForeverQuestTimers,'native countdown duplicated')
+s.db.hideQuestTimers=true;s.api.RefreshQuestTimers();s.flush()
+assert(not QuestTimerFrame.shown,'native timer not suppressed')
+QuestTimerFrame:Show();s.flush();assert(not QuestTimerFrame.shown,'late native show escaped suppression')
+s.db.hideQuestTimers=false;s.api.RefreshQuestTimers();s.flush()
+assert(QuestTimerFrame.shown,'native timer not restored')
+assert(QuestTimerFrame.alpha==0.8,'timer changed native alpha')
+s.db.hideTracker=true;s.api.RefreshQuestTimers();s.flush()
+assert(NoQuestHintsForeverQuestTimers.shown,'hidden tracker swallowed remaining time')
+s.db.hideQuestTimers=true;s.combat(true);s.api.RefreshQuestTimers();s.flush()
+assert(not NoQuestHintsForeverQuestTimers.shown,'private timer must hide even in combat')
+s.combat(false);s.event('PLAYER_REGEN_ENABLED');assert(not QuestTimerFrame.shown)
+s.update({});s.db.hideQuestTimers=false;s.api.RefreshQuestTimers();s.flush()
+assert(not QuestTimerFrame.shown,'completed timer restored stale native visibility')
+
+s=session({hideTracker=true},{{questID=1,questTimer=1}},false,false,true)
+s.event('PLAYER_ENTERING_WORLD')
+assert(not NoQuestHintsForeverQuestTimers and not s.label().shown,'missing API fabricated a timer')
+s=session({hideTracker=true},{{questID=1,questTimer=0},{questID=2,questTimer=-1},{questID=3,questTimer=math.huge},false})
+s.event('PLAYER_ENTERING_WORLD');assert(not NoQuestHintsForeverQuestTimers,'invalid/expired time rendered')
+io.write('PASS: client timer reload recovery, multiple quests, independent hiding, native restoration, combat/loading and timed metadata\n')

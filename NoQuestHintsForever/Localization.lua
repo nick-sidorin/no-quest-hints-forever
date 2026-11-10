@@ -1,6 +1,10 @@
 -- Display-language strings. English is the fallback for unsupported locales.
 -- Keep keys shared between the slash commands, native UI and quest menus.
 local en = {
+    QUEST_TIMERS = "Hide quest timers",
+    QUEST_TIMERS_DESC = "Hide the countdown for timed quests, independently of the objective tracker. When the tracker is hidden and this option is off, a separate timer remains visible. The journal still marks timed quests.",
+    TIMED_QUEST = "Timed quest",
+    TIMERS_STATUS = "Hide quest timers: ",
     VERSION_UPDATED = "Updated to version %s.",
     VERSION_FEATURES = "Updated to version %s! Open /nqh to explore new features in settings.",
     QUEST_LEVELS = "Hide quest levels",
@@ -81,6 +85,10 @@ local en = {
     VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
+    QUEST_TIMERS = "Скрывать таймеры заданий",
+    QUEST_TIMERS_DESC = "Скрывает обратный отсчёт заданий на время независимо от списка заданий. Если список скрыт, а эта галочка выключена, таймер виден отдельно. Пометка в журнале остаётся.",
+    TIMED_QUEST = "Задание на время",
+    TIMERS_STATUS = "Скрывать таймеры заданий: ",
     VERSION_UPDATED = "Аддон обновлён до версии %s.",
     VERSION_FEATURES = "Аддон обновлён до версии %s! Загляните в настройки через /nqh — там вас ждут новые функции.",
     QUEST_LEVELS = "Скрывать уровень заданий",

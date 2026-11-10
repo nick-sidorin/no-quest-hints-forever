@@ -22,6 +22,7 @@ Remember when finding a quest objective meant reading the description, looking a
 
 - **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
+- **Hide quest timers (optional):** Independently hide timed-quest countdowns. When the tracker is hidden and this option is OFF, a compact separate timer uses the client’s current remaining time, including after reload/login. Quest details retain a **Timed quest** label without revealing seconds. OFF in every preset.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
 - **Hide quest NPC names:** Temporarily override Blizzard's `UnitNameFriendlySpecialNPCName` setting to conceal quest-relevant floating names while preserving unrelated NPC-name CVars, then restore the original account-wide CVar when disabled. **Blizzard groups some special/friendly NPC names with quest NPCs under this setting, so those may also disappear.** This is a documented Blizzard limitation, not quest-by-quest name filtering.
 - **Item prices:** Two independent controls hide the native vendor SellPrice line **outside trading** and **at auction**. Merchants always show prices. These controls do not change actual prices, stats, trading mechanics or separate price overlays from other addons.
@@ -58,6 +59,7 @@ World of Warcraft/
                 ├── QuestMarkers.lua
                 ├── QuestHintPins.xml
                 ├── QuestInlineHints.lua
+                ├── QuestTimers.lua           # Client-sourced deadlines and timed-quest details
                 ├── QuestPresentation.lua     # Numeric title levels and difficulty-color filtering
                 ├── QuestTooltips.lua
                 ├── SellPrices.lua
@@ -80,7 +82,7 @@ After the loading screen finishes, a new character sees three realm-rule-style c
 
 Clicking a card only selects it. **Begin adventure** confirms the choice. Closing the window, choosing **Later**, or opening **Customize settings…** applies no preset. An unfinished first run reappears on the next login; editing a checkbox completes setup. Existing characters keep their saved choices and do not see onboarding after upgrading.
 
-Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the ten checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
+Reopen the cards with **Choose playstyle** in the addon settings. Applying a playstyle replaces the eleven checkbox values. As in Blizzard and Immersion keep both price controls OFF; Full immersion hides outside trading and keeps auction prices visible, as requested. Auction hiding can then be enabled separately for strict RP. Quest-item border hiding remains OFF in every preset. Choices are saved per character.
 
 After an upgrade, one localized message per account shows the new addon version after the loading screen has finished. Fix-only updates use a neutral message. If any feature release lies between the last seen and installed version (even when versions were skipped), the message also points to `/nqh` for new options. Ordinary reloads, alts and downgrades do not repeat it; a first install uses onboarding instead. Existing installations without version bookkeeping receive one notice, then keep a baseline in account SavedVariables. Test builds with the same TOC version do not count as separate upgrades.
 
@@ -168,7 +170,7 @@ WoW normally saves SavedVariables on logout and `/reload`; forced exits or crash
 - **Client:** World of Warcraft: Forever, **not** Retail or Classic Era.
 - **TOC Interface:** `16001`, checked against early Forever client builds. This does not by itself prove runtime API compatibility.
 - **Dependencies:** None. Uses Blizzard UI templates and Lua.
-- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, ten equal-rank `Settings.RegisterProxySetting` values (seven quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
+- **Blizzard Settings integration:** `Settings.RegisterVerticalLayoutCategory`, eleven equal-rank `Settings.RegisterProxySetting` values (eight quest controls, two independent price contexts and one bag control) and native `Settings.CreateCheckbox` controls (labels only, explanatory tooltip on hover). The option accessors read the active character; all native controls update the live game state. No separate settings dialog or copied checkbox state. A dedicated first-run chooser uses native game art; it is separate from the actual Settings page.
 - **Tracker:** `ObjectiveTrackerFrame`. These behaviors must still be validated in the current release of Forever, including combat and Edit Mode.
 
 Selective circular map pins keep their native real hover/click behavior. Their tooltip content refreshes on re-entry; periodic synthetic hover callbacks are disabled because Forever also rebuilds the journal through that callback. Unchanged quest events preserve existing pins, while changed permissions, position, style, selection or map refresh them.
@@ -319,3 +321,9 @@ To test automatic first-run presentation on an existing character, run `/run NoQ
 Contributor practices are pinned from [wow-addon-standards](https://github.com/nick-sidorin/wow-addon-standards) into `docs/standards/`. Root `AGENTS.md` explicitly loads those rules; local product decisions stay in this repository. This dependency is documentation for development, not a Lua addon, game-time dependency or package-manager installation. CI verifies document hashes offline; the standards are excluded from GitHub and CurseForge addon packages.
 
 For maintenance, see [the local adoption guide](docs/standards/README.md). A reviewed upstream commit is adopted through a PR; remote `main` is never imported automatically. No gameplay release is needed for a standards update.
+
+### Timed quest preview
+
+The independent **Hide quest timers** control is OFF by default and in all presets. With the objective tracker hidden, the addon displays a small non-interactive panel at the upper right using `C_QuestLog.GetQuestTimers()` records (`questID`, `questTimer`). The visible countdown is refreshed from the client at most four times per second, only while timers exist; no deadline or elapsed time is saved by the addon. With a usable visible native timer, no duplicate panel is drawn. Hiding timers temporarily hides only the native QuestTimerFrame outside combat and the addon panel; it does not change the game's timer or watch list. Combat-delayed native visibility changes retry afterward.
+
+Quest details show a localized **Timed quest** note at the bottom of the top button bar when current client timers or `C_QuestLog.GetTimeAllowed()` identify that quest as timed. The note remains when countdowns are hidden and contains no numeric duration. It is based on available client data, not escort type, quest text or an external quest database. Unknown/expired timer records are not turned into invented countdowns. Real-client timer persistence and placement need the preview smoke test; the server decides what happens to a timed quest while the player is offline.
