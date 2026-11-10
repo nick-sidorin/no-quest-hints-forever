@@ -109,7 +109,12 @@ local function npcOffer()
         offerLabel:SetText(L.TIMED_QUEST)
         if type(owner.HookScript)=="function" then
             owner:HookScript("OnShow",queue)
-            owner:HookScript("OnHide",function() if offerOwner==owner and offerLabel then offerLabel:Hide() end end)
+            owner:HookScript("OnHide",function()
+                if offerOwner==owner then
+                    offeredQuestID=nil
+                    if offerLabel then offerLabel:Hide() end
+                end
+            end)
         end
     end
     local current=read(GetQuestID)
@@ -205,7 +210,9 @@ local function install()
     end
 end
 events:SetScript("OnEvent",function(_,event)
-    if event=="QUEST_DETAIL" then offeredQuestID=read(GetQuestID)
+    if event=="QUEST_DETAIL" then
+        offeredQuestID=read(GetQuestID)
+        if offerLabel then offerLabel:Hide() end
     elseif event=="QUEST_FINISHED" or event=="QUEST_GREETING" or event=="QUEST_PROGRESS"
         or event=="QUEST_COMPLETE" or event=="LOADING_SCREEN_ENABLED" or event=="PLAYER_LOGOUT" then
         offeredQuestID=nil

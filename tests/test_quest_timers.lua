@@ -172,6 +172,8 @@ s.offer(1);assert(s.offerLabel().shown,'known active timed quest not identified 
 s.event('QUEST_FINISHED');assert(not s.offerLabel().shown,'offer label survived conversation end')
 s.offer(1);s.event('QUEST_PROGRESS');assert(not s.offerLabel().shown,'offer note leaked into turn-in UI')
 s.offer(1);QuestFrameDetailPanel:Hide();assert(not s.offerLabel().shown)
+s.offer(1);s.combat(true);s.offer(2)
+assert(not s.offerLabel().shown,'combat-deferred update leaked previous offer marker')
 s=session({}, {}, false, false, true)
 s.event('PLAYER_ENTERING_WORLD');s.offer(3)
 assert(not s.offerLabel().shown,'missing API fabricated a pre-acceptance timed flag')
