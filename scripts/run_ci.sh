@@ -4,6 +4,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+echo "::group::Verify pinned development standards"
+python3 scripts/standards.py check
+echo "::endgroup::"
+
 echo "::group::Verify addon TOC and runtime file list"
 python3 scripts/package_addon.py --check
 echo "::endgroup::"

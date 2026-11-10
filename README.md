@@ -313,3 +313,9 @@ See [CHANGELOG.md](CHANGELOG.md) and the [MIT License](LICENSE).
 Bag-border smoke test: enable **Bags → Hide quest item borders**, move quest and ordinary items between individual/combined native bags, obtain/complete a quest and reload. Quest borders should disappear; quality/new-item overlays and quest-start exclamation marks should remain. Disable or restore to recover original alpha/visibility. Check combat-end retry. Custom bag overlays require separate compatibility work.
 
 To test automatic first-run presentation on an existing character, run `/run NoQuestHintsForeverChar.onboardingComplete=false; ReloadUI()`. This preserves the checkbox configuration and reopens the chooser after loading; choices change only after confirmation. `pending=true, complete=false` means setup is incomplete, whether the chooser is visible or awaiting a safe opening time.
+
+## Shared development standards
+
+Contributor practices are pinned from [wow-addon-standards](https://github.com/nick-sidorin/wow-addon-standards) into `docs/standards/`. Root `AGENTS.md` explicitly loads those rules; local product decisions stay in this repository. This dependency is documentation for development, not a Lua addon, game-time dependency or package-manager installation. CI verifies document hashes offline; the standards are excluded from GitHub and CurseForge addon packages.
+
+For maintenance, see [the local adoption guide](docs/standards/README.md). A reviewed upstream commit is adopted through a PR; remote `main` is never imported automatically. No gameplay release is needed for a standards update.

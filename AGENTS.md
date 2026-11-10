@@ -1,5 +1,9 @@
 # AGENTS.md — No Quest Hints Forever
 
+## Shared development dependency
+
+Before substantive work, read [the pinned shared standards](docs/standards/AGENTS.md) and [their field notes](docs/standards/FIELD_NOTES.md), then the project-specific instructions below. [The lock file](docs/standards/standards.lock.json) records the exact upstream commit and document hashes. This is a development-only vendored dependency, not addon runtime code; no network lookup or package manager is required when working on the project. Local product rules refine the shared baseline; current owner instructions remain authoritative. Update only through a reviewed PR using `python3 scripts/standards.py sync --source <local-standards-clone> --commit <full-reviewed-sha> --target .`; run `python3 scripts/standards.py check` to verify local integrity. See [adoption and update instructions](docs/standards/README.md).
+
 Repository-wide instructions for contributors and coding agents. Before substantive work, read [README.md](README.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md), and relevant Issues/PRs. Treat source code and live GitHub state as authoritative over dated context.
 
 ## Communication and documentation
