@@ -211,15 +211,15 @@ assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
     "/nqh did not navigate to native Settings category")
 assert(NoQuestHintsForeverOptionsFrame == nil,
     "legacy floating settings window must never be created")
-assert(#s.proxySettings == 10, "each option needs a native proxy setting")
+assert(#s.proxySettings == 11, "each option needs a native proxy setting")
 for _, control in ipairs(s.checks) do
     assert(type(control.tooltip) == "string" and #control.tooltip > 0,
         "native checkbox description must be shown in tooltip")
 end
-assert(#s.checks == 10, "expected ten independent controls")
+assert(#s.checks == 11, "expected eleven independent controls")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
-    and s.checks[8]:GetChecked() == false and s.checks[5]:GetChecked() == false,
+    and s.checks[9]:GetChecked() == false and s.checks[5]:GetChecked() == false,
     "checkbox defaults do not match existing settings")
 s.checks[2]:SetChecked(true)
 s.checks[2].scripts.OnClick(s.checks[2])
@@ -236,8 +236,8 @@ assert(s.current.UnitNameFriendlySpecialNPCName == "0", "quest/special names CVa
 assert(shared.npcNameOriginal == "1", "account baseline not preserved")
 assert(s.current.UnitNameHostleNPC == "0" and s.current.UnitNameNPC == "0",
     "NPC name override changed unrelated name categories")
-s.checks[8]:SetChecked(true)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(true)
+s.checks[9].scripts.OnClick(s.checks[9])
 assert(original.hideSellPrices == true and NoQuestHintsForeverAPI.IsSellPriceHidden() == true,
     "sell price preference not enabled per character")
 s.checks[5]:SetChecked(true)
@@ -322,13 +322,13 @@ s.checks[2].scripts.OnClick(s.checks[2])
 assert(s.tracker:GetAlpha() == 0.8 and s.tracker:IsMouseEnabled())
 
 -- The price option is independent, and toggling it is reversible.
-s.checks[8]:SetChecked(false)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(false)
+s.checks[9].scripts.OnClick(s.checks[9])
 assert(original.hideSellPrices == false
     and NoQuestHintsForeverAPI.IsSellPriceHidden() == false,
     "turning off price concealment did not restore native behavior")
-s.checks[8]:SetChecked(true)
-s.checks[8].scripts.OnClick(s.checks[8])
+s.checks[9]:SetChecked(true)
+s.checks[9].scripts.OnClick(s.checks[9])
 
 s.checks[5]:SetChecked(false)
 s.checks[5].scripts.OnClick(s.checks[5])
@@ -349,7 +349,7 @@ assert(reload.tracker:GetAlpha() == 0, "slash off unexpectedly enabled tracker")
 reload.command("")
 assert(#reload.opened == 1, "/nqh must open native settings after reload")
 assert(reload.checks[2]:GetChecked() == true and reload.checks[3]:GetChecked() == true
-    and reload.checks[4]:GetChecked() == true and reload.checks[8]:GetChecked() == true
+    and reload.checks[4]:GetChecked() == true and reload.checks[9]:GetChecked() == true
     and reload.checks[5]:GetChecked() == true,
     "UI did not reflect loaded tracker/tooltip settings")
 
@@ -400,7 +400,7 @@ assert(category.rows[4].header == "Подсказки заданий")
 assert(category.rows[5].header == "Цены предметов")
 assert(category.rows[6].header == "Сумки")
 assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
-assert(localized.checks[8].setting.variable == "NQH_HIDE_SELL_PRICES")
+assert(localized.checks[9].setting.variable == "NQH_HIDE_SELL_PRICES")
 
 local reset = session({}, {}, true, true)
 local notifications = {}
@@ -414,12 +414,12 @@ assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
 reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
 assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
 local count=0; for _ in pairs(notifications) do count=count+1 end
-assert(count==10, "preset/restore must refresh every native checkbox")
+assert(count==11, "preset/restore must refresh every native checkbox")
 
 -- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
 local auctionUI = session(priceChar, {}, true, false)
-local auctionCheck = auctionUI.checks[9]
+local auctionCheck = auctionUI.checks[10]
 assert(auctionCheck.setting.variable == "NQH_HIDE_AUCTION_SELL_PRICES")
 assert(auctionCheck.setting.defaultValue == false and not auctionCheck:GetChecked())
 assert(not auctionCheck.parentInitializer and not auctionCheck.modifyPredicate,
@@ -428,7 +428,7 @@ auctionCheck:SetChecked(true); auctionCheck.scripts.OnClick(auctionCheck)
 assert(priceChar.hideAuctionSellPrices and not NoQuestHintsForeverAPI.IsSellPriceHidden(),
     "auction hiding must work with outside-trading hiding OFF")
 auctionUI = session(priceChar, {}, true, false)
-assert(auctionUI.checks[9]:GetChecked(), "independent auction choice lost on reload")
+assert(auctionUI.checks[10]:GetChecked(), "independent auction choice lost on reload")
 NoQuestHintsForeverAPI.ApplyPreset("full")
 assert(NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
     "Full immersion must keep auction values visible as requested")
@@ -437,7 +437,7 @@ NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsSellPriceHidden() and not NoQuestHintsForeverAPI.IsAuctionSellPriceHidden(),
     "restore must clear both independent hiding contexts")
 local auctionAlt = session({}, {}, true, false)
-assert(not auctionAlt.checks[9]:GetChecked(), "new alt must not inherit another character's hiding")
+assert(not auctionAlt.checks[10]:GetChecked(), "new alt must not inherit another character's hiding")
 
 -- Preview migration preserves effective price visibility and removes the old
 -- positive/dependent field; it must not override a new-format explicit choice.
@@ -472,13 +472,13 @@ assert(not NoQuestHintsForeverAPI.IsQuestLevelsHidden() and not NoQuestHintsFore
 -- Bag highlighting is a manual per-character option, OFF in every preset.
 local bagChar = {}
 local bags = session(bagChar, {}, true, false)
-local bagCheck = bags.checks[10]
+local bagCheck = bags.checks[11]
 assert(bagCheck.setting.variable == "NQH_HIDE_QUEST_ITEM_HIGHLIGHT")
 assert(not bagCheck:GetChecked())
 bagCheck:SetChecked(true); bagCheck.scripts.OnClick(bagCheck)
 assert(bagChar.hideQuestItemHighlight and NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
 bags = session(bagChar, {}, true, false)
-assert(bags.checks[10]:GetChecked(), "manual bag preference lost on reload")
+assert(bags.checks[11]:GetChecked(), "manual bag preference lost on reload")
 for _, preset in ipairs({ "blizzard", "immersion", "full" }) do
     NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
     NoQuestHintsForeverAPI.ApplyPreset(preset)
@@ -488,7 +488,7 @@ NoQuestHintsForeverAPI.SetQuestItemHighlightHidden(true)
 NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not NoQuestHintsForeverAPI.IsQuestItemHighlightHidden())
 local altBags = session({}, {}, true, false)
-assert(not altBags.checks[10]:GetChecked())
+assert(not altBags.checks[11]:GetChecked())
 
 -- The last Settings action presents a copyable project URL, with no browser API
 -- assumptions. Exercise the native GetEditBox shape and legacy frame fields.
@@ -577,3 +577,39 @@ assert(frenchSettings.panels[1].rows[1].header=="Style de jeu et restauration")
 assert(frenchSettings.panels[1].rows[#frenchSettings.panels[1].rows].button=="Signaler un problème")
 local germanSettings=session({}, {}, true, false, "deDE")
 assert(germanSettings.checks[1].setting.name=="Questkartenhinweise ausblenden")
+
+-- Timers have an independent equal-rank flag, preserved through reload and OFF
+-- in every preset. Restoration clears it without changing actual quest timers.
+local timerProfile={hideTracker=true,hideQuestTimers=true}
+local timerUI=session(timerProfile,{},true,false)
+local timerCheck=timerUI.checks[8]
+assert(timerCheck.setting.variable=="NQH_HIDE_QUEST_TIMERS" and timerCheck:GetChecked())
+assert(not timerCheck.parentInitializer and not timerCheck.modifyPredicate)
+for _,preset in ipairs({"blizzard","immersion","full"}) do
+    NoQuestHintsForeverAPI.SetQuestTimersHidden(true)
+    assert(NoQuestHintsForeverAPI.ApplyPreset(preset))
+    assert(not NoQuestHintsForeverAPI.IsQuestTimersHidden(),"preset hid quest deadlines")
+end
+NoQuestHintsForeverAPI.SetQuestTimersHidden(true)
+timerUI=session(timerProfile,{},true,false)
+assert(NoQuestHintsForeverAPI.IsQuestTimersHidden(),"manual timer hiding lost on reload")
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(not timerProfile.hideQuestTimers)
+
+-- Placement is a per-character UI preference, validated separately from presets.
+local positioned={questTimerPosition={x=0.8,y=0.65}}
+local positions=session(positioned,{},true,false)
+local point=NoQuestHintsForeverAPI.GetQuestTimerPosition()
+assert(point.x==0.8 and point.y==0.65)
+point.x=0.1
+assert(positioned.questTimerPosition.x==0.8,'position getter exposed mutable saved state')
+NoQuestHintsForeverAPI.SetQuestTimerPosition(-1,0.3)
+assert(positioned.questTimerPosition.x==0.8,'invalid position was saved')
+NoQuestHintsForeverAPI.SetQuestTimerPosition(0.7,0.4)
+assert(positioned.questTimerPosition.x==0.7 and positioned.questTimerPosition.y==0.4)
+NoQuestHintsForeverAPI.ApplyPreset('full')
+assert(positioned.questTimerPosition.x==0.7,'preset reset UI placement')
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(positioned.questTimerPosition.x==0.7,'restoration reset UI placement')
+positioned.questTimerPosition={x=0/0,y=0.2}
+assert(NoQuestHintsForeverAPI.GetQuestTimerPosition()==nil,'corrupt placement must fall back to minimap')

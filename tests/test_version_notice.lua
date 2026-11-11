@@ -129,3 +129,20 @@ local logoutEarly={lastSeenVersion='1.3.0'}
 s=session({},logoutEarly,'1.4.0','enUS',nil,true)
 s.event('LOADING_SCREEN_DISABLED',nil,true);s.event('PLAYER_LOGOUT')
 assert(#s.messages==0 and logoutEarly.lastSeenVersion=='1.3.0')
+
+-- The timer option actually ships in 1.5.0, including for skipped updates.
+local timerAccount={lastSeenVersion='1.4.4'}
+s=session({onboardingComplete=true},timerAccount,'1.5.0')
+assert(#s.messages==1 and s.messages[1]:find('new features',1,true))
+assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_LEVELS'))
+NoQuestHintsForeverAPI.MarkSettingSeen('NQH_HIDE_QUEST_TIMERS')
+s=session({},timerAccount,'1.5.1')
+assert(#s.messages==1 and not s.messages[1]:find('new features',1,true))
+assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
+local skippedTimers={lastSeenVersion='1.4.4'}
+s=session({},skippedTimers,'1.5.2')
+assert(s.messages[1]:find('new features',1,true) and NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
+local newInstall={}
+session({},newInstall,'1.5.0')
+assert(not newInstall.newSettings,'new installation received an upgrade-only timer badge')

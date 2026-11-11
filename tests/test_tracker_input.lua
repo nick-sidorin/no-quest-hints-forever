@@ -85,3 +85,18 @@ assert(not api.RestoreGameSettings())
 header.fail=false
 assert(api.RestoreGameSettings() and header.click and header.motion)
 io.write("PASS: tracker descendant hover/click/wheel suppression, new/detached blocks, exact restoration and combat retry\n")
+
+-- Exempt only the actual timer subtree; restore flags captured by earlier passes.
+local timer=frame(root,true,true,false)
+local timeButton=frame(timer,true,true,false)
+api.SetTrackerHidden(true)
+assert(not timeButton.click and not timeButton.motion)
+api.IsQuestTimerInputExempt=function(node) return node==timer end
+api.UpdateTracker()
+assert(timer.click and timer.motion and timeButton.click and timeButton.motion,
+    'native timer input captured by the hidden tracker was not restored')
+assert(not header.click and not header.motion,'timer exemption revealed normal quest headers')
+api.IsQuestTimerInputExempt=nil;api.UpdateTracker()
+assert(not timeButton.click and not timeButton.motion,'withdrawn exemption left a ghost timer target')
+api.SetTrackerHidden(false)
+assert(timeButton.click and timeButton.motion)

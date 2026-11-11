@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [1.5.0] — 2026-11-11
+
+- Add an independent Hide quest timers option, OFF by default and in every preset. Preserve the actual Blizzard QuestTimerFrame through a hidden tracker, including native artwork, localized countdown, title tooltip and quest-opening click. The timer keeps Blizzard’s own countdown, artwork and interactions.
+- Place the native timer below the minimap using an invisible addon-owned anchor. Drag its header to save per-character placement; native time buttons retain their original interaction. Exempt only the timer subtree from hidden-tracker mouse suppression and defer native visibility/position changes outside combat.
+- Leave native full-journal content untouched. A duration-free NPC-offer note fits between Accept and Decline only when client metadata identifies that offered quest. The owner confirmed no pre-acceptance time values for quest 3364; reliable first-time warnings for such offers remain unavailable.
+
 ## [1.4.4] — 2026-11-09
 
 - Restore automatic onboarding, `/nqh welcome` and the settings playstyle button by removing a native forbidden dialog template introduced in 1.4.3. Saved settings, preset confirmation and map/controller fixes are preserved. The chooser currently uses mouse input in either interface mode; native controller navigation inside it needs a separately validated implementation.

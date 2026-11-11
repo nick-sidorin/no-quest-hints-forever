@@ -21,9 +21,10 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 ## ✨ Features at a Glance
 
-Ten independent, optional controls:
+Eleven independent, optional controls:
 
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
+- ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters from NPC and object tooltips.
 - 🎯 **Hide Quest NPC Names** — Hide floating names that reveal quest targets.
@@ -62,6 +63,14 @@ After the loading screen finishes, choose a playstyle on first setup, or reopen 
 
 Select a card and confirm to apply it. Customize any option afterward. Difficulty colors, auction prices and quest-item borders remain visible in every preset unless you hide them manually.
 
+## ⏱️ Timed Quests
+
+Hiding the objective tracker no longer has to hide your quest countdown. Keep Blizzard’s original timer, hover over the time for the quest title, or click it to open the quest. Drag the header to reposition it; placement is saved per character.
+
+Enable **Hide quest timers** if you prefer to follow the urgency in the quest text. This option controls the on-screen timer independently of the tracker and is OFF in all playstyle presets. The full quest journal keeps its native presentation.
+
+Pre-acceptance warnings depend on client metadata and are not reliable for every timed quest. The addon does not guess from quest text. Actual time limits and behavior while offline remain controlled by the game.
+
 ## 🎮 Native Gamepad Beta
 
 The playstyle chooser currently uses mouse input, including with Gamepad Beta enabled. Native controller navigation inside the chooser is not currently supported. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
@@ -93,7 +102,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Update 1.4.4:** Restores automatic onboarding, `/nqh welcome` and the settings playstyle button after a 1.4.3 regression. The chooser uses mouse input in either interface mode. Saved choices and the earlier map/controller fixes are preserved. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.5.0:** Keep Blizzard’s native quest timer visible with a hidden tracker, including its title tooltip and quest-opening click. Drag its header to save the position, or hide the on-screen timer with the new independent option. Timer hiding is OFF by default and in every preset. Native journal content is preserved. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 

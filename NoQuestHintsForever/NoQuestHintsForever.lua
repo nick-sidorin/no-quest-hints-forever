@@ -103,6 +103,7 @@ end
 -- Add an entry only when features ship, never for a fixes-only release. Checking
 -- the whole interval handles players who skip one or more feature versions.
 local featureReleases = {
+    {version="1.5.0", settings={"NQH_HIDE_QUEST_TIMERS"}},
     {version="1.4.0", settings={"NQH_HIDE_QUEST_LEVELS", "NQH_HIDE_QUEST_DIFFICULTY",
         "NQH_HIDE_AUCTION_SELL_PRICES", "NQH_HIDE_QUEST_ITEM_HIGHLIGHT"}},
 }
@@ -289,6 +290,9 @@ local function updateTrackerInput(root, hidden)
     local active = {}
     local function visit(node)
         if not node or active[node] then return end
+        -- QuestTimerFrame keeps its native tooltip/clicks outside our hidden UI.
+        local timer=NoQuestHintsForeverAPI and NoQuestHintsForeverAPI.IsQuestTimerInputExempt
+        if type(timer)=="function" and timer(node) then return end
         if type(node.IsForbidden) == "function" then
             local ok, forbidden = pcall(node.IsForbidden, node)
             if not ok or forbidden then return end
@@ -339,12 +343,19 @@ updateTracker = function()
     end
     updateTrackerInput(frame, character.hideTracker == true)
     trackerApplying = false
+    if NoQuestHintsForeverAPI.RefreshQuestTimers then NoQuestHintsForeverAPI.RefreshQuestTimers() end
 end
 
 local function setTrackerHidden(hidden)
     if not character then return end
     character.hideTracker = hidden == true
     updateTracker()
+end
+
+local function setQuestTimersHidden(hidden)
+    if not character then return end
+    character.hideQuestTimers = hidden == true
+    if NoQuestHintsForeverAPI.RefreshQuestTimers then NoQuestHintsForeverAPI.RefreshQuestTimers() end
 end
 
 local function setTooltipHintsHidden(hidden)
@@ -438,6 +449,22 @@ local api = {}
 NoQuestHintsForeverAPI = api
 api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
+api.IsQuestTimersHidden = function() return character and character.hideQuestTimers == true end
+api.SetQuestTimersHidden = setQuestTimersHidden
+local function validTimerCoordinate(value)
+    return type(value)=="number" and value==value and value>=0 and value<=1
+end
+api.GetQuestTimerPosition = function()
+    local value=character and character.questTimerPosition
+    if type(value)=="table" and validTimerCoordinate(value.x) and validTimerCoordinate(value.y) then
+        return {x=value.x,y=value.y}
+    end
+end
+api.SetQuestTimerPosition = function(x,y)
+    if character and validTimerCoordinate(x) and validTimerCoordinate(y) then
+        character.questTimerPosition={x=x,y=y}
+    end
+end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
 api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end
@@ -500,6 +527,7 @@ function api.RestoreGameSettings()
     setQuestLevelsHidden(false)
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
+    setQuestTimersHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
     local itemsRestored = not api.RestoreQuestItemHighlight or api.RestoreQuestItemHighlight()
@@ -525,6 +553,7 @@ function api.ApplyPreset(preset)
     setQuestLevelsHidden(preset == "full")
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
+    setQuestTimersHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -549,6 +578,7 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     elseif command == "status" then
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.TIMERS_STATUS or "Hide quest timers: ") .. (character.hideQuestTimers == true and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))
         printMessage((L.NPC_NAME_STATUS or "Hide quest NPC names: ") .. (character.hideQuestNPCNames == true and statusOn or statusOff))
