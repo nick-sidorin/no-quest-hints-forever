@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Remove addon-originated bottom action-bar layout notifications after reports of repeated secret-value cooldown errors in combat and protected-action warnings in Edit Mode. Native listeners can mutate snap/action-bar state in the caller's context; dispatching their event is not a secure boundary. Leave spacing to native layout refreshes instead of forcing immediate collapse.
+- Suspend HUD hiding throughout the Edit Mode enter/exit interval, including before individual native frame flags are updated. Preserve saved choices, independent minimap/XP controls and restoration. Candidate verification in a fresh Forever session is pending.
+
 ## [1.6.0] — 2026-11-11
 
 - Add independent, per-character Hide experience bar and Hide minimap controls under Interface, OFF by default and in all presets. Hide the existing native HUD frames; preserve reputation bars, world-map access and quest timers. Restore the latest native visibility request and defer changes during combat. Request the native bottom action-bar layout immediately after XP visibility changes so default-position bars fill or restore the space without waiting for a pet action. Saved layouts, CVars and gameplay data remain untouched.

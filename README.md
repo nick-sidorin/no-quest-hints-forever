@@ -12,7 +12,7 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
-> **Version 1.6.0:** Independently hide the experience bar or minimap. Default-position action bars immediately fill or restore the XP space. Both options are OFF by default and in every preset; reputation, the world map and quest timers stay available.
+> **Version 1.6.0:** Independently hide the experience bar or minimap. Action-bar spacing follows the game’s own layout updates. Both options are OFF by default and in every preset; reputation, the world map and quest timers stay available.
 
 > **Version 1.5.0:** Keep Blizzard’s quest timer visible with a hidden objective tracker, or hide it independently. Drag the native header to save its position; native title tooltips and quest-opening clicks remain available. Timer hiding is OFF by default and in every preset.
 
@@ -42,7 +42,9 @@ The addon leaves the geographical map, quest descriptions, quest-giver exclamati
 
 ## HUD visibility (1.6.0)
 
-Two manual-only controls in **Interface** hide the native player experience bar and the complete native minimap cluster (including its frame and attached buttons). Both default OFF in every playstyle and save per character. Reputation bars remain available when native containers change their displayed bar; XP gain, the world map and the quest timer are unchanged. After XP visibility changes, request Blizzard's native bottom action-bar layout immediately so default-position bars fill or restore its space. Custom replacement HUDs are outside this integration.
+**Fix preview:** The owner reported repeated combat cooldown errors and an Edit Mode protected-action warning in 1.6.0. The candidate removes addon-triggered bottom action-bar layout and suspends hiding throughout Edit Mode. This candidate needs a fresh client session and verification of combat and Edit Mode before publication; earlier visual testing did not establish taint safety.
+
+Two manual-only controls in **Interface** hide the native player experience bar and the complete native minimap cluster (including its frame and attached buttons). Both default OFF in every playstyle and save per character. Reputation bars remain available when native containers change their displayed bar; XP gain, the world map and the quest timer are unchanged. The fix preview leaves action-bar spacing to native layout updates; space may remain until the next game-driven refresh. Custom replacement HUDs are outside this integration.
 
 Changes and restoration wait until combat ends. Unchecking restores the latest native visibility request rather than forcing a frame on that Blizzard has hidden. In Edit Mode, allow the native widgets to be edited. Normal logout restores successful changes; disabling the addon removes the session-only effect after reload. Native helper scripts, frame parents and gamepad registries are untouched. The owner verified both controls and immediate XP-space collapse/restoration in Forever and approved release 1.6.0. Automated checks cover lifecycle and restoration; physical-controller behavior is not claimed as tested.
 

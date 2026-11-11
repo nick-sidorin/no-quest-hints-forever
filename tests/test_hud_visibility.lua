@@ -8,18 +8,17 @@ local function session(xpHidden, mapHidden, late)
     }
     C_Timer={After=function(_, fn) pending[#pending+1]=fn end}
     InCombatLockdown=function() return combat end
-    local layouts, stackHeight = 0, nil
-    EditModeManagerFrame=nil
-    EventRegistry={TriggerEvent=function(_, event)
-        assert(event=="EditModeManager.UpdateBottomActionBarPositions")
-        assert(not combat, 'layout request in combat')
-        layouts=layouts+1
-        -- Model native layout using current visibility rather than invoking pet actions.
-        stackHeight=0
-        for _, container in ipairs(StatusTrackingBarManager.barContainers) do
-            if container:IsShown() then stackHeight=stackHeight+17 end
-        end
-    end}
+    local layoutRequests, editCallbacks = 0, {}
+    -- A native registry notification runs listeners in the caller's context.
+    -- Count attempts even when runtime pcall would swallow the mock's error.
+    EditModeManagerFrame={IsInitialized=function() return true end}
+    EventRegistry={
+        TriggerEvent=function()
+            layoutRequests=layoutRequests+1
+            error('native layout reached from addon execution')
+        end,
+        RegisterCallback=function(_,name,callback) editCallbacks[name]=callback end,
+    }
     hooksecurefunc=function(obj, name, fn)
         hooks=hooks+1
         local original=obj[name]
@@ -69,7 +68,8 @@ local function session(xpHidden, mapHidden, late)
     end
     return {api=api,map=map,first=first,second=second,manager=manager,
         flush=flush,frame=frame,hooks=function() return hooks end,
-        layout=function() return layouts,stackHeight end,
+        layout=function() return layoutRequests end,
+        edit=function(enter) editCallbacks[enter and "EditMode.Enter" or "EditMode.Exit"]();flush() end,
         set=function(x,m) xp=x;minimap=m;api.RefreshHUDVisibility();flush() end,
         combat=function(v) combat=v end,
         event=function(e) frames[#frames].scripts.OnEvent(nil,e);flush() end,
@@ -80,15 +80,17 @@ local s=session(false,false)
 s.event('PLAYER_LOGIN')
 assert(s.hooks()==0 and s.map.shown and s.first.shown,'OFF must be inert')
 s.set(true,false)
-assert(s.layout()==1, 'XP hide must request layout immediately')
-local _,height=s.layout();assert(height==17, 'native stack must shrink without a pet action')
+
+
 assert(not s.first.shown and s.second.shown and s.map.shown,'XP only, leave reputation')
+assert(s.layout()==0, 'XP hiding must not dispatch native action-bar layout')
 assert(not s.first.layoutChanges,'must not invoke EditMode layout-breaking Hide wrapper')
 s.first:Show();s.flush();assert(not s.first.shown,'native XP refresh escaped')
 s.set(false,true)
-assert(s.layout()==3, 'XP restoration must request layout immediately')
-local _,height=s.layout();assert(height==34, 'native stack must expand on XP restore')
+
+
 assert(s.first.shown and not s.map.shown and s.second.shown,'independent toggles')
+assert(s.layout()==0, 'XP restoration must not dispatch native action-bar layout')
 local before=s.layout()
 s.map:Show();s.flush();assert(not s.map.shown)
 assert(s.layout()==before, 'minimap-only changes must not request XP layout')
@@ -115,7 +117,7 @@ assert(s.layout()==0, 'combat toggle must not request layout')
 assert(s.map.shown and s.first.shown,'must defer in combat')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
 assert(not s.map.shown and not s.first.shown)
-assert(s.layout()==1, 'deferred hide needs one layout after combat')
+
 s.combat(true);s.set(false,false)
 assert(not s.map.shown and not s.api.RestoreHUDVisibility(),'pending restore must report failure')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
@@ -160,33 +162,33 @@ assert(s.hooks()==count, 'repeated toggles installed duplicate hooks')
 s.combat(true);s.set(false,false);s.set(false,true)
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
 assert(not s.map.shown, 'combat retry ignored the latest requested preference')
--- One reconciliation may restore the old container and hide the new XP one.
-s=session(true,false)
+-- Switching XP containers, combat restoration, EditMode and logout must never
+-- dispatch the action-bar layout helper, which can taint native button state.
+s=session(true,true)
 s.event('PLAYER_LOGIN')
-local before=s.layout()
+assert(s.layout()==0)
 s.first.pendingBarToShowIndex=1;s.first:ApplyPendingBarToShow();s.first:UpdateShownState()
 s.second.pendingBarToShowIndex=4;s.second:ApplyPendingBarToShow();s.second:UpdateShownState()
 s.flush()
-assert(s.first.shown and not s.second.shown)
-assert(s.layout()==before+1, 'coalesce two XP container transitions into one layout')
+assert(s.first.shown and not s.second.shown and s.layout()==0)
+-- The global EditMode notification suspends hiding even before per-frame flags
+-- are updated. Let native editor scripts own their geometry and selection.
+s.edit(true)
+assert(s.map.shown and s.second.shown and s.layout()==0)
 s.api.RefreshHUDVisibility();s.flush()
-assert(s.layout()==before+1, 'unchanged visibility must not relayout')
+assert(s.map.shown and s.second.shown)
+s.edit(false)
+assert(not s.map.shown and not s.second.shown and s.layout()==0)
+s.combat(true);s.set(false,false)
+assert(not s.map.shown and not s.second.shown)
+s.combat(false);s.event('PLAYER_REGEN_ENABLED')
+assert(s.map.shown and s.second.shown and s.layout()==0)
+s.set(true,true);s.event('PLAYER_LOGOUT')
+assert(s.map.shown and s.second.shown and s.layout()==0)
 
--- Missing/not-ready/temporarily failing layout API retains a retry even if
--- all frames have already been restored and both checkboxes are now OFF.
+-- Missing EditMode/registry APIs must not block ordinary visibility restoration.
 s=session(false,false)
-local registry=EventRegistry
-EventRegistry=nil
-s.set(true,false)
-s.set(false,false)
-assert(s.first.shown and not s.api.RestoreHUDVisibility())
-EventRegistry=registry
-EditModeManagerFrame={IsInitialized=function() return false end}
-s.event('ADDON_LOADED');assert(s.layout()==0)
-EditModeManagerFrame=nil
-local trigger=registry.TriggerEvent
-registry.TriggerEvent=function() error('not ready') end
-s.event('ADDON_LOADED');assert(not s.api.RestoreHUDVisibility())
-registry.TriggerEvent=trigger
-s.event('ADDON_LOADED');assert(s.layout()==1 and s.api.RestoreHUDVisibility())
-io.write('PASS: independent native HUD hiding, XP/reputation reuse, native visibility intent, combat, late UI and logout\n')
+EventRegistry=nil;EditModeManagerFrame=nil
+s.set(true,false);assert(not s.first.shown)
+s.set(false,false);assert(s.first.shown and s.api.RestoreHUDVisibility())
+io.write('PASS: native HUD hiding/restoration, no addon layout dispatch, EditMode suspension, combat and late UI\n')

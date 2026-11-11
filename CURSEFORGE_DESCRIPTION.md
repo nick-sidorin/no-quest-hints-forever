@@ -24,7 +24,7 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 Thirteen independent, optional controls:
 
 - 🌄 **Hide Minimap** — Explore without the corner map; keep the world map available.
-- 📊 **Hide Experience Bar** — Clear the XP bar and let action bars fill its space; keep reputation bars.
+- 📊 **Hide Experience Bar** — Clear the XP bar while keeping reputation bars.
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
 - ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
@@ -77,7 +77,7 @@ Pre-acceptance warnings depend on client metadata and are not reliable for every
 
 Under **Interface**, independently enable **Hide experience bar** or **Hide minimap**. Both are OFF by default and in every playstyle preset, and your choices are saved per character.
 
-Hiding XP immediately lets default-position action bars fill its space; showing it restores the space. Reputation bars and actual XP gain are unchanged. Minimap hiding includes its frame and attached buttons, while the world map and quest timer stay available. Changes wait until combat ends. These controls target Blizzard’s native HUD, not replacement interfaces from other addons.
+Action-bar spacing follows the game’s native layout updates. Reputation bars and actual XP gain are unchanged. Minimap hiding includes its frame and attached buttons, while the world map and quest timer stay available. Changes wait until combat ends. These controls target Blizzard’s native HUD, not replacement interfaces from other addons.
 
 ## 🎮 Native Gamepad Beta
 
@@ -110,7 +110,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Update 1.6.0:** Two new optional controls hide the experience bar and minimap. Action bars immediately fill or restore the XP space. Both controls are OFF in every preset, and existing choices are preserved. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.6.0:** Two new optional controls hide the experience bar and minimap. Action-bar spacing follows native updates. Both controls are OFF in every preset, and existing choices are preserved. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 
