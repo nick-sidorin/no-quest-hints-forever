@@ -40,7 +40,7 @@ The addon leaves the geographical map, quest descriptions, quest-giver exclamati
 
 ## HUD visibility preview (unreleased)
 
-Two manual-only controls in **Interface** hide the native player experience bar and the complete native minimap cluster (including its frame and attached buttons). Both default OFF in every playstyle and save per character. Reputation bars remain available when native containers change their displayed bar; XP gain, the world map and the quest timer are unchanged. The layout is not compacted to fill the hidden XP bar's space. Custom replacement HUDs are outside this integration.
+Two manual-only controls in **Interface** hide the native player experience bar and the complete native minimap cluster (including its frame and attached buttons). Both default OFF in every playstyle and save per character. Reputation bars remain available when native containers change their displayed bar; XP gain, the world map and the quest timer are unchanged. After XP visibility changes, request Blizzard's native bottom action-bar layout immediately so default-position bars fill or restore its space. Custom replacement HUDs are outside this integration.
 
 Changes and restoration wait until combat ends. Unchecking restores the latest native visibility request rather than forcing a frame on that Blizzard has hidden. In Edit Mode, allow the native widgets to be edited. Normal logout restores successful changes; disabling the addon removes the session-only effect after reload. Native helper scripts, frame parents and gamepad registries are untouched. Automated checks cover lifecycle and restoration; actual Forever rendering/input still needs owner verification before release.
 

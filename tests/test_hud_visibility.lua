@@ -8,7 +8,18 @@ local function session(xpHidden, mapHidden, late)
     }
     C_Timer={After=function(_, fn) pending[#pending+1]=fn end}
     InCombatLockdown=function() return combat end
-    EventRegistry=nil
+    local layouts, stackHeight = 0, nil
+    EditModeManagerFrame=nil
+    EventRegistry={TriggerEvent=function(_, event)
+        assert(event=="EditModeManager.UpdateBottomActionBarPositions")
+        assert(not combat, 'layout request in combat')
+        layouts=layouts+1
+        -- Model native layout using current visibility rather than invoking pet actions.
+        stackHeight=0
+        for _, container in ipairs(StatusTrackingBarManager.barContainers) do
+            if container:IsShown() then stackHeight=stackHeight+17 end
+        end
+    end}
     hooksecurefunc=function(obj, name, fn)
         hooks=hooks+1
         local original=obj[name]
@@ -58,6 +69,7 @@ local function session(xpHidden, mapHidden, late)
     end
     return {api=api,map=map,first=first,second=second,manager=manager,
         flush=flush,frame=frame,hooks=function() return hooks end,
+        layout=function() return layouts,stackHeight end,
         set=function(x,m) xp=x;minimap=m;api.RefreshHUDVisibility();flush() end,
         combat=function(v) combat=v end,
         event=function(e) frames[#frames].scripts.OnEvent(nil,e);flush() end,
@@ -68,12 +80,18 @@ local s=session(false,false)
 s.event('PLAYER_LOGIN')
 assert(s.hooks()==0 and s.map.shown and s.first.shown,'OFF must be inert')
 s.set(true,false)
+assert(s.layout()==1, 'XP hide must request layout immediately')
+local _,height=s.layout();assert(height==17, 'native stack must shrink without a pet action')
 assert(not s.first.shown and s.second.shown and s.map.shown,'XP only, leave reputation')
 assert(not s.first.layoutChanges,'must not invoke EditMode layout-breaking Hide wrapper')
 s.first:Show();s.flush();assert(not s.first.shown,'native XP refresh escaped')
 s.set(false,true)
+assert(s.layout()==3, 'XP restoration must request layout immediately')
+local _,height=s.layout();assert(height==34, 'native stack must expand on XP restore')
 assert(s.first.shown and not s.map.shown and s.second.shown,'independent toggles')
+local before=s.layout()
 s.map:Show();s.flush();assert(not s.map.shown)
+assert(s.layout()==before, 'minimap-only changes must not request XP layout')
 s.map:Hide();s.flush()
 s.set(false,false)
 assert(not s.map.shown,'restore must honor a later native Hide, not initial Show')
@@ -93,9 +111,11 @@ assert(not s.second.shown)
 
 s=session(false,false)
 s.combat(true);s.set(true,true)
+assert(s.layout()==0, 'combat toggle must not request layout')
 assert(s.map.shown and s.first.shown,'must defer in combat')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
 assert(not s.map.shown and not s.first.shown)
+assert(s.layout()==1, 'deferred hide needs one layout after combat')
 s.combat(true);s.set(false,false)
 assert(not s.map.shown and not s.api.RestoreHUDVisibility(),'pending restore must report failure')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
@@ -140,4 +160,33 @@ assert(s.hooks()==count, 'repeated toggles installed duplicate hooks')
 s.combat(true);s.set(false,false);s.set(false,true)
 s.combat(false);s.event('PLAYER_REGEN_ENABLED')
 assert(not s.map.shown, 'combat retry ignored the latest requested preference')
+-- One reconciliation may restore the old container and hide the new XP one.
+s=session(true,false)
+s.event('PLAYER_LOGIN')
+local before=s.layout()
+s.first.pendingBarToShowIndex=1;s.first:ApplyPendingBarToShow();s.first:UpdateShownState()
+s.second.pendingBarToShowIndex=4;s.second:ApplyPendingBarToShow();s.second:UpdateShownState()
+s.flush()
+assert(s.first.shown and not s.second.shown)
+assert(s.layout()==before+1, 'coalesce two XP container transitions into one layout')
+s.api.RefreshHUDVisibility();s.flush()
+assert(s.layout()==before+1, 'unchanged visibility must not relayout')
+
+-- Missing/not-ready/temporarily failing layout API retains a retry even if
+-- all frames have already been restored and both checkboxes are now OFF.
+s=session(false,false)
+local registry=EventRegistry
+EventRegistry=nil
+s.set(true,false)
+s.set(false,false)
+assert(s.first.shown and not s.api.RestoreHUDVisibility())
+EventRegistry=registry
+EditModeManagerFrame={IsInitialized=function() return false end}
+s.event('ADDON_LOADED');assert(s.layout()==0)
+EditModeManagerFrame=nil
+local trigger=registry.TriggerEvent
+registry.TriggerEvent=function() error('not ready') end
+s.event('ADDON_LOADED');assert(not s.api.RestoreHUDVisibility())
+registry.TriggerEvent=trigger
+s.event('ADDON_LOADED');assert(s.layout()==1 and s.api.RestoreHUDVisibility())
 io.write('PASS: independent native HUD hiding, XP/reputation reuse, native visibility intent, combat, late UI and logout\n')

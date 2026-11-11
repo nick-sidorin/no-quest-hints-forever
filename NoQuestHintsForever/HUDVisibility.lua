@@ -1,9 +1,10 @@
 -- Hide existing HUD frames without changing CVars, native data, parents,
--- layouts, scripts or gamepad registries. Disabled controls install no hooks.
+-- saved layouts, scripts or gamepad registries. Disabled controls install no hooks.
 local api = NoQuestHintsForeverAPI
 if not api then return end
 local records, hooked = {}, setmetatable({}, {__mode="k"})
 local queued, applying, stopping = false, false, false
+local layoutPending = false
 local queue
 
 local function available(frame)
@@ -16,15 +17,31 @@ local function inCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
 
-local function setShown(frame, shown)
+local function requestLayout()
+    if not layoutPending then return true end
+    if inCombat() then return false end
+    if EditModeManagerFrame and type(EditModeManagerFrame.IsInitialized)=="function"
+        and not EditModeManagerFrame:IsInitialized() then return false end
+    if not EventRegistry or type(EventRegistry.TriggerEvent)~="function" then return false end
+    -- This is the notification used by native UpdateShownState. Let Blizzard
+    -- calculate the stack from current visibility; never set action-bar anchors.
+    local ok = pcall(EventRegistry.TriggerEvent, EventRegistry,
+        "EditModeManager.UpdateBottomActionBarPositions")
+    if ok then layoutPending = false end
+    return ok
+end
+
+local function setShown(frame, shown, affectsStack)
     if frame:IsShown()==shown then return true end
     -- EditMode's Hide wrapper breaks snapped layouts. Its saved widget method
-    -- hides only this frame; do not invoke the layout helper from addon code.
+    -- hides this frame without breaking its saved frame snaps.
     local method = shown and frame.Show or frame.HideBase or frame.Hide
     applying = true
     local ok = pcall(method, frame)
     applying = false
-    return ok and frame:IsShown()==shown
+    local changed = ok and frame:IsShown()==shown
+    if changed and affectsStack then layoutPending = true end
+    return changed
 end
 
 local function hook(frame)
@@ -51,14 +68,14 @@ end
 
 local function restore(frame)
     local record = records[frame]
-    if record and available(frame) and setShown(frame, record.shown) then
+    if record and available(frame) and setShown(frame, record.shown, record.affectsStack) then
         records[frame] = nil
     end
 end
 
 local function refresh()
     if stopping or inCombat() then return end
-    local targets = {}
+    local targets, xpContainers = {}, {}
     if api.IsMinimapHidden() and available(MinimapCluster) then
         targets[MinimapCluster] = not MinimapCluster.isInEditMode
     end
@@ -70,6 +87,7 @@ local function refresh()
         end
         for _, container in ipairs(manager.barContainers) do
             if available(container) then
+                xpContainers[container] = true
                 -- Both containers can change from XP to reputation and back.
                 -- Read the actual displayed bar, not the pending animation target.
                 local bar = container.bars and container.bars[container.shownBarIndex]
@@ -93,17 +111,18 @@ local function refresh()
     for frame, hidden in pairs(targets) do
         if hidden then
             if not records[frame] then
-                records[frame] = {shown=frame:IsShown()}
+                records[frame] = {shown=frame:IsShown(), affectsStack=xpContainers[frame]==true}
                 hook(frame)
             end
-            setShown(frame, false)
+            setShown(frame, false, records[frame].affectsStack)
         end
     end
+    requestLayout()
 end
 
 queue = function()
     if queued or stopping or applying then return end
-    if not api.IsExperienceBarHidden() and not api.IsMinimapHidden() and next(records)==nil then return end
+    if not api.IsExperienceBarHidden() and not api.IsMinimapHidden() and next(records)==nil and not layoutPending then return end
     if not C_Timer or type(C_Timer.After)~="function" then return end
     queued = true
     C_Timer.After(0, function()
@@ -114,9 +133,9 @@ end
 
 api.RefreshHUDVisibility = queue
 api.RestoreHUDVisibility = function()
-    if inCombat() then return next(records)==nil end
+    if inCombat() then return next(records)==nil and not layoutPending end
     for frame in pairs(records) do restore(frame) end
-    return next(records)==nil
+    return requestLayout() and next(records)==nil
 end
 
 local events = CreateFrame("Frame")
