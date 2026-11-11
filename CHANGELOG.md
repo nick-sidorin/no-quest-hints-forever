@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## [1.6.0] — 2026-11-11
+
 - Add independent, per-character Hide experience bar and Hide minimap controls under Interface, OFF by default and in all presets. Hide the existing native HUD frames; preserve reputation bars, world-map access and quest timers. Restore the latest native visibility request and defer changes during combat. Request the native bottom action-bar layout immediately after XP visibility changes so default-position bars fill or restore the space without waiting for a pet action. Saved layouts, CVars and gameplay data remain untouched.
+- Add full locale coverage and mark the two newly introduced settings for upgrading users. The owner verified both controls and the immediate layout update in Forever.
 
 ## [1.5.0] — 2026-11-11
 
