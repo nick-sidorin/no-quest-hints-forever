@@ -103,6 +103,7 @@ end
 -- Add an entry only when features ship, never for a fixes-only release. Checking
 -- the whole interval handles players who skip one or more feature versions.
 local featureReleases = {
+    {version="1.6.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
     {version="1.5.0", settings={"NQH_HIDE_QUEST_TIMERS"}},
     {version="1.4.0", settings={"NQH_HIDE_QUEST_LEVELS", "NQH_HIDE_QUEST_DIFFICULTY",
         "NQH_HIDE_AUCTION_SELL_PRICES", "NQH_HIDE_QUEST_ITEM_HIGHLIGHT"}},
