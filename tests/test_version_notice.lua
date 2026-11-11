@@ -147,29 +147,12 @@ local newInstall={}
 session({},newInstall,'1.5.0')
 assert(not newInstall.newSettings,'new installation received an upgrade-only timer badge')
 
--- HUD options first ship in 1.6.0; no reset of unseen timer markers or choices.
-local hudAccount={lastSeenVersion='1.5.0'}
-local hudProfile={onboardingComplete=true,hideMinimap=true,hideExperienceBar=false}
-s=session(hudProfile,hudAccount,'1.6.0')
-assert(#s.messages==1 and s.messages[1]:find('new features',1,true))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_EXPERIENCE_BAR'))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MINIMAP'))
-assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
-assert(hudProfile.hideMinimap and not hudProfile.hideExperienceBar)
-NoQuestHintsForeverAPI.MarkSettingSeen('NQH_HIDE_MINIMAP')
-s=session(hudProfile,hudAccount,'1.6.1')
-assert(not s.messages[1]:find('new features',1,true))
-assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MINIMAP'))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_EXPERIENCE_BAR'))
-local skippedHUD={lastSeenVersion='1.4.4'}
-s=session({},skippedHUD,'1.6.0')
-assert(s.messages[1]:find('new features',1,true))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_EXPERIENCE_BAR'))
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MINIMAP'))
-local pendingTimer={lastSeenVersion='1.5.0',newSettings={NQH_HIDE_QUEST_TIMERS=true}}
-session({},pendingTimer,'1.6.0')
-assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
-local newHUD={}
-session({},newHUD,'1.6.0')
-assert(not newHUD.newSettings,'fresh install received upgrade-only HUD badges')
+-- Emergency 1.6.1 uses stable runtime: neutral upgrade and inert HUD preferences.
+local rollbackAccount={lastSeenVersion='1.6.0'}
+local rollbackChar={onboardingComplete=true,hideExperienceBar=true,hideMinimap=true,hideTracker=true}
+s=session(rollbackChar,rollbackAccount,'1.6.1')
+assert(#s.messages==1 and not s.messages[1]:find('new features',1,true))
+assert(rollbackAccount.lastSeenVersion=='1.6.1')
+assert(rollbackChar.hideExperienceBar and rollbackChar.hideMinimap and rollbackChar.hideTracker)
+assert(NoQuestHintsForeverAPI.SetMinimapHidden==nil and NoQuestHintsForeverAPI.SetExperienceBarHidden==nil)
+assert(#session(rollbackChar,rollbackAccount,'1.6.1').messages==0)

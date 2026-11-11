@@ -32,10 +32,6 @@ local controls = {
       "IsQuestItemHighlightHidden", "SetQuestItemHighlightHidden" },
     { "NQH_HIDE_QUEST_TIMERS", "QUEST_TIMERS", "QUEST_TIMERS_DESC",
       "IsQuestTimersHidden", "SetQuestTimersHidden" },
-    { "NQH_HIDE_EXPERIENCE_BAR", "EXPERIENCE_BAR", "EXPERIENCE_BAR_DESC",
-      "IsExperienceBarHidden", "SetExperienceBarHidden" },
-    { "NQH_HIDE_MINIMAP", "MINIMAP", "MINIMAP_DESC",
-      "IsMinimapHidden", "SetMinimapHidden" },
 }
 
 local PROJECT_URL = "https://github.com/nick-sidorin/no-quest-hints-forever"
@@ -133,12 +129,11 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10, 12, 13 }
+    local order = { 1, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end
         if index == 10 then heading(L.BAGS_GROUP) end
-        if index == 12 then heading(L.HUD_GROUP) end
         -- Do not store copied state in the Settings framework. Getters read the
         -- active character's SavedVariables on every access; setters delegate
         -- to the existing routines that update Blizzard UI immediately.
