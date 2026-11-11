@@ -22,3 +22,4 @@ QuestProgressMessages.lua
 QuestPresentation.lua
 QuestItemHighlight.lua
 QuestTimers.lua
+HUDVisibility.lua
