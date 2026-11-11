@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [1.6.1] — 2026-11-12
+
+- Emergency rollback: restore the runtime from stable 1.5.0, changing only TOC version metadata. Remove the 1.6.0 experience-bar/minimap controls and addon-driven layout updates after repeated combat cooldown and Edit Mode taint reports.
+- Preserve existing character/account settings. The inactive 1.6.0 HUD preferences remain saved but have no effect. Quest timers and all other 1.5.0 functionality remain available. Fully exit and restart the game after updating to clear the affected session.
+
+
 ## [1.6.0] — 2026-11-11
 
 - Add independent, per-character Hide experience bar and Hide minimap controls under Interface, OFF by default and in all presets. Hide the existing native HUD frames; preserve reputation bars, world-map access and quest timers. Restore the latest native visibility request and defer changes during combat. Request the native bottom action-bar layout immediately after XP visibility changes so default-position bars fill or restore the space without waiting for a pet action. Saved layouts, CVars and gameplay data remain untouched.
