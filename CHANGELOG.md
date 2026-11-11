@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Add an independent Hide quest timers option, OFF by default and in every preset. Preserve a usable native on-screen countdown or show a separate client-sourced timer with the tracker hidden. Reload/login re-reads current time; no addon deadline is saved.
-- Use compact single-line timer rows with native dialog framing, default placement below the minimap, left-button dragging and per-character saved placement. Hover shows full titles and a localized drag hint.
-- Leave native full-journal content/timer text untouched. A duration-free NPC-offer note fits between Accept and Decline only when current client metadata identifies that offered quest. The owner confirmed no pre-acceptance time values for quest 3364; reliable first-time warnings for such offers remain unavailable.
+- Add an independent Hide quest timers option, OFF by default and in every preset. Preserve the actual Blizzard QuestTimerFrame through a hidden tracker, including native artwork, localized countdown, title tooltip and quest-opening click. Remove the custom countdown renderer.
+- Place the native timer below the minimap using an invisible addon-owned anchor. Drag its header to save per-character placement; native time buttons retain their original interaction. Exempt only the timer subtree from hidden-tracker mouse suppression and defer native visibility/position changes outside combat.
+- Leave native full-journal content untouched. A duration-free NPC-offer note fits between Accept and Decline only when client metadata identifies that offered quest. The owner confirmed no pre-acceptance time values for quest 3364; reliable first-time warnings for such offers remain unavailable.
 
 ## [1.4.4] — 2026-11-09
 

@@ -24,7 +24,7 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 Eleven independent, optional controls:
 
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
-- ⏱️ **Hide Quest Timers** — Keep a compact movable countdown with a hidden tracker, or hide the on-screen timer independently.
+- ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters from NPC and object tooltips.
 - 🎯 **Hide Quest NPC Names** — Hide floating names that reveal quest targets.

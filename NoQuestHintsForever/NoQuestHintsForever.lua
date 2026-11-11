@@ -289,6 +289,9 @@ local function updateTrackerInput(root, hidden)
     local active = {}
     local function visit(node)
         if not node or active[node] then return end
+        -- QuestTimerFrame keeps its native tooltip/clicks outside our hidden UI.
+        local timer=NoQuestHintsForeverAPI and NoQuestHintsForeverAPI.IsQuestTimerInputExempt
+        if type(timer)=="function" and timer(node) then return end
         if type(node.IsForbidden) == "function" then
             local ok, forbidden = pcall(node.IsForbidden, node)
             if not ok or forbidden then return end

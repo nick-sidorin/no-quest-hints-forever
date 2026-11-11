@@ -1,35 +1,34 @@
--- Client-owned quest deadlines; never persist or restart an addon countdown.
--- Forever's C_QuestLog.GetQuestTimers returns {questID, questTimer} records.
-local api = NoQuestHintsForeverAPI
+-- Preserve Blizzard's actual QuestTimerFrame, including its native callbacks.
+-- Never run its update/layout, tooltip or quest-selection code from addon code.
+local api=NoQuestHintsForeverAPI
 if not api then return end
-local L = NoQuestHintsForeverLocale
-local panel, nativeHooked
-local dragging=false
+local L=NoQuestHintsForeverLocale
+local record, anchor, dragging
 local offerLabel, offerOwner, offeredQuestID
-local rows, timers = {}, {}
-local states = setmetatable({}, {__mode="k"})
-local ready, stopped, queued = false, false, false
+local timers={}
+local ready, stopped, queued, applying=false,false,false,false
+local hooked=setmetatable({}, {__mode="k"})
 local refresh
 
 local function combat()
-    return type(InCombatLockdown) == "function" and InCombatLockdown()
+    return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
-
-local function read(fn, ...)
-    if type(fn) ~= "function" then return end
-    local ok, value = pcall(fn, ...)
+local function read(fn,...)
+    if type(fn)~="function" then return end
+    local ok,value=pcall(fn,...)
     if ok then return value end
 end
-
 local function finite(value)
-    return type(value)=="number" and value==value and value<math.huge and value>=0
+    return type(value)=="number" and value==value and value>=0 and value<math.huge
 end
-
+local function nativeFrame()
+    return QuestTimerFrame or (ObjectiveTrackerFrame and ObjectiveTrackerFrame.QuestTimerFrame)
+end
 local function snapshot()
-    local list = read(C_QuestLog and C_QuestLog.GetQuestTimers)
-    local result = {}
+    local list=read(C_QuestLog and C_QuestLog.GetQuestTimers)
+    local result={}
     if type(list)=="table" then
-        for _, info in pairs(list) do
+        for _,info in pairs(list) do
             if type(info)=="table" and type(info.questID)=="number" and info.questID>0
                 and info.questID%1==0 and finite(info.questTimer) and info.questTimer>0 then
                 result[info.questID]=info.questTimer
@@ -38,34 +37,14 @@ local function snapshot()
     end
     return result
 end
-
 local function queue()
-    if type(api.RefreshQuestTimers)=="function" then api.RefreshQuestTimers() end
-end
-
-local function nativeFrame()
-    return QuestTimerFrame or (ObjectiveTrackerFrame and ObjectiveTrackerFrame.QuestTimerFrame)
-end
-
-local function restoreNative()
-    if combat() then return end
-    for object, record in pairs(states) do
-        local done=true
-        if record.wasShown and next(timers) and type(object.Show)=="function" then
-            done=pcall(object.Show,object)
-        end
-        if done then states[object]=nil end
+    if queued or stopped or not ready or applying then return end
+    if C_Timer and type(C_Timer.After)=="function" then
+        queued=true
+        C_Timer.After(0,function() queued=false;if ready and not stopped then refresh() end end)
     end
 end
-
-local function suppress(object)
-    if not object or type(object.Hide)~="function" then return end
-    local record=states[object] or {wasShown=false};states[object]=record
-    if read(object.IsShown,object) then
-        record.wasShown=true
-        pcall(object.Hide,object)
-    end
-end
+api.RefreshQuestTimers=queue
 
 local function timed(id)
     if type(id)~="number" or id<=0 then return false end
@@ -113,171 +92,165 @@ local function npcOffer()
         and read(owner.IsShown,owner) then offerLabel:Show() else offerLabel:Hide() end
 end
 
-local function placePanel()
-    if not panel or dragging then return end
-    panel:ClearAllPoints()
+local function placeAnchor()
+    if not anchor or dragging then return end
+    anchor:ClearAllPoints()
     local position=api.GetQuestTimerPosition()
     if position then
-        panel:SetPoint("CENTER",UIParent,"BOTTOMLEFT",
+        anchor:SetPoint("CENTER",UIParent,"BOTTOMLEFT",
             position.x*UIParent:GetWidth(),position.y*UIParent:GetHeight())
-    elseif Minimap then
-        panel:SetPoint("TOP",Minimap,"BOTTOM",0,-24)
-    else
-        panel:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-32,-220)
-    end
+    elseif Minimap then anchor:SetPoint("TOP",Minimap,"BOTTOM",0,-24)
+    else anchor:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-32,-220) end
 end
-
 local function endDrag()
-    if not dragging or not panel then return end
-    panel:StopMovingOrSizing();dragging=false
-    local x,y=panel:GetCenter()
+    if not dragging or not anchor then return end
+    local ok=pcall(anchor.StopMovingOrSizing,anchor)
+    if not ok then return end
+    dragging=false
+    local x,y=anchor:GetCenter()
     local width,height=UIParent:GetWidth(),UIParent:GetHeight()
-    local scale=read(panel.GetEffectiveScale,panel) or 1
+    local scale=read(anchor.GetEffectiveScale,anchor) or 1
     local rootScale=read(UIParent.GetEffectiveScale,UIParent) or 1
     if finite(x) and finite(y) and width>0 and height>0 and rootScale>0 then
         api.SetQuestTimerPosition(math.max(0,math.min(1,x*scale/rootScale/width)),
             math.max(0,math.min(1,y*scale/rootScale/height)))
     end
-    placePanel()
+    if not combat() then placeAnchor() end
 end
-
-local function hideTooltip()
-    if GameTooltip and read(GameTooltip.GetOwner,GameTooltip)==panel then GameTooltip:Hide() end
-end
-
-local function decoratePanel()
-    local backdrop={bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
-        tile=true,tileSize=16,insets={left=6,right=6,top=6,bottom=6}}
-    if NineSliceUtil and type(NineSliceUtil.GetLayout)=="function"
-        and type(NineSliceUtil.ApplyLayoutByName)=="function" and NineSliceUtil.GetLayout("Dialog") then
-        -- Reuse dialog art only, without inheriting popup focus/binding scripts.
-        panel.NineSlice=CreateFrame("Frame",nil,panel)
-        panel.NineSlice:SetAllPoints(panel)
-        panel.NineSlice:SetFrameLevel(panel:GetFrameLevel())
-        panel.NineSlice.layoutType="Dialog"
-        NineSliceUtil.ApplyLayoutByName(panel.NineSlice,"Dialog")
-    else
-        backdrop.edgeFile="Interface\\DialogFrame\\UI-DialogBox-Gold-Border"
-        backdrop.edgeSize=16
+local function underTracker(frame)
+    local seen={}
+    while frame and not seen[frame] do
+        if frame==ObjectiveTrackerFrame then return true end
+        seen[frame]=true;frame=read(frame.GetParent,frame)
     end
-    panel:SetBackdrop(backdrop)
-    panel:SetBackdropColor(0,0,0,0.95)
+    return false
+end
+local function restoreNative()
+    if not record or combat() then return end
+    local f=record.frame
+    if record.ignore~=nil and type(f.SetIgnoreParentAlpha)=="function" then
+        pcall(f.SetIgnoreParentAlpha,f,record.ignore)
+    end
+    if record.anchored then
+        pcall(f.ClearAllPoints,f)
+        for _,point in ipairs(record.points) do pcall(f.SetPoint,f,unpack(point,1,5)) end
+    end
+    if record.hiddenByUs and next(timers) then pcall(f.Show,f) end
+    record.keepInput=false
+    if record.handle then record.handle:Hide() end
 end
 
-local function draw(show)
-    if not show then if panel then panel:Hide() end;return end
-    if not panel then
-        panel=CreateFrame("Frame","NoQuestHintsForeverQuestTimers",UIParent,"BackdropTemplate")
-        panel:SetSize(190,32)
-        panel:SetMovable(true);panel:SetClampedToScreen(true);panel:EnableMouse(true)
-        panel:RegisterForDrag("LeftButton")
-        panel:SetScript("OnDragStart",function()
-            hideTooltip();dragging=true;panel:StartMoving()
-        end)
-        panel:SetScript("OnDragStop",endDrag)
-        panel:SetScript("OnHide",function() endDrag();hideTooltip() end)
-        panel:SetScript("OnEnter",function()
-            if not GameTooltip then return end
-            GameTooltip:SetOwner(panel,"ANCHOR_LEFT");GameTooltip:SetText(L.TIMED_QUEST)
-            for _,row in ipairs(rows) do
-                if row:IsShown() then GameTooltip:AddLine(row.Title:GetText(),1,1,1,true) end
-            end
-            GameTooltip:AddLine(L.TIMERS_MOVE_HINT,1,0.82,0,true);GameTooltip:Show()
-        end)
-        panel:SetScript("OnLeave",hideTooltip)
-        decoratePanel();placePanel()
+-- The core restores any previously captured mouse flags for this subtree.
+api.IsQuestTimerInputExempt=function(node)
+    return record and record.frame==node and record.keepInput==true or false
+end
+
+local function attach(f)
+    if record and record.frame==f then return end
+    restoreNative()
+    if anchor then endDrag();anchor:Hide() end
+    local points={}
+    if type(f.GetNumPoints)=="function" and type(f.GetPoint)=="function" then
+        for i=1,f:GetNumPoints() do points[i]={f:GetPoint(i)} end
     end
-    local ids={};for id in pairs(timers) do ids[#ids+1]=id end;table.sort(ids)
-    for index,id in ipairs(ids) do
-        local row=rows[index]
-        if not row then
-            row=CreateFrame("Frame",nil,panel);rows[index]=row
-            row:SetSize(166,16);row:SetPoint("TOPLEFT",panel,"TOPLEFT",12,-8-(index-1)*18)
-            row.Title=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-            row.Title:SetPoint("LEFT");row.Title:SetWidth(120);row.Title:SetHeight(16);row.Title:SetJustifyH("LEFT")
-            row.Clock=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-            row.Clock:SetPoint("RIGHT",row,"RIGHT",0,0);row.Clock:SetWidth(42);row.Clock:SetJustifyH("RIGHT")
+    record={frame=f,points=points,ignore=read(f.IsIgnoringParentAlpha,f)}
+    if not anchor then
+        -- An invisible addon-owned movement anchor; all visible art stays native.
+        anchor=CreateFrame("Frame","NoQuestHintsForeverQuestTimerAnchor",UIParent)
+        anchor:SetMovable(true);anchor:SetClampedToScreen(true)
+        anchor:SetScript("OnHide",endDrag)
+    end
+    placeAnchor()
+    local handle=CreateFrame("Frame",nil,f)
+    record.handle=handle
+    handle:SetPoint("TOPLEFT",f,"TOPLEFT",0,11)
+    handle:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,11)
+    handle:SetHeight(30);handle:SetFrameLevel(f:GetFrameLevel()+3)
+    handle:EnableMouse(true);handle:RegisterForDrag("LeftButton")
+    handle:SetScript("OnDragStart",function()
+        if combat() or stopped then return end
+        dragging=pcall(anchor.StartMoving,anchor)
+    end)
+    handle:SetScript("OnDragStop",endDrag)
+    local function hideHint()
+        if GameTooltip and read(GameTooltip.GetOwner,GameTooltip)==handle then GameTooltip:Hide() end
+    end
+    handle:SetScript("OnEnter",function()
+        if GameTooltip then
+            GameTooltip:SetOwner(handle,"ANCHOR_LEFT");GameTooltip:SetText(L.TIMERS_MOVE_HINT);GameTooltip:Show()
         end
-        row.Title:SetText(read(C_QuestLog and C_QuestLog.GetTitleForQuestID,id) or L.TIMED_QUEST)
-        local seconds=math.ceil(timers[id])
-        row.Clock:SetText(string.format("%d:%02d",math.floor(seconds/60),seconds%60))
-        row:Show()
+    end)
+    handle:SetScript("OnLeave",hideHint)
+    handle:SetScript("OnHide",function() endDrag();hideHint() end)
+    if not hooked[f] and type(f.HookScript)=="function" then
+        f:HookScript("OnShow",queue)
+        f:HookScript("OnHide",queue)
+        f:HookScript("OnSizeChanged",queue)
+        hooked[f]=true
     end
-    for index=#ids+1,#rows do rows[index]:Hide() end
-    local height=16+#ids*18
-    panel:SetHeight(height)
-    if panel.NineSlice and type(NineSliceUtil.UpdateCornerCropping)=="function" then
-        NineSliceUtil.UpdateCornerCropping(panel,height)
-    end
-    panel:Show()
 end
 
 refresh=function()
-    if not ready or stopped then return end
+    if not ready or stopped or applying then return end
     timers=snapshot()
-    local hidden=api.IsQuestTimersHidden()==true
-    local native=nativeFrame()
-    if not combat() then
-        if hidden then suppress(native) else restoreNative() end
-        if native and native~=nativeHooked and type(native.HookScript)=="function" then
-            nativeHooked=native;native:HookScript("OnShow",queue)
+    if combat() then return end
+    applying=true
+    local f=nativeFrame()
+    if f and not read(f.IsForbidden,f) then
+        attach(f)
+        local hidden=api.IsQuestTimersHidden()==true
+        local needsIgnore=api.IsTrackerHidden() and underTracker(f) and not hidden
+        local ignore=needsIgnore or record.ignore
+        if ignore~=nil and type(f.SetIgnoreParentAlpha)=="function"
+            and read(f.IsIgnoringParentAlpha,f)~=ignore then
+            pcall(f.SetIgnoreParentAlpha,f,ignore)
         end
-        npcOffer()
+        record.keepInput=not hidden and (not needsIgnore or read(f.IsIgnoringParentAlpha,f)==true)
+        local width,height=read(f.GetWidth,f),read(f.GetHeight,f)
+        if finite(width) and width>0 and finite(height) and height>0 then
+            local scale=read(f.GetEffectiveScale,f) or 1
+            local rootScale=read(UIParent.GetEffectiveScale,UIParent) or 1
+            anchor:SetSize(width*scale/rootScale,(height+11)*scale/rootScale)
+            if not record.anchored then
+                f:ClearAllPoints();f:SetPoint("TOP",anchor,"TOP",0,-11)
+                record.anchored=true
+            end
+        end
+        if hidden then
+            if read(f.IsShown,f) then record.hiddenByUs=pcall(f.Hide,f) or record.hiddenByUs end
+        elseif record.hiddenByUs and next(timers) then
+            if pcall(f.Show,f) then record.hiddenByUs=false end
+        end
+        if read(f.IsShown,f) then anchor:Show() else anchor:Hide() end
+        -- Restore native timer-button input captured by an earlier tracker pass.
+        if type(api.UpdateTracker)=="function" then api.UpdateTracker() end
     end
-    -- Do not duplicate the native panel when it is usable outside the hidden tracker.
-    local nativeVisible=native and read(native.IsVisible or native.IsShown,native)
-    local alpha=native and read(native.GetEffectiveAlpha,native)
-    -- IsVisible can stay true under an alpha-zero tracker. Conversely, some
-    -- client layouts already keep the native timer directly under UIParent.
-    local nativeUsable=nativeVisible and (type(alpha)=="number" and alpha>0
-        or alpha==nil and not api.IsTrackerHidden())
-    draw(not hidden and next(timers)~=nil and not nativeUsable)
+    npcOffer()
+    applying=false
 end
 
 local events=CreateFrame("Frame")
-for _, event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","LOADING_SCREEN_ENABLED",
+for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","LOADING_SCREEN_ENABLED",
     "LOADING_SCREEN_DISABLED","QUEST_LOG_UPDATE","PLAYER_REGEN_ENABLED","PLAYER_LOGOUT",
-    "UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED","QUEST_DETAIL","QUEST_FINISHED","QUEST_GREETING","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_DATA_LOAD_RESULT"}) do
-    events:RegisterEvent(event)
-end
-local elapsed=0
-local function tick(_, delta)
-    elapsed=elapsed+delta
-    if elapsed<0.25 then return end
-    elapsed=0
-    refresh()
-    if not next(timers) then events:SetScript("OnUpdate",nil) end
-end
-local function start()
-    refresh()
-    events:SetScript("OnUpdate",next(timers) and tick or nil)
-end
--- Settings changes also start polling when an active timer was just received.
-api.RefreshQuestTimers=function()
-    if queued or not ready or stopped then return end
-    if C_Timer and type(C_Timer.After)=="function" then
-        queued=true
-        C_Timer.After(0,function() queued=false;if ready and not stopped then start() end end)
-    end
-end
+    "UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED","QUEST_DETAIL","QUEST_FINISHED","QUEST_GREETING",
+    "QUEST_PROGRESS","QUEST_COMPLETE","QUEST_DATA_LOAD_RESULT"}) do events:RegisterEvent(event) end
 events:SetScript("OnEvent",function(_,event)
     if event=="QUEST_DETAIL" then
         offeredQuestID=read(GetQuestID)
         if offerLabel then offerLabel:Hide() end
     elseif event=="QUEST_FINISHED" or event=="QUEST_GREETING" or event=="QUEST_PROGRESS"
         or event=="QUEST_COMPLETE" or event=="LOADING_SCREEN_ENABLED" or event=="PLAYER_LOGOUT" then
-        offeredQuestID=nil
-        if offerLabel then offerLabel:Hide() end
+        offeredQuestID=nil;if offerLabel then offerLabel:Hide() end
     end
     if event=="PLAYER_LOGOUT" then
-        stopped=true;ready=false;events:SetScript("OnUpdate",nil);draw(false)
-        restoreNative()
+        stopped=true;ready=false;endDrag();restoreNative()
+        if anchor then anchor:Hide() end
     elseif event=="LOADING_SCREEN_ENABLED" then
-        ready=false;events:SetScript("OnUpdate",nil);draw(false)
+        ready=false;endDrag()
     else
         if event=="LOADING_SCREEN_DISABLED" or event=="PLAYER_ENTERING_WORLD" then ready=true end
         if event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED"
-            or event=="PLAYER_ENTERING_WORLD" then placePanel() end
-        api.RefreshQuestTimers()
+            or event=="PLAYER_ENTERING_WORLD" then if not combat() then placeAnchor() end end
+        queue()
     end
 end)
