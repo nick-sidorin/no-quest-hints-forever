@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Version 1.5.0:** Keep Blizzard’s quest timer visible with a hidden objective tracker, or hide it independently. Drag the native header to save its position; native title tooltips and quest-opening clicks remain available. Timer hiding is OFF by default and in every preset.
+
 > **Version 1.4.4:** Restores opening the playstyle chooser after the 1.4.3 regression. Use mouse input inside the chooser, including in Gamepad Beta; native controller navigation there is not supported. Saved choices and the earlier map/controller fixes remain intact.
 
 > **Version 1.4.3:** Native Gamepad Beta map compatibility, fixes for selective-hint waypoint copying and missing bag buttons, confirmed quest-permission cleanup, and a treasure-map addon icon. Saved choices remain intact.
@@ -322,7 +324,7 @@ Contributor practices are pinned from [wow-addon-standards](https://github.com/n
 
 For maintenance, see [the local adoption guide](docs/standards/README.md). A reviewed upstream commit is adopted through a PR; remote `main` is never imported automatically. No gameplay release is needed for a standards update.
 
-### Timed quest preview
+### Native timed quests (1.5.0)
 
 **Hide quest timers** is an independent per-character option, OFF by default and in every preset. It controls Blizzard's on-screen `QuestTimerFrame`; the full quest journal keeps its own native timer/content. The addon reuses the existing native widget instead of drawing a replacement or creating a copy of the timer mixin. Its localized time text, header, border, native title tooltip and click-to-open quest details stay under Blizzard's original scripts. No native update/layout or button callbacks are invoked from addon execution.
 
@@ -330,4 +332,4 @@ When the objective tracker is hidden with alpha zero, its descendant timer uses 
 
 An invisible addon-owned anchor places the native timer below the minimap and saves normalized per-character placement. Drag the native header with the left mouse button to move the anchor; the native time buttons retain their original interactions. The header displays a localized drag hint. Presets/restoration preserve placement. Original native anchors and ignore-parent-alpha state are restored on logout where possible. No native data, timer deadlines, watch lists, shared caches or binding groups are modified. The timer's own native OnUpdate remains the sole countdown renderer; this module has no countdown OnUpdate/polling.
 
-A duration-free NPC-offer note fits between Accept and Decline, conditional on current client metadata for that exact offered quest. On 2026-11-11 the owner observed `NQH time 3364` with no returned time values while offering Scalding Mornbrew Delivery. Reliable first-time warnings for such offers remain unavailable; the addon does not infer them from descriptions or add a quest database. The owner confirmed the native and earlier private countdowns render after acceptance and selected the native widget as the desired design. Native preservation, header dragging and tooltip/click behavior still need the updated preview check. No addon note is added to the full journal.
+A duration-free NPC-offer note fits between Accept and Decline, conditional on current client metadata for that exact offered quest. On 2026-11-11 the owner observed `NQH time 3364` with no returned time values while offering Scalding Mornbrew Delivery. Reliable first-time warnings for such offers remain unavailable; the addon does not infer them from descriptions or add a quest database. The owner tested the final native-widget preview in Forever, confirmed it works and looks like the original timer, and explicitly approved release 1.5.0. This does not establish physical-controller behavior or all possible taint scenarios. No addon note is added to the full journal.
