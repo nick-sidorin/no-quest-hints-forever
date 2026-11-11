@@ -2,8 +2,9 @@
 -- Keep complete dictionaries; enUS remains the defensive fallback for unknown keys.
 NoQuestHintsForeverTranslations = {
     deDE = {
+        TIMERS_MOVE_HINT = "Zum Verschieben ziehen.",
         QUEST_TIMERS = "Questtimer ausblenden",
-        QUEST_TIMERS_DESC = "Verbirgt den Countdown zeitbegrenzter Quests unabhängig von der Zielverfolgung. Ist diese ausgeblendet und die Option aus, bleibt ein separater Timer sichtbar. Die Markierung im Questlog bleibt erhalten.",
+        QUEST_TIMERS_DESC = "Verbirgt die Quest-Countdowns auf dem Bildschirm unabhängig von der Zielverfolgung. Ist diese ausgeblendet und die Option aus, bleibt ein separater Timer sichtbar. Das Questlog behält seine ursprüngliche Darstellung.",
         TIMED_QUEST = "Zeitbegrenzte Quest",
         TIMERS_STATUS = "Questtimer ausblenden: ",
         VERSION_UPDATED = "Auf Version %s aktualisiert.",
@@ -86,8 +87,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "nicht verfügbar",
     },
     esES = {
+        TIMERS_MOVE_HINT = "Arrastra para mover.",
         QUEST_TIMERS = "Ocultar temporizadores de misión",
-        QUEST_TIMERS_DESC = "Oculta la cuenta atrás de las misiones con límite de tiempo, independientemente del seguimiento de objetivos. Si el seguimiento está oculto y esta opción desactivada, se muestra un temporizador aparte. La indicación del diario se mantiene.",
+        QUEST_TIMERS_DESC = "Oculta los temporizadores de misión en pantalla, independientemente del seguimiento de objetivos. Si el seguimiento está oculto y esta opción desactivada, se muestra un temporizador aparte. El diario conserva su presentación original.",
         TIMED_QUEST = "Misión con límite de tiempo",
         TIMERS_STATUS = "Ocultar temporizadores de misión: ",
         VERSION_UPDATED = "Actualizado a la versión %s.",
@@ -170,8 +172,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "no disponible",
     },
     frFR = {
+        TIMERS_MOVE_HINT = "Faites glisser pour déplacer.",
         QUEST_TIMERS = "Masquer les chronomètres de quête",
-        QUEST_TIMERS_DESC = "Masque le compte à rebours des quêtes chronométrées indépendamment du suivi des objectifs. Si le suivi est masqué et cette option désactivée, un chronomètre séparé reste visible. La mention dans le journal reste affichée.",
+        QUEST_TIMERS_DESC = "Masque les comptes à rebours des quêtes à l’écran indépendamment du suivi des objectifs. Si le suivi est masqué et cette option désactivée, un chronomètre séparé reste visible. Le journal conserve sa présentation native.",
         TIMED_QUEST = "Quête chronométrée",
         TIMERS_STATUS = "Masquer les chronomètres de quête : ",
         VERSION_UPDATED = "Mise à jour vers la version %s.",
@@ -254,8 +257,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "indisponible",
     },
     itIT = {
+        TIMERS_MOVE_HINT = "Trascina per spostare.",
         QUEST_TIMERS = "Nascondi timer delle missioni",
-        QUEST_TIMERS_DESC = "Nasconde il conto alla rovescia delle missioni a tempo, indipendentemente dal tracciamento degli obiettivi. Se il tracciamento è nascosto e questa opzione è disattivata, resta visibile un timer separato. La nota nel registro rimane.",
+        QUEST_TIMERS_DESC = "Nasconde i timer delle missioni sullo schermo, indipendentemente dal tracciamento degli obiettivi. Se il tracciamento è nascosto e questa opzione è disattivata, resta visibile un timer separato. Il registro mantiene la presentazione originale.",
         TIMED_QUEST = "Missione a tempo",
         TIMERS_STATUS = "Nascondi timer delle missioni: ",
         VERSION_UPDATED = "Aggiornato alla versione %s.",
@@ -338,8 +342,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "non disponibile",
     },
     koKR = {
+        TIMERS_MOVE_HINT = "드래그하여 이동합니다.",
         QUEST_TIMERS = "퀘스트 타이머 숨기기",
-        QUEST_TIMERS_DESC = "목표 추적기와 관계없이 시간제한 퀘스트의 남은 시간을 숨깁니다. 추적기를 숨기고 이 설정을 끄면 별도의 타이머가 표시됩니다. 퀘스트 목록의 시간제한 표시는 유지됩니다.",
+        QUEST_TIMERS_DESC = "목표 추적기와 관계없이 화면의 퀘스트 타이머를 숨깁니다. 추적기를 숨기고 이 설정을 끄면 별도의 타이머가 표시됩니다. 퀘스트 목록은 기본 표시를 유지합니다.",
         TIMED_QUEST = "시간제한 퀘스트",
         TIMERS_STATUS = "퀘스트 타이머 숨기기: ",
         VERSION_UPDATED = "%s 버전으로 업데이트되었습니다.",
@@ -422,8 +427,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "사용 불가",
     },
     ptBR = {
+        TIMERS_MOVE_HINT = "Arraste para mover.",
         QUEST_TIMERS = "Ocultar cronômetros de missão",
-        QUEST_TIMERS_DESC = "Oculta a contagem regressiva de missões com tempo limitado, independentemente do rastreador de objetivos. Se o rastreador estiver oculto e esta opção desativada, um cronômetro separado permanece visível. A indicação no registro continua aparecendo.",
+        QUEST_TIMERS_DESC = "Oculta os cronômetros de missão na tela, independentemente do rastreador de objetivos. Se o rastreador estiver oculto e esta opção desativada, um cronômetro separado permanece visível. O registro mantém a apresentação original.",
         TIMED_QUEST = "Missão com tempo limitado",
         TIMERS_STATUS = "Ocultar cronômetros de missão: ",
         VERSION_UPDATED = "Atualizado para a versão %s.",
@@ -506,8 +512,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "indisponível",
     },
     zhCN = {
+        TIMERS_MOVE_HINT = "拖动以移动。",
         QUEST_TIMERS = "隐藏任务计时器",
-        QUEST_TIMERS_DESC = "独立于目标追踪栏隐藏限时任务的倒计时。隐藏追踪栏且关闭此选项时，将显示单独的计时器。任务日志仍会显示限时任务标记。",
+        QUEST_TIMERS_DESC = "独立于目标追踪栏隐藏屏幕上的任务倒计时。隐藏追踪栏且关闭此选项时，将显示单独的计时器。任务日志保持原生显示。",
         TIMED_QUEST = "限时任务",
         TIMERS_STATUS = "隐藏任务计时器：",
         VERSION_UPDATED = "已更新至 %s 版本。",
@@ -590,8 +597,9 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "不可用",
     },
     zhTW = {
+        TIMERS_MOVE_HINT = "拖曳以移動。",
         QUEST_TIMERS = "隱藏任務計時器",
-        QUEST_TIMERS_DESC = "獨立於目標追蹤欄隱藏限時任務的倒數計時。隱藏追蹤欄且關閉此選項時，會顯示獨立的計時器。任務日誌仍會顯示限時任務標記。",
+        QUEST_TIMERS_DESC = "獨立於目標追蹤欄隱藏畫面上的任務倒數計時。隱藏追蹤欄且關閉此選項時，會顯示獨立的計時器。任務日誌維持原生顯示。",
         TIMED_QUEST = "限時任務",
         TIMERS_STATUS = "隱藏任務計時器：",
         VERSION_UPDATED = "已更新至 %s 版本。",

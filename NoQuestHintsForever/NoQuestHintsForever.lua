@@ -447,6 +447,20 @@ api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsQuestTimersHidden = function() return character and character.hideQuestTimers == true end
 api.SetQuestTimersHidden = setQuestTimersHidden
+local function validTimerCoordinate(value)
+    return type(value)=="number" and value==value and value>=0 and value<=1
+end
+api.GetQuestTimerPosition = function()
+    local value=character and character.questTimerPosition
+    if type(value)=="table" and validTimerCoordinate(value.x) and validTimerCoordinate(value.y) then
+        return {x=value.x,y=value.y}
+    end
+end
+api.SetQuestTimerPosition = function(x,y)
+    if character and validTimerCoordinate(x) and validTimerCoordinate(y) then
+        character.questTimerPosition={x=x,y=y}
+    end
+end
 api.IsTooltipHintsHidden = function() return character and character.hideQuestTooltips == true end
 api.IsSellPriceHidden = function() return character and character.hideSellPrices == true end
 api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end

@@ -595,3 +595,21 @@ timerUI=session(timerProfile,{},true,false)
 assert(NoQuestHintsForeverAPI.IsQuestTimersHidden(),"manual timer hiding lost on reload")
 NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not timerProfile.hideQuestTimers)
+
+-- Placement is a per-character UI preference, validated separately from presets.
+local positioned={questTimerPosition={x=0.8,y=0.65}}
+local positions=session(positioned,{},true,false)
+local point=NoQuestHintsForeverAPI.GetQuestTimerPosition()
+assert(point.x==0.8 and point.y==0.65)
+point.x=0.1
+assert(positioned.questTimerPosition.x==0.8,'position getter exposed mutable saved state')
+NoQuestHintsForeverAPI.SetQuestTimerPosition(-1,0.3)
+assert(positioned.questTimerPosition.x==0.8,'invalid position was saved')
+NoQuestHintsForeverAPI.SetQuestTimerPosition(0.7,0.4)
+assert(positioned.questTimerPosition.x==0.7 and positioned.questTimerPosition.y==0.4)
+NoQuestHintsForeverAPI.ApplyPreset('full')
+assert(positioned.questTimerPosition.x==0.7,'preset reset UI placement')
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(positioned.questTimerPosition.x==0.7,'restoration reset UI placement')
+positioned.questTimerPosition={x=0/0,y=0.2}
+assert(NoQuestHintsForeverAPI.GetQuestTimerPosition()==nil,'corrupt placement must fall back to minimap')

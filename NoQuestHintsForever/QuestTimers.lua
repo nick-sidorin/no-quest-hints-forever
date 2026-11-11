@@ -3,7 +3,8 @@
 local api = NoQuestHintsForeverAPI
 if not api then return end
 local L = NoQuestHintsForeverLocale
-local panel, label, detailsOwner, nativeHooked
+local panel, nativeHooked
+local dragging=false
 local offerLabel, offerOwner, offeredQuestID
 local rows, timers = {}, {}
 local states = setmetatable({}, {__mode="k"})
@@ -74,23 +75,6 @@ local function timed(id)
     return finite(total) and total>0 or false
 end
 
-local function journal()
-    local details=QuestMapFrame and QuestMapFrame.DetailsFrame
-    if details~=detailsOwner then
-        if label then label:Hide() end
-        label=nil;detailsOwner=details
-    end
-    if not details or type(details.CreateFontString)~="function" or combat() then return end
-    if not label then
-        label=details:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-        label:SetPoint("BOTTOMLEFT",details.BackFrame or details,"BOTTOMLEFT",12,3)
-        label:SetWidth(275);label:SetHeight(14);label:SetJustifyH("LEFT")
-        label:SetText(L.TIMED_QUEST)
-        if type(details.HookScript)=="function" then details:HookScript("OnShow",queue) end
-    end
-    if ready and timed(details.questID) then label:Show() else label:Hide() end
-end
-
 -- Offer metadata is separate from the selected journal quest. Never use a
 -- different active quest's timer to label a not-yet-accepted NPC offer.
 local function npcOffer()
@@ -101,11 +85,18 @@ local function npcOffer()
     end
     if not owner or type(owner.CreateFontString)~="function" or combat() then return end
     if not offerLabel then
-        offerLabel=owner:CreateFontString(nil,"OVERLAY","GameFontNormal")
-        -- The native panel leaves a band above the parchment/scroll frame.
-        -- Keep the note visible while scrolling without moving native content.
-        offerLabel:SetPoint("TOPLEFT",owner,"TOPLEFT",20,-42)
-        offerLabel:SetWidth(290);offerLabel:SetHeight(18);offerLabel:SetJustifyH("CENTER")
+        offerLabel=owner:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+        -- Fit the duration-free note between the native accept/decline buttons.
+        if QuestFrameAcceptButton then
+            offerLabel:SetPoint("LEFT",QuestFrameAcceptButton,"RIGHT",8,0)
+            if QuestFrameDeclineButton then
+                offerLabel:SetPoint("RIGHT",QuestFrameDeclineButton,"LEFT",-8,0)
+            else offerLabel:SetWidth(150) end
+        else
+            offerLabel:SetPoint("BOTTOM",owner,"BOTTOM",0,5)
+            offerLabel:SetWidth(150)
+        end
+        offerLabel:SetHeight(22);offerLabel:SetJustifyH("CENTER")
         offerLabel:SetText(L.TIMED_QUEST)
         if type(owner.HookScript)=="function" then
             owner:HookScript("OnShow",queue)
@@ -122,28 +113,90 @@ local function npcOffer()
         and read(owner.IsShown,owner) then offerLabel:Show() else offerLabel:Hide() end
 end
 
+local function placePanel()
+    if not panel or dragging then return end
+    panel:ClearAllPoints()
+    local position=api.GetQuestTimerPosition()
+    if position then
+        panel:SetPoint("CENTER",UIParent,"BOTTOMLEFT",
+            position.x*UIParent:GetWidth(),position.y*UIParent:GetHeight())
+    elseif Minimap then
+        panel:SetPoint("TOP",Minimap,"BOTTOM",0,-24)
+    else
+        panel:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-32,-220)
+    end
+end
+
+local function endDrag()
+    if not dragging or not panel then return end
+    panel:StopMovingOrSizing();dragging=false
+    local x,y=panel:GetCenter()
+    local width,height=UIParent:GetWidth(),UIParent:GetHeight()
+    local scale=read(panel.GetEffectiveScale,panel) or 1
+    local rootScale=read(UIParent.GetEffectiveScale,UIParent) or 1
+    if finite(x) and finite(y) and width>0 and height>0 and rootScale>0 then
+        api.SetQuestTimerPosition(math.max(0,math.min(1,x*scale/rootScale/width)),
+            math.max(0,math.min(1,y*scale/rootScale/height)))
+    end
+    placePanel()
+end
+
+local function hideTooltip()
+    if GameTooltip and read(GameTooltip.GetOwner,GameTooltip)==panel then GameTooltip:Hide() end
+end
+
+local function decoratePanel()
+    local backdrop={bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
+        tile=true,tileSize=16,insets={left=6,right=6,top=6,bottom=6}}
+    if NineSliceUtil and type(NineSliceUtil.GetLayout)=="function"
+        and type(NineSliceUtil.ApplyLayoutByName)=="function" and NineSliceUtil.GetLayout("Dialog") then
+        -- Reuse dialog art only, without inheriting popup focus/binding scripts.
+        panel.NineSlice=CreateFrame("Frame",nil,panel)
+        panel.NineSlice:SetAllPoints(panel)
+        panel.NineSlice:SetFrameLevel(panel:GetFrameLevel())
+        panel.NineSlice.layoutType="Dialog"
+        NineSliceUtil.ApplyLayoutByName(panel.NineSlice,"Dialog")
+    else
+        backdrop.edgeFile="Interface\\DialogFrame\\UI-DialogBox-Gold-Border"
+        backdrop.edgeSize=16
+    end
+    panel:SetBackdrop(backdrop)
+    panel:SetBackdropColor(0,0,0,0.95)
+end
+
 local function draw(show)
     if not show then if panel then panel:Hide() end;return end
     if not panel then
         panel=CreateFrame("Frame","NoQuestHintsForeverQuestTimers",UIParent,"BackdropTemplate")
-        panel:SetSize(260,40)
-        panel:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-70,-220)
-        panel:EnableMouse(false)
-        panel:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
-            edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=16,edgeSize=16,
-            insets={left=4,right=4,top=4,bottom=4}})
-        panel:SetBackdropColor(0,0,0,0.85)
+        panel:SetSize(190,32)
+        panel:SetMovable(true);panel:SetClampedToScreen(true);panel:EnableMouse(true)
+        panel:RegisterForDrag("LeftButton")
+        panel:SetScript("OnDragStart",function()
+            hideTooltip();dragging=true;panel:StartMoving()
+        end)
+        panel:SetScript("OnDragStop",endDrag)
+        panel:SetScript("OnHide",function() endDrag();hideTooltip() end)
+        panel:SetScript("OnEnter",function()
+            if not GameTooltip then return end
+            GameTooltip:SetOwner(panel,"ANCHOR_LEFT");GameTooltip:SetText(L.TIMED_QUEST)
+            for _,row in ipairs(rows) do
+                if row:IsShown() then GameTooltip:AddLine(row.Title:GetText(),1,1,1,true) end
+            end
+            GameTooltip:AddLine(L.TIMERS_MOVE_HINT,1,0.82,0,true);GameTooltip:Show()
+        end)
+        panel:SetScript("OnLeave",hideTooltip)
+        decoratePanel();placePanel()
     end
     local ids={};for id in pairs(timers) do ids[#ids+1]=id end;table.sort(ids)
     for index,id in ipairs(ids) do
         local row=rows[index]
         if not row then
             row=CreateFrame("Frame",nil,panel);rows[index]=row
-            row:SetSize(236,34);row:SetPoint("TOPLEFT",panel,"TOPLEFT",12,-10-(index-1)*36)
+            row:SetSize(166,16);row:SetPoint("TOPLEFT",panel,"TOPLEFT",12,-8-(index-1)*18)
             row.Title=row:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-            row.Title:SetPoint("TOPLEFT");row.Title:SetWidth(236);row.Title:SetHeight(14);row.Title:SetJustifyH("LEFT")
-            row.Clock=row:CreateFontString(nil,"OVERLAY","GameFontNormal")
-            row.Clock:SetPoint("TOPLEFT",row.Title,"BOTTOMLEFT",0,-3)
+            row.Title:SetPoint("LEFT");row.Title:SetWidth(120);row.Title:SetHeight(16);row.Title:SetJustifyH("LEFT")
+            row.Clock=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+            row.Clock:SetPoint("RIGHT",row,"RIGHT",0,0);row.Clock:SetWidth(42);row.Clock:SetJustifyH("RIGHT")
         end
         row.Title:SetText(read(C_QuestLog and C_QuestLog.GetTitleForQuestID,id) or L.TIMED_QUEST)
         local seconds=math.ceil(timers[id])
@@ -151,7 +204,12 @@ local function draw(show)
         row:Show()
     end
     for index=#ids+1,#rows do rows[index]:Hide() end
-    panel:SetHeight(20+#ids*36);panel:Show()
+    local height=16+#ids*18
+    panel:SetHeight(height)
+    if panel.NineSlice and type(NineSliceUtil.UpdateCornerCropping)=="function" then
+        NineSliceUtil.UpdateCornerCropping(panel,height)
+    end
+    panel:Show()
 end
 
 refresh=function()
@@ -164,7 +222,6 @@ refresh=function()
         if native and native~=nativeHooked and type(native.HookScript)=="function" then
             nativeHooked=native;native:HookScript("OnShow",queue)
         end
-        journal()
         npcOffer()
     end
     -- Do not duplicate the native panel when it is usable outside the hidden tracker.
@@ -180,7 +237,7 @@ end
 local events=CreateFrame("Frame")
 for _, event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","LOADING_SCREEN_ENABLED",
     "LOADING_SCREEN_DISABLED","QUEST_LOG_UPDATE","PLAYER_REGEN_ENABLED","PLAYER_LOGOUT",
-    "QUEST_DETAIL","QUEST_FINISHED","QUEST_GREETING","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_DATA_LOAD_RESULT"}) do
+    "UI_SCALE_CHANGED","DISPLAY_SIZE_CHANGED","QUEST_DETAIL","QUEST_FINISHED","QUEST_GREETING","QUEST_PROGRESS","QUEST_COMPLETE","QUEST_DATA_LOAD_RESULT"}) do
     events:RegisterEvent(event)
 end
 local elapsed=0
@@ -203,12 +260,6 @@ api.RefreshQuestTimers=function()
         C_Timer.After(0,function() queued=false;if ready and not stopped then start() end end)
     end
 end
-local hookInstalled=false
-local function install()
-    if not hookInstalled and type(QuestMapFrame_ShowQuestDetails)=="function" and type(hooksecurefunc)=="function" then
-        hookInstalled=pcall(hooksecurefunc,"QuestMapFrame_ShowQuestDetails",api.RefreshQuestTimers)
-    end
-end
 events:SetScript("OnEvent",function(_,event)
     if event=="QUEST_DETAIL" then
         offeredQuestID=read(GetQuestID)
@@ -220,14 +271,13 @@ events:SetScript("OnEvent",function(_,event)
     end
     if event=="PLAYER_LOGOUT" then
         stopped=true;ready=false;events:SetScript("OnUpdate",nil);draw(false)
-        if label then label:Hide() end
         restoreNative()
     elseif event=="LOADING_SCREEN_ENABLED" then
         ready=false;events:SetScript("OnUpdate",nil);draw(false)
-        if label then label:Hide() end
     else
-        install()
         if event=="LOADING_SCREEN_DISABLED" or event=="PLAYER_ENTERING_WORLD" then ready=true end
+        if event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED"
+            or event=="PLAYER_ENTERING_WORLD" then placePanel() end
         api.RefreshQuestTimers()
     end
 end)

@@ -1,8 +1,9 @@
 -- Display-language strings. English is the fallback for unsupported locales.
 -- Keep keys shared between the slash commands, native UI and quest menus.
 local en = {
+    TIMERS_MOVE_HINT = "Drag to move.",
     QUEST_TIMERS = "Hide quest timers",
-    QUEST_TIMERS_DESC = "Hide the countdown for timed quests, independently of the objective tracker. When the tracker is hidden and this option is off, a separate timer remains visible. The journal still marks timed quests.",
+    QUEST_TIMERS_DESC = "Hide on-screen timed-quest countdowns independently of the objective tracker. When the tracker is hidden and this option is off, a separate timer remains visible. The quest journal keeps its native presentation.",
     TIMED_QUEST = "Timed quest",
     TIMERS_STATUS = "Hide quest timers: ",
     VERSION_UPDATED = "Updated to version %s.",
@@ -85,8 +86,9 @@ local en = {
     VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
+    TIMERS_MOVE_HINT = "Перетащи мышью, чтобы переместить.",
     QUEST_TIMERS = "Скрывать таймеры заданий",
-    QUEST_TIMERS_DESC = "Скрывает обратный отсчёт заданий на время независимо от списка заданий. Если список скрыт, а эта галочка выключена, таймер виден отдельно. Пометка в журнале остаётся.",
+    QUEST_TIMERS_DESC = "Скрывает экранные таймеры заданий независимо от списка заданий. Если список скрыт, а эта галочка выключена, таймер виден отдельно. Оформление журнала остаётся родным.",
     TIMED_QUEST = "Задание на время",
     TIMERS_STATUS = "Скрывать таймеры заданий: ",
     VERSION_UPDATED = "Аддон обновлён до версии %s.",
