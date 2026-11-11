@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add independent, per-character Hide experience bar and Hide minimap controls under Interface, OFF by default and in all presets. Hide the existing native HUD frames; preserve reputation bars, world-map access and quest timers. Restore the latest native visibility request and defer changes during combat. Request the native bottom action-bar layout immediately after XP visibility changes so default-position bars fill or restore the space without waiting for a pet action. Saved layouts, CVars and gameplay data remain untouched.
+
 ## [1.5.0] — 2026-11-11
 
 - Add an independent Hide quest timers option, OFF by default and in every preset. Preserve the actual Blizzard QuestTimerFrame through a hidden tracker, including native artwork, localized countdown, title tooltip and quest-opening click. The timer keeps Blizzard’s own countdown, artwork and interactions.
