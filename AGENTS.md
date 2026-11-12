@@ -119,3 +119,8 @@ Repository-wide instructions for contributors and coding agents. Before substant
 
 - The owner reported repeated secret-value cooldown and Edit Mode errors in 1.6.0, withdrew its GitHub release, and authorized an emergency 1.6.1 containing stable 1.5.0 runtime with only TOC version metadata changed. HUD preferences remain saved but inactive. Do not reset saved choices or promote the unverified #43 candidate into this rollback.
 - Never dispatch EditModeManager.UpdateBottomActionBarPositions from addon code: its listeners execute in the caller context and mutate native snaps/anchor/action-button state. Deferral, pcall and registry dispatch are not secure boundaries. Do not patch native secret-value handling or clear native taint tables. HUD work requires separate real-client verification before returning.
+
+## Reintroduced HUD controls — 1.7.0
+
+- The owner tested fix candidate df5959d from #43, reported no further reproduced combat/Edit Mode errors, accepted waiting for native layout to remove the XP gap, and authorized release. 1.7.0 restores both independent controls, OFF in all presets, retaining stored HUD flags. Do not import the withdrawn 1.6.0 layout dispatch or the failed ForceUpdateAction probe.
+- Explicitly suspend hiding throughout EditMode.Enter/Exit and native per-frame edit flags; leave native spacing/anchors alone. No fake actions/autocast toggles, polling, cooldown/secret-value patches or native registry writes. Reintroduction is explicitly recorded in featureReleases at 1.7.0 so users on rollback 1.6.1 see the restored rows; preserve the historical 1.6.0 entry. Do not generalize the owner's tested scenario to universal taint safety.

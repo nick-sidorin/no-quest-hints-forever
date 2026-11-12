@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [1.7.0] — 2026-11-12
+
+- Restore independent, per-character Hide experience bar and Hide minimap controls after the 1.6.1 rollback. Both remain OFF by default and in every preset; saved manual choices are retained. Preserve reputation bars, world-map access and native quest timers.
+- Remove addon-triggered bottom action-bar layout notifications. Let Blizzard update spacing on its next native layout pass; the XP gap may remain until then. No fake actions, pet-autocast toggles, manual action-bar coordinates or ForceUpdateAction workaround.
+- Suspend HUD hiding during Edit Mode. Preserve combat deferral, visibility restoration and all official locales. The owner tested the fix candidate, reported no further reproduced errors and accepted the native-spacing limitation. This is verification of that scenario, not universal taint or physical-controller certification.
+- Mark the reintroduced controls as new for users upgrading past the rollback, without resetting existing preferences.
+
 ## [1.6.1] — 2026-11-12
 
 - Emergency rollback: restore the runtime from stable 1.5.0, changing only TOC version metadata. Remove the 1.6.0 experience-bar/minimap controls and addon-driven layout updates after repeated combat cooldown and Edit Mode taint reports.

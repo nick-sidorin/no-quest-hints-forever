@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Version 1.7.0:** Restore optional experience-bar and minimap hiding with the owner-tested fix. Never force action-bar layout from addon code. Spacing catches up on Blizzard’s next native layout update; both controls remain OFF in every preset.
+
 > **Version 1.6.1 — emergency rollback:** Restores stable 1.5.0 runtime after combat cooldown and Edit Mode regressions in 1.6.0. XP-bar/minimap hiding is withdrawn; native quest timers and existing preferences are preserved. Fully exit and restart the game after updating.
 
 > **Version 1.5.0:** Keep Blizzard’s quest timer visible with a hidden objective tracker, or hide it independently. Drag the native header to save its position; native title tooltips and quest-opening clicks remain available. Timer hiding is OFF by default and in every preset.
@@ -39,6 +41,14 @@ Remember when finding a quest objective meant reading the description, looking a
 The addon leaves the geographical map, quest descriptions, quest-giver exclamation marks above NPCs, and quest voiceover addons alone. It does not hide markers created by other quest addons. **Native badges beside titles in the quest journal and objective tracker** are selectively restored only for allowed quest IDs. The user interface follows the client language automatically: English (`enUS`/`enGB`), Russian, German, French, Spanish (`esES`/`esMX`), Italian, Brazilian Portuguese, Korean, Simplified Chinese and Traditional Chinese. Unknown locales/keys fall back to English.
 
 **Remove the directions, not the adventure.**
+
+## HUD visibility (1.7.0)
+
+In **Interface**, independently hide the native player experience bar or the full minimap cluster, including its frame and attached buttons. Both controls default OFF in every playstyle and save per character. Existing saved HUD choices from 1.6.0 are retained. Reputation bars, actual XP gain, the world map and native quest timers remain available.
+
+Changes wait until combat ends; hiding is suspended in Edit Mode. Unchecking restores the latest native visibility request. Action-bar spacing updates on Blizzard’s next native layout pass, so an XP gap can remain temporarily. The addon does not force layout, move action bars, use a fake skill, toggle pet autocast or call ForceUpdateAction. Custom replacement HUDs are outside scope.
+
+The owner tested candidate df5959d in Forever and reported the combat/Edit Mode errors no longer reproduced, accepted the spacing limitation, and authorized release. This does not establish universal taint safety or physical-controller behavior.
 
 ## Getting started
 
