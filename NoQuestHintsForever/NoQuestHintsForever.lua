@@ -103,6 +103,9 @@ end
 -- Add an entry only when features ship, never for a fixes-only release. Checking
 -- the whole interval handles players who skip one or more feature versions.
 local featureReleases = {
+    -- Reintroduced after the 1.6.1 rollback; users on that release regain rows.
+    {version="1.7.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
+    {version="1.6.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
     {version="1.5.0", settings={"NQH_HIDE_QUEST_TIMERS"}},
     {version="1.4.0", settings={"NQH_HIDE_QUEST_LEVELS", "NQH_HIDE_QUEST_DIFFICULTY",
         "NQH_HIDE_AUCTION_SELL_PRICES", "NQH_HIDE_QUEST_ITEM_HIGHLIGHT"}},
@@ -451,6 +454,15 @@ api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTrackerHidden = function() return character and character.hideTracker == true end
 api.IsQuestTimersHidden = function() return character and character.hideQuestTimers == true end
 api.SetQuestTimersHidden = setQuestTimersHidden
+api.IsExperienceBarHidden = function() return character and character.hideExperienceBar == true end
+api.IsMinimapHidden = function() return character and character.hideMinimap == true end
+local function setHUDPreference(key, value)
+    if not character then return end
+    character[key] = value == true
+    if api.RefreshHUDVisibility then api.RefreshHUDVisibility() end
+end
+api.SetExperienceBarHidden = function(value) setHUDPreference("hideExperienceBar", value) end
+api.SetMinimapHidden = function(value) setHUDPreference("hideMinimap", value) end
 local function validTimerCoordinate(value)
     return type(value)=="number" and value==value and value>=0 and value<=1
 end
@@ -528,11 +540,14 @@ function api.RestoreGameSettings()
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
     setQuestTimersHidden(false)
+    api.SetExperienceBarHidden(false)
+    api.SetMinimapHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     if api.HideWelcome then api.HideWelcome() end
     local itemsRestored = not api.RestoreQuestItemHighlight or api.RestoreQuestItemHighlight()
     local presentationRestored = not api.RestoreQuestPresentation or api.RestoreQuestPresentation()
-    return itemsRestored and presentationRestored and next(character.original) == nil and next(account.original) == nil
+    local hudRestored = not api.RestoreHUDVisibility or api.RestoreHUDVisibility()
+    return hudRestored and itemsRestored and presentationRestored and next(character.original) == nil and next(account.original) == nil
         and account.npcNameOriginal == nil and next(trackerInputs) == nil
 end
 
@@ -554,6 +569,8 @@ function api.ApplyPreset(preset)
     setQuestDifficultyHidden(false)
     setQuestItemHighlightHidden(false)
     setQuestTimersHidden(false)
+    api.SetExperienceBarHidden(false)
+    api.SetMinimapHidden(false)
     if api.RefreshOptions then api.RefreshOptions() end
     return true
 end
@@ -578,6 +595,8 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
     elseif command == "status" then
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.EXPERIENCE_BAR or "Hide experience bar") .. ": " .. (api.IsExperienceBarHidden() and statusOn or statusOff))
+        printMessage((L.MINIMAP or "Hide minimap") .. ": " .. (api.IsMinimapHidden() and statusOn or statusOff))
         printMessage((L.TIMERS_STATUS or "Hide quest timers: ") .. (character.hideQuestTimers == true and statusOn or statusOff))
         printMessage((L.TRACKER_STATUS or "Hide objective tracker: ") .. (character.hideTracker == true and statusOn or statusOff))
         printMessage((L.TOOLTIP_STATUS or "Hide quest tooltip hints: ") .. (character.hideQuestTooltips == true and statusOn or statusOff))

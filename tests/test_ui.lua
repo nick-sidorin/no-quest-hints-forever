@@ -211,12 +211,12 @@ assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
     "/nqh did not navigate to native Settings category")
 assert(NoQuestHintsForeverOptionsFrame == nil,
     "legacy floating settings window must never be created")
-assert(#s.proxySettings == 11, "each option needs a native proxy setting")
+assert(#s.proxySettings == 13, "each option needs a native proxy setting")
 for _, control in ipairs(s.checks) do
     assert(type(control.tooltip) == "string" and #control.tooltip > 0,
         "native checkbox description must be shown in tooltip")
 end
-assert(#s.checks == 11, "expected eleven independent controls")
+assert(#s.checks == 13, "expected thirteen independent controls")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
     and s.checks[9]:GetChecked() == false and s.checks[5]:GetChecked() == false,
@@ -399,6 +399,7 @@ assert(type(category.rows[2].click) == "function" and type(category.rows[3].clic
 assert(category.rows[4].header == "Подсказки заданий")
 assert(category.rows[5].header == "Цены предметов")
 assert(category.rows[6].header == "Сумки")
+assert(category.rows[7].header == "Интерфейс")
 assert(localized.checks[5].setting.variable == "NQH_HIDE_QUEST_PROGRESS")
 assert(localized.checks[9].setting.variable == "NQH_HIDE_SELL_PRICES")
 
@@ -414,7 +415,7 @@ assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
 reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
 assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
 local count=0; for _ in pairs(notifications) do count=count+1 end
-assert(count==11, "preset/restore must refresh every native checkbox")
+assert(count==13, "preset/restore must refresh every native checkbox")
 
 -- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
@@ -613,3 +614,24 @@ NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(positioned.questTimerPosition.x==0.7,'restoration reset UI placement')
 positioned.questTimerPosition={x=0/0,y=0.2}
 assert(NoQuestHintsForeverAPI.GetQuestTimerPosition()==nil,'corrupt placement must fall back to minimap')
+
+-- HUD options are independent and manual-only; existing preferences survive reload.
+local hudProfile={hideExperienceBar=true,hideMinimap=true}
+local hud=session(hudProfile, {}, true, false)
+assert(hud.checks[12].setting.variable=="NQH_HIDE_EXPERIENCE_BAR")
+assert(hud.checks[13].setting.variable=="NQH_HIDE_MINIMAP")
+assert(hud.checks[12]:GetChecked() and hud.checks[13]:GetChecked())
+NoQuestHintsForeverAPI.SetExperienceBarHidden(false)
+assert(not NoQuestHintsForeverAPI.IsExperienceBarHidden() and NoQuestHintsForeverAPI.IsMinimapHidden())
+for _,preset in ipairs({"blizzard","immersion","full"}) do
+    NoQuestHintsForeverAPI.SetExperienceBarHidden(true)
+    NoQuestHintsForeverAPI.SetMinimapHidden(true)
+    assert(NoQuestHintsForeverAPI.ApplyPreset(preset))
+    assert(not hudProfile.hideExperienceBar and not hudProfile.hideMinimap)
+end
+NoQuestHintsForeverAPI.SetExperienceBarHidden(true)
+NoQuestHintsForeverAPI.SetMinimapHidden(true)
+hud=session(hudProfile, {}, true, false)
+assert(hud.checks[12]:GetChecked() and hud.checks[13]:GetChecked())
+NoQuestHintsForeverAPI.RestoreGameSettings()
+assert(not hudProfile.hideExperienceBar and not hudProfile.hideMinimap)

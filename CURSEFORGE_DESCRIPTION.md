@@ -21,8 +21,10 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 ## ✨ Features at a Glance
 
-Eleven independent, optional controls:
+Thirteen independent, optional controls:
 
+- 🌄 **Hide Minimap** — Explore without the corner map; keep the world map available.
+- 📊 **Hide Experience Bar** — Clear the XP bar while keeping reputation bars.
 - 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
 - ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
@@ -71,6 +73,12 @@ Enable **Hide quest timers** if you prefer to follow the urgency in the quest te
 
 Pre-acceptance warnings depend on client metadata and are not reliable for every timed quest. The addon does not guess from quest text. Actual time limits and behavior while offline remain controlled by the game.
 
+## 🌄 A Quieter HUD
+
+Under **Interface**, independently enable **Hide experience bar** or **Hide minimap**. Both are OFF by default and in every playstyle preset, and your choices are saved per character.
+
+Action-bar spacing follows the game’s next native layout update, so a temporary gap can remain after hiding XP. Reputation bars and actual XP gain are unchanged. Minimap hiding includes its frame and attached buttons, while the world map and quest timer stay available. Changes wait until combat ends. These controls target Blizzard’s native HUD, not replacement interfaces from other addons.
+
 ## 🎮 Native Gamepad Beta
 
 The playstyle chooser currently uses mouse input, including with Gamepad Beta enabled. Native controller navigation inside the chooser is not currently supported. Revealed quest pins show quest details under the map crosshair; **select or focus those quests through the journal**. Mouse interactions remain available in the normal mouse interface.
@@ -102,7 +110,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Update 1.6.1 — emergency rollback:** Restores the stable 1.5.0 runtime after combat and Edit Mode errors in 1.6.0. The experience-bar/minimap controls are withdrawn; quest timers and your existing choices are preserved. Fully exit and restart the game after updating. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.7.0:** Experience-bar and minimap hiding return after the rollback, with addon-triggered action-bar layout removed. Spacing follows the game’s next native layout update, so a temporary XP gap can remain. Both controls are OFF in every preset; existing saved choices are retained. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 
