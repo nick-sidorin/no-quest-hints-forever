@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only map/navigation hints, quest tooltip lines and quest/special NPC names in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer CVar/pin work during combat/loading. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
+
 ## [1.7.0] — 2026-11-12
 
 - Restore independent, per-character Hide experience bar and Hide minimap controls after the 1.6.1 rollback. Both remain OFF by default and in every preset; saved manual choices are retained. Preserve reputation bars, world-map access and native quest timers.

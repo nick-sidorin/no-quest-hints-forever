@@ -7,7 +7,8 @@ local cvarNames = {
     "minimapShowQuestBlobs", "showInGameNavigation",
 }
 
-local function session(char, account, withSettings, withTracker, locale)
+local function session(char, account, withSettings, withTracker, locale, instance)
+    IsInInstance = function() return instance and instance.inside==true or false, instance and instance.kind or "none" end
     NoQuestHintsForeverChar = nil
     NoQuestHintsForeverAccount = nil
     NoQuestHintsForeverAPI = nil
@@ -211,12 +212,12 @@ assert(#s.opened == 1 and s.opened[1] == s.panels[1]:GetID(),
     "/nqh did not navigate to native Settings category")
 assert(NoQuestHintsForeverOptionsFrame == nil,
     "legacy floating settings window must never be created")
-assert(#s.proxySettings == 13, "each option needs a native proxy setting")
+assert(#s.proxySettings == 14, "each option needs a native proxy setting")
 for _, control in ipairs(s.checks) do
     assert(type(control.tooltip) == "string" and #control.tooltip > 0,
         "native checkbox description must be shown in tooltip")
 end
-assert(#s.checks == 13, "expected thirteen independent controls")
+assert(#s.checks == 14, "expected fourteen independent controls")
 assert(s.checks[1]:GetChecked() == true and s.checks[2]:GetChecked() == false
     and s.checks[3]:GetChecked() == false and s.checks[4]:GetChecked() == false
     and s.checks[9]:GetChecked() == false and s.checks[5]:GetChecked() == false,
@@ -415,7 +416,7 @@ assert(reset.tracker:GetAlpha() == 0.8 and not reset.tracker:IsMouseEnabled())
 reset.setCombat(false); reset.event("PLAYER_REGEN_ENABLED"); reset.flush()
 assert(reset.tracker:IsMouseEnabled() and NoQuestHintsForeverAPI.RestoreGameSettings())
 local count=0; for _ in pairs(notifications) do count=count+1 end
-assert(count==13, "preset/restore must refresh every native checkbox")
+assert(count==14, "preset/restore must refresh every native checkbox")
 
 -- The two price controls have equal rank and independent hide semantics.
 local priceChar = {}
@@ -635,3 +636,28 @@ hud=session(hudProfile, {}, true, false)
 assert(hud.checks[12]:GetChecked() and hud.checks[13]:GetChecked())
 NoQuestHintsForeverAPI.RestoreGameSettings()
 assert(not hudProfile.hideExperienceBar and not hudProfile.hideMinimap)
+
+-- Instance exception is an independent policy, not a temporary rewrite of checkboxes.
+local instancePrefs={enabled=true,hideQuestTooltips=true,hideQuestNPCNames=true,
+    restoreGuidanceInInstances=true,hideQuestLevels=true,hideSellPrices=true}
+local inside={inside=true,kind="party"}
+local instanceUI=session(instancePrefs,{},true,false,"ruRU",inside)
+assert(instanceUI.checks[14].setting.variable=="NQH_INSTANCE_GUIDANCE")
+assert(instanceUI.checks[14]:GetChecked())
+assert(instanceUI.checks[1]:GetChecked() and instanceUI.checks[3]:GetChecked() and instanceUI.checks[4]:GetChecked(),
+    "effective pause must not uncheck configured hiding preferences")
+assert(not NoQuestHintsForeverAPI.IsMapHidden() and not NoQuestHintsForeverAPI.IsTooltipHintsHidden())
+assert(NoQuestHintsForeverAPI.IsQuestLevelsHidden() and NoQuestHintsForeverAPI.IsSellPriceHidden())
+instanceUI.checks[14]:SetChecked(false);instanceUI.checks[14].scripts.OnClick(instanceUI.checks[14]);instanceUI.flush()
+assert(not instancePrefs.restoreGuidanceInInstances and NoQuestHintsForeverAPI.IsMapHidden())
+for _,preset in ipairs({"blizzard","immersion","full"}) do
+    NoQuestHintsForeverAPI.SetInstanceGuidanceEnabled(true)
+    assert(NoQuestHintsForeverAPI.ApplyPreset(preset))
+    assert(instancePrefs.restoreGuidanceInInstances,"playstyle must preserve the independent instance policy")
+end
+local reloaded=session(instancePrefs,{},true,false,"ruRU",inside)
+assert(reloaded.checks[14]:GetChecked())
+NoQuestHintsForeverAPI.RestoreGameSettings();reloaded.flush()
+assert(not instancePrefs.restoreGuidanceInInstances)
+local freshInstance=session({}, {}, true, false)
+assert(not freshInstance.checks[14]:GetChecked(),"new instance policy must default OFF")
