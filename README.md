@@ -52,11 +52,11 @@ The owner tested candidate df5959d in Forever and reported the combat/Edit Mode 
 
 ## Dungeon and raid guidance preview (unreleased)
 
-In **Dungeons and raids**, enable **Restore quest guidance** to temporarily stop hiding quest map/navigation hints, native quest tooltip lines and quest NPC names inside dungeon (`party`) and raid (`raid`) instances. It is OFF by default, saved per character and retained when selecting a playstyle. **Restore game settings** and the native setting default turn it OFF.
+In **Dungeons and raids**, enable **Restore quest guidance** to temporarily stop hiding native quest tooltip lines and quest NPC names inside dungeon (`party`) and raid (`raid`) instances. It is OFF by default, saved per character and retained when selecting a playstyle. **Restore game settings** and the native setting default turn it OFF.
 
-Only these three restrictions are suspended. Quest levels/colors, prices, tracker, progress popups, quest-item borders, timers, XP bar and full-minimap visibility stay as configured. Configured checkboxes remain checked while their effects are paused; leaving the instance reapplies them. Your own original Blizzard CVar choices are preserved, so settings you disabled yourself are not forcibly enabled. Saved per-quest permissions are unchanged.
+Only these two restrictions are suspended. Map markers and navigation keep their normal hiding and manual **Show hint** behavior. Quest levels/colors, prices, tracker, progress popups, quest-item borders, timers, XP bar and full-minimap visibility stay as configured. Configured checkboxes remain checked while their effects are paused; leaving the instance reapplies them. Your own original Blizzard CVar choices are preserved, so settings you disabled yourself are not forcibly enabled. Saved per-quest permissions are unchanged.
 
-Native `IsInInstance()` classifies the location; outdoor groups, battlegrounds, arenas and scenarios are excluded. Login/reload and zone/loading transitions re-evaluate the policy. CVar and map-pin refreshes wait until loading/combat ends, while tooltip filtering reads the current effective policy. Existing NPC-name limitations still apply. This preview needs owner verification in Forever; automated tests do not prove rendered hints or taint safety.
+Native `IsInInstance()` classifies the location; outdoor groups, battlegrounds, arenas and scenarios are excluded. Login/reload and zone/loading transitions re-evaluate the policy. NPC-name CVar refreshes wait until loading/combat ends, while tooltip filtering reads the current effective policy. Existing NPC-name limitations still apply. This preview needs owner verification in Forever; automated tests do not prove rendered hints or taint safety.
 
 ## Getting started
 

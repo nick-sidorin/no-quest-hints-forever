@@ -646,7 +646,7 @@ assert(instanceUI.checks[14].setting.variable=="NQH_INSTANCE_GUIDANCE")
 assert(instanceUI.checks[14]:GetChecked())
 assert(instanceUI.checks[1]:GetChecked() and instanceUI.checks[3]:GetChecked() and instanceUI.checks[4]:GetChecked(),
     "effective pause must not uncheck configured hiding preferences")
-assert(not NoQuestHintsForeverAPI.IsMapHidden() and not NoQuestHintsForeverAPI.IsTooltipHintsHidden())
+assert(NoQuestHintsForeverAPI.IsMapHidden() and not NoQuestHintsForeverAPI.IsTooltipHintsHidden())
 assert(NoQuestHintsForeverAPI.IsQuestLevelsHidden() and NoQuestHintsForeverAPI.IsSellPriceHidden())
 instanceUI.checks[14]:SetChecked(false);instanceUI.checks[14].scripts.OnClick(instanceUI.checks[14]);instanceUI.flush()
 assert(not instancePrefs.restoreGuidanceInInstances and NoQuestHintsForeverAPI.IsMapHidden())

@@ -60,9 +60,6 @@ end
 local function usesGuidancePolicy()
     return character and (character.restoreGuidanceInInstances==true or guidancePending)
 end
-local function mapHidingActive()
-    return character and character.enabled==true and not guidanceSuspended()
-end
 
 local function initialize()
     if existingInstallation == nil then
@@ -159,17 +156,9 @@ local function notifyVersionUpgrade()
     printMessage(string.format(message, version))
 end
 
-local restoreMapValues
 local function enforceMapHints()
-    if loggingOut or not character or enforcing then return end
-    if usesGuidancePolicy() and (inCombat() or guidanceLoading) then return end
+    if loggingOut or not character or character.enabled ~= true or enforcing then return end
     enforcing = true
-    if not mapHidingActive() then
-        restoreMapValues(character.original)
-        restoreMapValues(account.original)
-        enforcing = false
-        return
-    end
     for _, name in ipairs(cvars) do
         local value = getCVar(name)
         if value ~= nil then
@@ -189,7 +178,7 @@ local function enforceMapHints()
     enforcing = false
 end
 
-restoreMapValues = function(original)
+local function restoreMapValues(original)
     if not original then return end
     for name, value in pairs(original) do
         local current = getCVar(name)
@@ -202,7 +191,12 @@ end
 local function setMapHints(enabled)
     if not character then return end
     character.enabled = enabled == true
-    enforceMapHints()
+    if character.enabled then
+        enforceMapHints()
+    else
+        restoreMapValues(character.original)
+        restoreMapValues(account.original)
+    end
     -- The opted-in map pin layer is independent of Blizzard's global CVars.
     if NoQuestHintsForeverAPI and type(NoQuestHintsForeverAPI.RefreshQuestHintPins) == "function" then
         NoQuestHintsForeverAPI.RefreshQuestHintPins()
@@ -215,7 +209,6 @@ end
 local trackerFrame, trackerAlpha
 local trackerInputs = setmetatable({}, { __mode = "k" })
 local trackerHooked, trackerApplying, trackerQueued = false, false, false
-
 
 local updateTracker
 
@@ -466,10 +459,10 @@ local function setQuestNPCNamesHidden(hidden)
     updateQuestNPCNames()
 end
 
--- Only the three quest-guidance effects participate in this exception.
+-- Only quest tooltip filtering and NPC-name suppression participate in this exception.
 -- Never apply a preset, rewrite configured flags or change unrelated effects.
 local function queueGuidanceRefresh(force)
-    if not character or loggingOut or enforcing or npcNamesApplying then return end
+    if not character or loggingOut or npcNamesApplying then return end
     if not force and not guidancePending and character.restoreGuidanceInInstances~=true then return end
     guidancePending = true
     if guidanceQueued or guidanceLoading or inCombat() then return end
@@ -479,20 +472,14 @@ local function queueGuidanceRefresh(force)
         guidanceQueued = false
         if loggingOut or guidanceLoading or inCombat() then return end
         guidancePending = false
-        enforceMapHints()
         updateQuestNPCNames()
-        local currentAPI = NoQuestHintsForeverAPI
-        if currentAPI and type(currentAPI.RefreshQuestHintPins)=="function" then
-            currentAPI.RefreshQuestHintPins()
-        end
     end)
 end
 
 -- UI module attaches an OpenOptions callback after its own Lua file loads.
 local api = {}
 NoQuestHintsForeverAPI = api
-api.IsMapHidden = mapHidingActive
-api.IsMapHidingConfigured = function() return character and character.enabled==true end
+api.IsMapHidden = function() return character and character.enabled == true end
 api.IsTooltipHidingConfigured = function() return character and character.hideQuestTooltips==true end
 api.IsNPCNameHidingConfigured = function() return character and character.hideQuestNPCNames==true end
 api.IsInstanceGuidanceEnabled = function() return character and character.restoreGuidanceInInstances==true end
@@ -718,12 +705,13 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
         if not character then initialize() end
-        if usesGuidancePolicy() then
-            queueGuidanceRefresh()
-        else
+        if character.enabled == true then
             enforceMapHints()
-            updateQuestNPCNames()
+        else
+            restoreMapValues(character.original)
+            restoreMapValues(account.original)
         end
+        if usesGuidancePolicy() then queueGuidanceRefresh() else updateQuestNPCNames() end
         updateTracker()
     elseif event == "LOADING_SCREEN_ENABLED" then
         guidanceLoading = true
@@ -734,12 +722,8 @@ frame:SetScript("OnEvent", function(_, event, changed)
         worldLoaded = true
         queueAfterLoad()
     elseif event == "PLAYER_ENTERING_WORLD" then
-        if usesGuidancePolicy() then
-            queueGuidanceRefresh()
-        else
-            enforceMapHints()
-            updateQuestNPCNames()
-        end
+        enforceMapHints()
+        if usesGuidancePolicy() then queueGuidanceRefresh() else updateQuestNPCNames() end
         updateTracker()
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         queueGuidanceRefresh()
@@ -747,7 +731,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character.enabled == true then
             for _, name in ipairs(cvars) do
                 if changed:lower() == name:lower() then
-                    if usesGuidancePolicy() then queueGuidanceRefresh() else enforceMapHints() end
+                    enforceMapHints()
                     break
                 end
             end
@@ -760,7 +744,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker then queueTrackerUpdate() end
     elseif event == "SUPER_TRACKING_CHANGED" then
         -- Never reveal navigation toward a non-permitted quest.
-        if usesGuidancePolicy() then queueGuidanceRefresh() else enforceMapHints() end
+        enforceMapHints()
     elseif event == "PLAYER_REGEN_ENABLED" then
         queueGuidanceRefresh()
         updateTracker()

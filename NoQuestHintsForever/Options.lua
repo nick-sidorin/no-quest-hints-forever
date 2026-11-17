@@ -11,7 +11,7 @@ local category
 
 local controls = {
     { "NQH_HIDE_MAP_HINTS", "MAP_HINTS", "MAP_HINTS_DESC",
-      "IsMapHidden", "SetMapHidden", "IsMapHidingConfigured" },
+      "IsMapHidden", "SetMapHidden" },
     { "NQH_HIDE_TRACKER", "TRACKER", "TRACKER_DESC",
       "IsTrackerHidden", "SetTrackerHidden" },
     { "NQH_HIDE_QUEST_TOOLTIPS", "TOOLTIP_HINTS", "TOOLTIP_HINTS_DESC",

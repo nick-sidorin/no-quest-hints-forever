@@ -66,7 +66,9 @@ local function session(char, account, location, values)
     end
     event('ADDON_LOADED','NoQuestHintsForever');event('PLAYER_LOGIN');flush()
     if NoQuestHintsForeverChar.restoreGuidanceInInstances then
-        assert(#writes==0,'instance policy must not write before loading completes')
+        for _,write in ipairs(writes) do
+            assert(write[1]~='UnitNameFriendlySpecialNPCName','NPC policy must wait for loading')
+        end
     end
     event('LOADING_SCREEN_DISABLED');flush()
     return {api=api,char=NoQuestHintsForeverChar,account=NoQuestHintsForeverAccount,values=values,
@@ -85,7 +87,7 @@ local function profile(policy)
         restoreGuidanceInInstances=policy,onboardingComplete=true,revealedQuests={[123]=true}}
 end
 local function restricted(s,want)
-    assert(s.api.IsMapHidden()==want)
+    assert(s.api.IsMapHidden()==true,'instance policy changed map hiding')
     assert(s.api.IsTooltipHintsHidden()==want)
     assert(s.api.IsQuestNPCNamesHidden()==want)
     for _,name in ipairs({'IsTrackerHidden','IsSellPriceHidden','IsAuctionSellPriceHidden',
@@ -94,7 +96,7 @@ local function restricted(s,want)
         assert(s.api[name]()==true,'unrelated restriction changed: '..name)
     end
     assert(s.char.enabled and s.char.hideQuestTooltips and s.char.hideQuestNPCNames)
-    assert(s.api.IsMapHidingConfigured() and s.api.IsTooltipHidingConfigured() and s.api.IsNPCNameHidingConfigured())
+    assert(s.api.IsTooltipHidingConfigured() and s.api.IsNPCNameHidingConfigured())
     assert(s.char.revealedQuests[123],'instance policy changed quest permissions')
 end
 -- OFF is inert even in an instance, and outdoor parties/raids are not instances.
@@ -111,13 +113,14 @@ s.where.inside=true;s.where.kind='party'
 s.event('PLAYER_ENTERING_WORLD');s.event('ZONE_CHANGED_NEW_AREA')
 assert(s.writes()==before and s.pins()==pins,'location callback must defer game-side effects')
 s.flush();restricted(s,false)
-assert(s.values.questPOI=='1' and s.values.showInGameNavigation=='1')
+assert(s.values.questPOI=='0' and s.values.showInGameNavigation=='0')
+assert(s.char.original.questPOI=='1','map baseline lost during exception')
 assert(s.values.UnitNameFriendlySpecialNPCName=='1' and not s.tooltip())
 assert(s.unrelated()==unrelated,'instance change refreshed an unrelated feature')
-assert(s.pins()==pins+1)
+assert(s.pins()==pins)
 -- Repeated signals coalesce without erasing the saved flags.
 s.event('ZONE_CHANGED_NEW_AREA');s.event('ZONE_CHANGED_NEW_AREA');s.flush()
-assert(s.pins()==pins+2)
+assert(s.pins()==pins)
 s.where.inside=false;s.where.kind='none';s.event('PLAYER_ENTERING_WORLD');s.flush()
 restricted(s,true);assert(s.values.questPOI=='0' and s.tooltip()==true)
 -- Only party/raid instance types are covered, not battlegrounds/scenarios or map labels.
@@ -138,15 +141,22 @@ s=session(profile(true),{},nil,{questPOI='0',UnitNameFriendlySpecialNPCName='0'}
 s.where.inside=true;s.where.kind='party';s.event('ZONE_CHANGED_NEW_AREA');s.flush()
 assert(s.values.questPOI=='0' and s.values.UnitNameFriendlySpecialNPCName=='0')
 -- Preserve failed restoration backups; a later native CVar signal retries recovery.
-s=session(profile(true));s.blocked.questPOI=true
+s=session(profile(true));s.blocked.UnitNameFriendlySpecialNPCName=true
 s.where.inside=true;s.where.kind='raid';s.event('ZONE_CHANGED_NEW_AREA');s.flush()
-assert(s.char.original.questPOI=='1' and s.values.questPOI=='0')
-s.blocked.questPOI=nil;s.event('CVAR_UPDATE','questPOI');s.flush()
-assert(s.values.questPOI=='1' and s.char.original.questPOI==nil)
+assert(s.account.npcNameOriginal=='1' and s.values.UnitNameFriendlySpecialNPCName=='0')
+s.blocked.UnitNameFriendlySpecialNPCName=nil;s.event('CVAR_UPDATE','UnitNameFriendlySpecialNPCName');s.flush()
+assert(s.values.UnitNameFriendlySpecialNPCName=='1' and s.account.npcNameOriginal==nil)
+-- Native map changes and manual navigation permissions retain ordinary enforcement.
+s.values.questPOI='1';s.event('CVAR_UPDATE','questPOI');assert(s.values.questPOI=='0')
+s.api.IsQuestNavigationAllowed=function() return true end
+s.event('SUPER_TRACKING_CHANGED');assert(s.values.showInGameNavigation=='1')
+s.api.IsQuestNavigationAllowed=function() return false end
+s.event('SUPER_TRACKING_CHANGED');assert(s.values.showInGameNavigation=='0')
 -- Login/reload inside an instance also recovers suppression from a prior session.
 s=session(profile(true),{npcNameOriginal='1',original={showInGameNavigation='1'}},
     {inside=true,kind='party'}, {UnitNameFriendlySpecialNPCName='0',showInGameNavigation='0'})
-restricted(s,false);assert(s.values.UnitNameFriendlySpecialNPCName=='1' and s.values.showInGameNavigation=='1')
+restricted(s,false);assert(s.values.UnitNameFriendlySpecialNPCName=='1' and s.values.showInGameNavigation=='0')
+assert(s.account.original.showInGameNavigation=='1')
 s=session(s.char,s.account,{inside=true,kind='party'},s.values)
 restricted(s,false);assert(s.char.restoreGuidanceInInstances)
 s.event('PLAYER_LOGOUT');assert(s.char.restoreGuidanceInInstances and s.char.enabled)
@@ -167,16 +177,16 @@ s.event('LOADING_SCREEN_ENABLED');s.where.inside=true;s.where.kind='party'
 s.event('PLAYER_ENTERING_WORLD');s.event('ZONE_CHANGED_NEW_AREA');s.flush()
 assert(s.writes()==before,'loading callback changed CVars')
 s.event('LOADING_SCREEN_DISABLED');s.flush()
-assert(s.values.questPOI=='1')
+assert(s.values.questPOI=='0' and s.values.UnitNameFriendlySpecialNPCName=='1')
 s.where.inside=false;s.event('ZONE_CHANGED_NEW_AREA');s.flush()
 s.combat(true);before=s.writes();s.where.inside=true;s.where.kind='raid'
 s.event('PLAYER_ENTERING_WORLD');s.flush()
 assert(s.writes()==before,'combat callback changed CVars')
 s.combat(false);s.event('PLAYER_REGEN_ENABLED');s.flush();restricted(s,false)
 s.combat(true);before=s.writes();s.api.SetInstanceGuidanceEnabled(false);s.flush()
-s.event('CVAR_UPDATE','questPOI');assert(s.writes()==before)
+s.event('CVAR_UPDATE','UnitNameFriendlySpecialNPCName');assert(s.writes()==before)
 s.combat(false);s.event('PLAYER_REGEN_ENABLED');s.flush();restricted(s,true)
 -- A stale queued callback cannot reapply after logout.
 s=session(profile(true));s.where.inside=true;s.where.kind='party';s.event('ZONE_CHANGED_NEW_AREA')
 s.event('PLAYER_LOGOUT');before=s.writes();s.flush();assert(s.writes()==before)
-io.write('PASS: dungeon/raid guidance exception, exactly three effects, native baselines, deferred combat/loading, reload and saved choices\n')
+io.write('PASS: dungeon/raid guidance exception, only tooltips and NPC names; unchanged map/navigation, native baselines, deferred combat/loading, reload and saved choices\n')

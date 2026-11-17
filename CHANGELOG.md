@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only map/navigation hints, quest tooltip lines and quest/special NPC names in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer CVar/pin work during combat/loading. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
+- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only quest tooltip lines and quest/special NPC names in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer NPC-name CVar work during combat/loading. Map markers, navigation and manual Show hint behavior remain unchanged. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
 
 ## [1.7.0] — 2026-11-12
 
