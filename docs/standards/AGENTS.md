@@ -1,6 +1,6 @@
 # Shared AGENTS.md — WoW addon development
 
-Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; project-specific behavior belongs in the consuming repository's root `AGENTS.md` and `PROJECT_CONTEXT.md`.
+Standards version: **0.1.3**, 2026-11-18. Portable contributor instructions; project-specific behavior belongs in the consuming repository's root `AGENTS.md` and `PROJECT_CONTEXT.md`.
 
 ## Working agreement
 
@@ -16,6 +16,8 @@ Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; pro
 - Forever shares APIs with Retail but is not guaranteed compatible with Retail or Classic Era. An interface number, function name, registered XML template or exported mixin is not proof of permission or behavior.
 - Research the matching client's UI source/API, then verify capabilities in that client. Retail documentation and other addons are useful leads; identify the branch/build and respect source licenses when reusing code.
 - Separate saved state, effects, UI, localization and packaging. Keep dependencies explicit and avoid unnecessary runtime libraries. Initialize optional integrations only when needed.
+- Keep independent views of the same data synchronized through a shared model and change notifications; hiding a dashboard must not freeze an otherwise visible shortcut. Reuse the renderer/palette and refresh on relevant activity, configuration, reset and context changes. For addon-owned calendar rollover, prefer one cancellable deadline over continuous polling; reject stale callbacks after hide/rebuild.
+- Derive numeric progress and completion from the same raw getter/threshold. Clamp or round presentation without changing authoritative totals or inferring completion from rounded text. Keep historical earned state separate from a current value that can later fall, such as a streak.
 - Make disabled features inert where practical. Installing hooks, creating native providers or filling shared caches can have side effects even when the checkbox is OFF.
 - Account for load-on-demand Blizzard UI, missing APIs, nil pooled entries, reused/reparented frames, combat, logout and reload. Hook once per object and reconcile reuse without leaking handlers or state.
 - Prefer events and coalesced deferred refreshes to perpetual polling. If polling is necessary, limit it to the visible relevant view, use an interval and stop it when hidden, unloading or in combat where applicable.
@@ -32,9 +34,15 @@ Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; pro
 
 ## Blizzard-native visual design
 
+- When the owner asks for Blizzard's visual style or native behavior, first search the matching client's API documentation and UI source for an existing component and supported API. Make this investigation the starting point before implementing a custom visual approximation.
+- Prefer reusing a complete permitted widget/template and its public documented API. Inspect its children, mixins, initialization, inherited scripts, input handling and loading context so reuse preserves the component's authored appearance and lifecycle. Use an existing suitable API instead of duplicating its behavior through guessed internals.
+- Check protected/forbidden status, real-ID requirements, shared caches/pools and load-on-demand dependencies before instantiation. If the complete component cannot safely serve addon-owned data, use ordinary addon-owned frames with its native artwork, authored geometry and draw layers. Build custom visuals only where suitable reusable pieces are unavailable or the product needs an extension; record why that fallback is necessary.
+- Record the chosen component/API, source branch/file or documentation reference, and any fallback reason in the project's UI research notes. Distinguish source/API evidence from actual target-client verification.
 - Build settings in the client's native AddOns settings category when supported. A dedicated feature window can coexist with native settings; do not duplicate settings state across two interfaces.
 - Prefer native widgets, font objects, atlases, masks, borders and button textures available in the target client. Inspect authored atlas dimensions and maintain aspect ratios. Use the correct large-button art or three-slice/nine-slice construction instead of stretching a small button.
 - Game art availability does not make every XML template safe to inherit. Glue/login UI templates may not exist in the loaded game UI. Keep a visually consistent, capability-checked fallback without duplicate borders.
+- When switching between texture sheets and atlases, reset the appropriate texture coordinates explicitly; preserve authored dimensions and draw layers. For missing/misaligned labels, inspect text/visibility, parent frame level, draw layer and anchor bounds. Atlas rectangles can include transparent padding, so they need not be suitable content anchors.
+- Navigate and retain selection by stable item IDs across sorting/reused rows, not captured row indices. Reapply all data-dependent visibility, tint and shadow state on rebind; preserve manual scroll during ordinary refresh. Notifications should open the item currently displayed and dismiss only the intended queue entry; clean up only tooltips owned by that widget.
 - Use a clear visual hierarchy, aligned margins and button groups. Keep explanatory prose concise. Avoid repeating a selection in a card, status line and CTA unless each has a distinct purpose.
 - Equal-rank options use the same typography and indentation. Prefer a consistent action direction within a group, such as all “Hide …” or all “Show …”. Use a dependent child only when the underlying setting really depends on its parent.
 - Put frequent/high-level actions before detailed options; support actions can go last. Make clickable actions recognizable as buttons, including secondary actions.
@@ -54,10 +62,19 @@ Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; pro
 - Cleanup cannot be guaranteed after a crash, force quit or once the addon has been disabled. Explain restoration accurately and offer a deliberate recovery action if the addon changes persistent game settings.
 - Add a support button with a copyable project/Issues URL and localized instructions. Do not promise browser launch or automatic report submission from the addon.
 
+## Context-dependent effects and native widget lifecycle
+
+- Keep configured preferences separate from effective behavior. A temporary context exception must not rewrite SavedVariables, apply a preset or erase per-item permissions. Native checkboxes should display the saved choice; effect consumers can use an effective accessor. Specify the exact participating effects and verify that unrelated effects/refreshers remain unchanged.
+- Classify context through the matching client's native API rather than group membership or localized zone names. Handle missing, throwing and unknown results conservatively according to the feature contract. Coalesce transition work, recheck loading/combat/logout in the deferred callback, and preserve manual changes made during the exception. Defaults, preset and explicit-reset behavior require separate product decisions.
+- Reuse the existing native timer/data lifecycle when appropriate. A reload must recover authoritative remaining time; do not restart a saved duration or persist session-relative uptime as a durable deadline. Missing pre-acceptance metadata does not prove a quest is untimed; avoid inventing warnings from guessed text/type.
+- When one child must remain visible inside a transparent native parent, inspect supported alpha-inheritance and scoped input exemptions before reparenting or duplicating it. Preserve native parentage, scripts, pools, tooltips and clicks where possible; restore exact modified state. A permitted cosmetic change is not permission to invoke its native updater/layout/button callbacks.
+- For native HUD hiding, account for Edit Mode and the latest native visibility intent. Restore editability while editing and reconcile after exit, deferring protected changes outside combat. Inspect actual target-client wrappers: ordinary-looking Show/Hide calls may also mutate layout state. Do not copy a build-specific internal-method workaround to another widget/client without inspecting it.
+
 ## Taint, protected actions and native gamepad
 
 - Do not replace global return-value APIs or protected binding/focus functions to force compatibility. Prefer narrowly scoped hooks and addon-owned UI. Avoid mutating native shared caches, shared widget pools and global navigation registries without verified permission.
 - A native helper may write into a cache later consumed by secure UI. The eventual blocked action can be far from the initiating addon call. Deferring a call or wrapping it in `pcall` does not make it secure or remove taint.
+- A native layout notification can synchronously dispatch into action buttons and shared anchor tables under addon execution, causing later secret-value/cooldown or unit-frame errors. Calling it once, outside combat or after a timer does not make that route safe. Accept documented delayed native layout where necessary; do not simulate abilities, toggle gameplay state or guess pixel positions to force refresh.
 - Preserve inherited scripts when a permitted template requires them; `SetScript` can erase native behavior. `HookScript` is useful but is not proof of taint safety or permission to instantiate the template.
 - **Confirmed Forever limitation:** `GamepadSecureBaseDialogTemplate` is registered but addon `CreateFrame` inheritance fails with `Cannot create a forbidden frame from a tainted context`, in both mouse and Gamepad Beta modes. Do not use it for addon dialogs. This does not imply every template or every client has the same restriction.
 - Do not call the native gamepad focus/binding manager directly as an unverified substitute. Ordinary addon-frame navigation requires its own validated design. Do not advertise native controller support merely because mouse interaction works with Gamepad Beta enabled.
@@ -81,6 +98,7 @@ Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; pro
 
 - Use a branch and PR for changes to protected `main`; default merge strategy is squash. Never bypass protections or force-push main. Respect explicit preview/merge/release scope and existing owner authorization.
 - Verify the exact final PR head's CI. Independently verify whether branch protection actually requires the passing check; a green check and an enforced check are different facts. Do not silently change repository protection policy.
+- Distinguish runner/tool-installation failures from failing project gates before retrying. Pin required build tools and, where stability needs it, the runner image; review upgrades deliberately. Use bounded transport retries and require the same pinned digest for every allowed source mirror before extraction/execution. Do not bypass a checksum mismatch, weaken TLS or mark skipped tests as passing.
 - Keep experiments out of a stable release. Reconcile parallel changes before merging and preserve the accepted rollback of abandoned work.
 - Treat the TOC as the ordered source-code manifest. The packager must also include XML-referenced includes/scripts and an explicit inventory of runtime assets, such as textures/fonts, plus the license as appropriate. A Lua-only or TOC-only ZIP is insufficient for addons with artwork.
 - Validate archive paths, missing/duplicate entries, version consistency, source bytes, corrupt members and exactly one intended addon root. Reject absolute paths and traversal. Exclude tests, internal instructions, credentials and unrelated repository files.
@@ -89,12 +107,14 @@ Standards version: **0.1.0**, 2026-11-10. Portable contributor instructions; pro
 - A publisher should rerun the final gates, refuse accidental tag reuse and build the installable archive from the exact tagged commit. Tag creation, release uploads and retry behavior must be explicit; inspect partial runs before retrying.
 - Use the existing CurseForge integration/webhook if configured. Its source packager can build independently of the GitHub ZIP: validate `.pkgmeta` exclusions, folder moves and runtime assets separately. Do not copy another addon's `.pkgmeta` paths blindly or add a second uploader unnecessarily.
 - Confirm the GitHub release is published, its tag targets the intended commit and its uploaded asset matches the verified build. Check CurseForge separately: GitHub success is not proof the webhook/packager/moderation finished. Report pending visibility without inventing completion.
+- For an authorized emergency rollback, publish a higher version containing a known-good runtime so installed clients can update. Keep existing tags fixed, retain user preferences/recovery data, and compare every packaged runtime file against the chosen stable revision with only explicit version/metadata differences. Keep unverified fixes separate. Withdrawing a GitHub release does not withdraw a CurseForge file; verify each distribution independently and document any required full client restart.
 - Every release handoff includes version, important changes/limitations, direct installable ZIP, release page, concise verification evidence and CurseForge publication status. Include copy-ready **full description Markdown**, **short description**, and the project's direct **description editor URL**, plus the public project URL. Do not substitute the repository README for listing copy.
 
 ## Upgrade notices and new features
 
 - Read the installed version from actual addon metadata. Keep the highest seen version account-wide where appropriate; avoid duplicate notices on reloads, alternate characters and downgrades. Do not consume notice state before world readiness or after logout starts.
 - Deliver a short localized notice after loading, when the player can see it. Never open settings automatically just because the version changed.
+- If a feature was withdrawn and later reintroduced, explicitly decide its upgrade-notice metadata for users returning from the rollback. Preserve historical introduction records and saved choices; do not infer that the feature is already present from a previously seen version alone.
 - Track feature introductions explicitly by shipping version and stable setting IDs. For skipped versions, scan the full `(previous, installed]` interval. Fix-only updates use neutral “updated” wording; do not infer new features from a version number.
 - Use supported native per-setting “New” hooks on addon-owned rows if available. Keep seen/pending state owned by the addon and mark a setting seen when the actual row appears. Never write custom IDs into Blizzard's shared feature/new-setting registries.
 - On clients lacking the native badge API, preserve working controls without claiming badges are available. A first install need not mark every setting as a new upgrade.
