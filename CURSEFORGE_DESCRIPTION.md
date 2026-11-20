@@ -21,18 +21,19 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 ## ✨ Features at a Glance
 
-Thirteen independent, optional controls:
+Fourteen independent, optional controls:
 
 - 🌄 **Hide Minimap** — Explore without the corner map; keep the world map available.
 - 📊 **Hide Experience Bar** — Clear the XP bar while keeping reputation bars.
-- 🗺️ **Hide Quest Map Hints** — Remove quest markers, blue objective areas and navigation guidance.
+- 🗺️ **Hide Quest Objectives** — Remove objective areas, markers and navigation for unfinished quests.
+- ❔ **Hide Quest Turn-in Locations** — Independently hide or retain world-map ? markers for quests ready to turn in.
 - ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters from NPC and object tooltips.
 - 🎯 **Hide Quest NPC Names** — Hide floating names that reveal quest targets.
 - 💰 **Hide Item Sell Prices** — Hide vendor values outside trading and at auction with two independent options.
 - 🔕 **Hide Quest Progress Popups** — Remove yellow objective updates while keeping other game messages.
-- 🔢 **Hide Quest Levels** — Remove numeric level prefixes from journal and tracker titles.
+- 🔢 **Hide Quest Levels** — Remove numeric level prefixes from journal/tracker titles and addon map-marker tooltips.
 - 🎨 **Hide Difficulty Colors** — Show quest titles in ordinary yellow instead of difficulty colors.
 - 🎒 **Hide Quest Item Borders** — Remove yellow quest-item borders from Blizzard's bags.
 
@@ -55,12 +56,22 @@ Select **Hide hint** when you no longer need help. You can reveal multiple quest
 
 **No external quest database. Just Blizzard's own guidance, under your control.**
 
+## ❔ Keep Turn-in Locations, Hide Objectives
+
+Enable **Hide quest objectives** and leave **Hide quest turn-in locations** OFF to explore without objective markers while still seeing where to hand in completed quests. Enable both to hide both classes, or disable both for normal Blizzard behavior.
+
+**Show hint** overrides the hiding rules for that individual quest. **Hide hint** returns it to your global choices. Existing map-hiding preferences migrate without changing what is visible.
+
+Map-marker tooltips respect hidden levels and difficulty colors immediately. Hover uses Blizzard’s original inner/outer glow without rebuilding or scrolling your quest list; click behavior remains available.
+
+**Minimap limitation:** Native hints cannot be restored for individual quests. Mixed modes keep the common minimap hint layer suppressed; this feature does not control native questgiver icons on the minimap.
+
 ## 🌍 Choose Your Adventure
 
 After the loading screen finishes, choose a playstyle on first setup, or reopen the chooser with `/nqh welcome`:
 
 - **As in Blizzard:** keep your current game settings; nothing is hidden.
-- **Immersion:** hide the five forms of quest guidance.
+- **Immersion:** hide quest guidance, including both map objectives and turn-in locations.
 - **Full immersion:** everything in Immersion, plus hidden numeric quest levels and item sell prices outside trading.
 
 Select a card and confirm to apply it. Customize any option afterward. Difficulty colors, auction prices and quest-item borders remain visible in every preset unless you hide them manually.
@@ -110,7 +121,7 @@ Upgrade messages appear after loading and distinguish new features from fixes. N
 - Some special NPC names may also be hidden because Blizzard groups them with quest NPC names.
 - Custom bag borders and price overlays from other addons remain under those addons' control.
 
-**Update 1.7.0:** Experience-bar and minimap hiding return after the rollback, with addon-triggered action-bar layout removed. Spacing follows the game’s next native layout update, so a temporary XP gap can remain. Both controls are OFF in every preset; existing saved choices are retained. Earlier waypoint report: [Issue #3](https://github.com/nick-sidorin/no-quest-hints-forever/issues/3).
+**Update 1.8.0:** Separate objective and turn-in hiding, preserved existing choices, and native marker hover glow with level-aware tooltips and no hover-triggered quest-list flicker.
 
 **[Report a Bug or Suggest a Feature](https://github.com/nick-sidorin/no-quest-hints-forever/issues)**
 

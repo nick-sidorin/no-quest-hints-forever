@@ -11,7 +11,9 @@ local queued = {}
 
 local function shouldShow(questID)
     return type(api.IsMapHidden) == "function" and api.IsMapHidden() == true
-        and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)
+        and ((type(api.IsQuestMapHintAllowed) == "function" and api.IsQuestMapHintAllowed(questID))
+            or (type(api.IsQuestMapHintAllowed) ~= "function"
+                and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)))
 end
 
 -- Own the native-template widgets instead of borrowing Blizzard's pools.

@@ -30,6 +30,49 @@ local function isRevealed(id)
     return list ~= nil and validQuestID(id) and list[id] == true or false
 end
 
+-- Use live native quest state, never Blizzard's shared Lua QuestCache.
+function api.IsQuestReadyForTurnIn(id)
+    local log = C_QuestLog or {}
+    local fn = log.ReadyForTurnIn or log.IsComplete
+    if type(fn) ~= "function" then return false end
+    local ok, ready = pcall(fn, id)
+    return ok and ready == true
+end
+
+function api.IsQuestMapHintAllowed(id)
+    if not validQuestID(id) then return false end
+    if isRevealed(id) then return true end
+    if api.IsQuestReadyForTurnIn(id) then
+        return type(api.IsQuestTurnInsHidden) == "function" and not api.IsQuestTurnInsHidden()
+    end
+    return type(api.IsQuestObjectivesHidden) == "function" and not api.IsQuestObjectivesHidden()
+end
+
+function api.IsQuestAreaAllowed(id)
+    return isRevealed(id) or (not api.IsQuestReadyForTurnIn(id)
+        and type(api.IsQuestObjectivesHidden) == "function" and not api.IsQuestObjectivesHidden())
+end
+
+function api.GetMapGuidanceQuestIDs()
+    local ids = {}
+    for id, enabled in pairs(allowed() or {}) do
+        if enabled and validQuestID(id) then ids[id] = true end
+    end
+    local log = C_QuestLog or {}
+    if type(log.GetNumQuestLogEntries) == "function" and type(log.GetInfo) == "function" then
+        local ok, count = pcall(log.GetNumQuestLogEntries)
+        if ok and type(count) == "number" then
+            for index = 1, count do
+                local success, info = pcall(log.GetInfo, index)
+                if success and type(info) == "table" and not info.isHeader and validQuestID(info.questID) then
+                    ids[info.questID] = true
+                end
+            end
+        end
+    end
+    return ids
+end
+
 local function refreshMap()
     installProvider()
     if provider and provider.pin and type(provider.pin.Refresh) == "function" then
@@ -130,7 +173,7 @@ function api.IsQuestNavigationAllowed()
         if ok and active ~= true then return false end
     end
     local ok, id = pcall(C_SuperTrack.GetSuperTrackedQuestID)
-    return ok and isRevealed(id) or false
+    return ok and api.IsQuestMapHintAllowed(id) or false
 end
 
 api.IsQuestRevealed = isRevealed
@@ -276,7 +319,7 @@ local function installJournal()
 end
 
 -- Populate our separate XML QuestPOIFrame with Blizzard's own QuestBlob
--- implementation. Only its Refresh policy differs: draw whitelisted IDs
+-- implementation. Only its Refresh policy differs: draw permitted IDs
 -- even when questPOI=0. All shapes and artwork come from the client.
 local function initializeNativePin()
     if pinMixinReady then return true end
@@ -308,10 +351,9 @@ local function initializeNativePin()
     function NQHQuestBlobPinMixin:Refresh()
         self:DrawNone()
         if not self.mapAllowsBlobs or api.IsMapHidden() ~= true then return end
-        local list = allowed()
-        if not list then return end
-        for id, enabled in pairs(list) do
-            if enabled and validQuestID(id) then
+        local list = api.GetMapGuidanceQuestIDs()
+        for id in pairs(list) do
+            if api.IsQuestAreaAllowed(id) then
                 -- The same native filtering Blizzard uses for its own blobs.
                 -- A quest without POI shape data simply draws nothing.
                 self:TryDrawQuest(id)
@@ -339,13 +381,14 @@ installProvider = function()
     end
     -- Even an empty QuestPOIFrame participates in the native map lifecycle.
     -- Do not create one until selective hint rendering is actually needed.
-    if not hasRevealedQuest or not initializeNativePin() then return end
+    local showObjectives = type(api.IsQuestObjectivesHidden) == "function" and not api.IsQuestObjectivesHidden()
+    if (not hasRevealedQuest and not showObjectives) or not initializeNativePin() then return end
     if type(MapCanvasDataProviderMixin) ~= "table"
         or not WorldMapFrame or type(WorldMapFrame.AddDataProvider) ~= "function" then return end
 
     local candidate = CreateFromMixins(MapCanvasDataProviderMixin)
     -- Blizzard's native QuestBlobPinMixin:TryDrawQuest() calls this method.
-    -- We explicitly select only whitelisted quest IDs, including world quests.
+    -- We select permitted quest IDs from native journal data and manual reveals.
     function candidate:IsShowingWorldQuests() return true end
     function candidate:OnAdded(map)
         MapCanvasDataProviderMixin.OnAdded(self, map)
