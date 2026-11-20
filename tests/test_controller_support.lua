@@ -43,6 +43,7 @@ C_QuestLog={
 }
 assert(loadfile("NoQuestHintsForever/ControllerSupport.lua"))()
 local api=NoQuestHintsForeverAPI
+api.SetQuestMapPinHover=function(pin, shown) pin.privateHover=shown end
 assert(api.IsNativeGamepadUI(),"native gamepad mode must be independent of the last input device")
 local function pin(id,px,py)
     local p={id=id,x=px,y=py,shown=true}
@@ -72,9 +73,11 @@ local function event(e)
     for _,f in ipairs(frames) do if f.events[e] then f.scripts.OnEvent(f,e) end end
 end
 tick()
+assert(a.privateHover==true, "controller hover did not enable owned native glow")
 assert(#tooltips==1 and tooltips[1].owner==a and tooltips[1].text=="Quest 11")
 assert(tooltips[1].lines[1]=="Objective 0/1" and #tooltips[1].lines==1)
-x=106; tick();assert(tooltips[1].owner==b,"nearest private pin was not selected")
+x=106; tick();assert(not a.privateHover and b.privateHover, "controller hover leaked glow")
+assert(tooltips[1].owner==b,"nearest private pin was not selected")
 b.id=11;tick();assert(tooltips[1].text=="Quest 11","pooled quest reuse retained stale tooltip")
 x=500;tick();assert(not tooltips[1].shown)
 x=100;SoftCursor.shown=false;tick();assert(not tooltips[1].shown)

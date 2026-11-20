@@ -19,7 +19,21 @@ local function run(db, ready, initialHidden)
     C_QuestInfoSystem={GetQuestClassification=function(id) return "normal" end}
     function map:AcquirePin(template)
         assert(template=="NQHQuestMarkerPinTemplate")
-        local pin={Display={ClearAllPoints=function() end,SetPoint=function() end}}
+        local pin={Display={ClearAllPoints=function() end,SetPoint=function() end},scripts={}}
+        -- Model an XML-captured native hover, not only method lookup.
+        pin.scripts.OnEnter=function() error("XML entry rebuilt journal") end
+        pin.scripts.OnLeave=function() error("XML leave rebuilt journal") end
+        local click=function() map.clicked=true end
+        pin.scripts.OnClick=click
+        function pin:SetScript(name,fn) self.scripts[name]=fn end
+        local function region()
+            local r={shown=false}
+            function r:IsShown() return self.shown end
+            function r:SetShown(value) self.shown=value end
+            return r
+        end
+        pin.HighlightTexture=region();pin.LinkGlow=region()
+        pin.Glow=region();pin.Glow.shown=true -- selected glow is independent
         function pin:SetQuestID(id) self.id=id end
         function pin:GetQuestID() return self.id end
         function pin:UseFrameLevelType(kind,offset) self.level=kind end
@@ -28,8 +42,8 @@ local function run(db, ready, initialHidden)
         function pin:UpdateButtonStyle() assert(self:GetQuestClassification()=="normal") end
         function pin:EvaluateManagedHighlight() end
         function pin:SetPosition(x,y) self.x,self.y=x,y end
-        function pin:OnMouseEnter() map.enters=map.enters+1;map.tooltipRenders=map.tooltipRenders+1 end
-        function pin:OnMouseLeave() map.leaves=map.leaves+1 end
+        function pin:OnMouseEnter() error("native entry rebuilt journal") end
+        function pin:OnMouseLeave() error("native leave rebuilt journal") end
         pin.UpdateTooltip=pin.OnMouseEnter
         self.pins[#self.pins+1]=pin
         return pin
@@ -68,6 +82,8 @@ local function run(db, ready, initialHidden)
         IsMapHidden=function() return hidden end,
         IsQuestRevealed=function(id) return db.revealedQuests and db.revealedQuests[id]==true end,
         GuardQuestMapPin=function(pin,interactive) assert(interactive==true);pin.controllerGuard=true end,
+        ShowQuestMapTooltip=function(pin) map.enters=map.enters+1;map.tooltipRenders=map.tooltipRenders+1 end,
+        HideQuestMapTooltip=function(pin) map.leaves=map.leaves+1 end,
     }
     assert(loadfile("NoQuestHintsForever/QuestMarkers.lua"))()
     local api=NoQuestHintsForeverAPI
@@ -89,12 +105,25 @@ assert(#s.map.pins==3 and s.map.pins[1].id==14 and s.map.pins[2].id==15
 assert(s.map.pins[2].style=="turnin","turn-in style lost")
 assert(s.map.pins[3].waypoint==true)
 local hovered=s.map.pins[2]
-hovered:OnMouseEnter()
+hovered.scripts.OnEnter(hovered)
+assert(hovered.HighlightTexture.shown and hovered.LinkGlow.shown, "native hover regions missing")
+hovered.scripts.OnEnter(hovered) -- repeated entry must not overwrite original visibility
+hovered.scripts.OnLeave(hovered)
+assert(not hovered.HighlightTexture.shown and not hovered.LinkGlow.shown and hovered.Glow.shown,
+    "native hover cleanup changed selected glow or leaked hover")
+-- A preexisting native highlight must survive the temporary hover.
+hovered.LinkGlow.shown=true
+hovered.scripts.OnEnter(hovered);hovered.scripts.OnLeave(hovered)
+assert(hovered.LinkGlow.shown and not hovered.HighlightTexture.shown)
+hovered.LinkGlow.shown=false
+local mapEnters,mapLeaves=s.map.enters,s.map.leaves
+hovered.scripts.OnEnter(hovered)
+assert(hovered.scripts.OnClick, "mouse click script was removed")
 for _=1,20 do if hovered.UpdateTooltip then hovered:UpdateTooltip() end end
-assert(s.map.enters==1, "stationary map tooltip repeatedly re-entered and rebuilt journal")
-hovered:OnMouseLeave();hovered:OnMouseEnter()
-assert(s.map.enters==2 and s.map.leaves==1 and s.map.tooltipRenders==2,
-    "real hover transitions and native tooltip content must remain")
+assert(s.map.enters==mapEnters+1, "stationary map tooltip repeatedly re-entered and rebuilt journal")
+hovered.scripts.OnLeave(hovered);hovered.scripts.OnEnter(hovered)
+assert(s.map.enters==mapEnters+2 and s.map.leaves==mapLeaves+1 and s.map.tooltipRenders==mapEnters+2,
+    "private hover transitions must preserve tooltip re-entry without native journal dispatch")
 local releases=s.map.releases
 for _=1,20 do s.event("QUEST_LOG_UPDATE");s.event("QUEST_POI_UPDATE") end
 assert(s.map.pins[2]==hovered and s.map.releases==releases,

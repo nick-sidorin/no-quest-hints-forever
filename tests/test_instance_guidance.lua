@@ -50,12 +50,22 @@ local function session(char, account, location, values)
     -- Unrelated effect entry points must never be called by a policy refresh.
     local unrelated=0
     for _,name in ipairs({'RefreshHUDVisibility','RefreshQuestTimers','RefreshQuestPresentation',
-        'RefreshQuestItemHighlight','RefreshQuestProgressMessages'}) do
+        'RefreshQuestItemHighlight'}) do
         api[name]=function() unrelated=unrelated+1 end
     end
     Enum={TooltipDataLineType={QuestTitle=1,QuestObjective=2,QuestPlayer=3},TooltipDataType={Unit=1,Object=2,Item=3}}
     TooltipDataProcessor={AddLinePreCall=function(kind,fn) callbacks[kind]=fn end}
     assert(loadfile('NoQuestHintsForever/QuestTooltips.lua'))()
+    LE_GAME_ERR_QUEST_ADD_ITEM_SII=101
+    LE_GAME_ERR_QUEST_ADD_KILL_SII=102
+    BLACK_LISTED_MESSAGE_TYPES={[102]=true} -- an existing player/addon preference
+    local progress={[101]=true,[102]=false}
+    UIErrorsFrame={SetMessageTypeEnabled=function(_,kind,enabled)
+        assert(kind==101 or kind==102,'unrelated error/warning type changed')
+        progress[kind]=enabled
+        BLACK_LISTED_MESSAGE_TYPES[kind]=not enabled
+    end}
+    assert(loadfile('NoQuestHintsForever/QuestProgressMessages.lua'))()
     local function flush()
         local n=0
         while #pending>0 do
@@ -72,7 +82,7 @@ local function session(char, account, location, values)
     end
     event('LOADING_SCREEN_DISABLED');flush()
     return {api=api,char=NoQuestHintsForeverChar,account=NoQuestHintsForeverAccount,values=values,
-        where=location,event=event,flush=flush,blocked=blocked,
+        where=location,event=event,flush=flush,blocked=blocked,progress=progress,
         combat=function(value) combat=value end,
         writes=function() return #writes end,
         pins=function() return pinRefreshes end,
@@ -90,13 +100,16 @@ local function restricted(s,want)
     assert(s.api.IsMapHidden()==true,'instance policy changed map hiding')
     assert(s.api.IsTooltipHintsHidden()==want)
     assert(s.api.IsQuestNPCNamesHidden()==want)
+    assert(s.api.IsQuestProgressHidden()==want)
+    assert(s.progress[101]==not want,'native progress message policy was not applied')
+    assert(s.progress[102]==false,'personal disabled message type was forced on')
     for _,name in ipairs({'IsTrackerHidden','IsSellPriceHidden','IsAuctionSellPriceHidden',
-        'IsQuestLevelsHidden','IsQuestDifficultyHidden','IsQuestProgressHidden',
+        'IsQuestLevelsHidden','IsQuestDifficultyHidden',
         'IsQuestItemHighlightHidden','IsQuestTimersHidden','IsExperienceBarHidden','IsMinimapHidden'}) do
         assert(s.api[name]()==true,'unrelated restriction changed: '..name)
     end
     assert(s.char.enabled and s.char.hideQuestTooltips and s.char.hideQuestNPCNames)
-    assert(s.api.IsTooltipHidingConfigured() and s.api.IsNPCNameHidingConfigured())
+    assert(s.api.IsTooltipHidingConfigured() and s.api.IsNPCNameHidingConfigured() and s.api.IsProgressHidingConfigured())
     assert(s.char.revealedQuests[123],'instance policy changed quest permissions')
 end
 -- OFF is inert even in an instance, and outdoor parties/raids are not instances.
@@ -189,4 +202,17 @@ s.combat(false);s.event('PLAYER_REGEN_ENABLED');s.flush();restricted(s,true)
 -- A stale queued callback cannot reapply after logout.
 s=session(profile(true));s.where.inside=true;s.where.kind='party';s.event('ZONE_CHANGED_NEW_AREA')
 s.event('PLAYER_LOGOUT');before=s.writes();s.flush();assert(s.writes()==before)
-io.write('PASS: dungeon/raid guidance exception, only tooltips and NPC names; unchanged map/navigation, native baselines, deferred combat/loading, reload and saved choices\n')
+-- Every split-map combination remains independent from the instance policy.
+for _,pair in ipairs({{true,true},{true,false},{false,true},{false,false}}) do
+    local char=profile(true);char.enabled=pair[1];char.hideQuestTurnIns=pair[2]
+    local mode=session(char)
+    local nativeMap=mode.values.questPOI
+    mode.where.inside=true;mode.where.kind='party';mode.event('ZONE_CHANGED_NEW_AREA');mode.flush()
+    assert(mode.api.IsQuestObjectivesHidden()==pair[1] and mode.api.IsQuestTurnInsHidden()==pair[2])
+    assert(mode.values.questPOI==nativeMap and mode.pins()==0,'exception altered split-map layer')
+    assert(mode.progress[101] and not mode.api.IsQuestProgressHidden())
+    mode.where.inside=false;mode.event('ZONE_CHANGED_NEW_AREA');mode.flush()
+    assert(not mode.progress[101] and mode.api.IsQuestProgressHidden())
+    assert(mode.values.questPOI==nativeMap and mode.pins()==0)
+end
+io.write('PASS: dungeon/raid guidance exception, only tooltips, NPC names and native progress messages; unchanged map/navigation, native baselines, deferred combat/loading, reload and saved choices\n')

@@ -61,6 +61,12 @@ local function usesGuidancePolicy()
     return character and (character.restoreGuidanceInInstances==true or guidancePending)
 end
 
+-- Either restriction needs the native global layer suppressed; owned widgets
+-- restore only the allowed class. Keep legacy enabled as the objective choice.
+local function mapRestricted()
+    return character and (character.enabled == true or character.hideQuestTurnIns == true)
+end
+
 local function initialize()
     if existingInstallation == nil then
         existingInstallation = (type(NoQuestHintsForeverChar) == "table" and next(NoQuestHintsForeverChar) ~= nil)
@@ -82,9 +88,12 @@ local function initialize()
             and character.showAuctionSellPrices == false
     end
     character.showAuctionSellPrices = nil
+    if character.hideQuestTurnIns == nil then
+        character.hideQuestTurnIns = character.enabled == true
+    end
     if type(character.original) ~= "table" then character.original = {} end
     if type(account.original) ~= "table" then account.original = {} end
-    -- Preserve legacy 'enabled' from 1.1.1 as the map-hints option.
+    -- Legacy enabled now stores objective hiding; turn-in hiding migrates above.
     -- Hide quest lines on unit/object tooltips is a new independent,
     -- opt-in option. Existing 1.2.0 users retain all their preferences.
     -- Both hideTracker and hideQuestTooltips default to false.
@@ -118,6 +127,7 @@ end
 -- Add an entry only when features ship, never for a fixes-only release. Checking
 -- the whole interval handles players who skip one or more feature versions.
 local featureReleases = {
+    {version="1.8.0", settings={"NQH_HIDE_MAP_HINTS", "NQH_HIDE_QUEST_TURN_INS"}},
     -- Reintroduced after the 1.6.1 rollback; users on that release regain rows.
     {version="1.7.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
     {version="1.6.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
@@ -157,7 +167,7 @@ local function notifyVersionUpgrade()
 end
 
 local function enforceMapHints()
-    if loggingOut or not character or character.enabled ~= true or enforcing then return end
+    if loggingOut or not character or not mapRestricted() or enforcing then return end
     enforcing = true
     for _, name in ipairs(cvars) do
         local value = getCVar(name)
@@ -166,7 +176,7 @@ local function enforceMapHints()
             if original[name] == nil then original[name] = value end
             local target = "0"
             -- Navigation is a single globally drawn diamond. Allow it ONLY
-            -- when the currently super-tracked quest is explicitly revealed.
+            -- when the current quest is permitted by either class or Show hint.
             if name == "showInGameNavigation" and NoQuestHintsForeverAPI
                 and type(NoQuestHintsForeverAPI.IsQuestNavigationAllowed) == "function"
                 and NoQuestHintsForeverAPI.IsQuestNavigationAllowed() then
@@ -188,10 +198,9 @@ local function restoreMapValues(original)
     end
 end
 
-local function setMapHints(enabled)
+local function refreshMapPolicy()
     if not character then return end
-    character.enabled = enabled == true
-    if character.enabled then
+    if mapRestricted() then
         enforceMapHints()
     else
         restoreMapValues(character.original)
@@ -201,6 +210,14 @@ local function setMapHints(enabled)
     if NoQuestHintsForeverAPI and type(NoQuestHintsForeverAPI.RefreshQuestHintPins) == "function" then
         NoQuestHintsForeverAPI.RefreshQuestHintPins()
     end
+end
+
+-- Compatibility entry point for presets/restoration and existing callers.
+local function setMapHints(enabled)
+    if not character then return end
+    character.enabled = enabled == true
+    character.hideQuestTurnIns = enabled == true
+    refreshMapPolicy()
 end
 
 -- ObjectiveTrackerFrame is Blizzard-owned. Do not Hide() it in secure
@@ -459,7 +476,7 @@ local function setQuestNPCNamesHidden(hidden)
     updateQuestNPCNames()
 end
 
--- Only quest tooltip filtering and NPC-name suppression participate in this exception.
+-- Only quest tooltips, NPC names and progress messages participate in this exception.
 -- Never apply a preset, rewrite configured flags or change unrelated effects.
 local function queueGuidanceRefresh(force)
     if not character or loggingOut or npcNamesApplying then return end
@@ -473,14 +490,29 @@ local function queueGuidanceRefresh(force)
         if loggingOut or guidanceLoading or inCombat() then return end
         guidancePending = false
         updateQuestNPCNames()
+        local currentAPI = NoQuestHintsForeverAPI
+        if currentAPI and currentAPI.RefreshQuestProgressMessages then currentAPI.RefreshQuestProgressMessages() end
     end)
 end
 
 -- UI module attaches an OpenOptions callback after its own Lua file loads.
 local api = {}
 NoQuestHintsForeverAPI = api
-api.IsMapHidden = function() return character and character.enabled == true end
+api.IsMapHidden = mapRestricted
+api.IsQuestObjectivesHidden = function() return character and character.enabled == true end
+api.IsQuestTurnInsHidden = function() return character and character.hideQuestTurnIns == true end
+api.SetQuestObjectivesHidden = function(value)
+    if not character then return end
+    character.enabled = value == true
+    refreshMapPolicy()
+end
+api.SetQuestTurnInsHidden = function(value)
+    if not character then return end
+    character.hideQuestTurnIns = value == true
+    refreshMapPolicy()
+end
 api.IsTooltipHidingConfigured = function() return character and character.hideQuestTooltips==true end
+api.IsProgressHidingConfigured = function() return character and character.hideQuestProgressMessages==true end
 api.IsNPCNameHidingConfigured = function() return character and character.hideQuestNPCNames==true end
 api.IsInstanceGuidanceEnabled = function() return character and character.restoreGuidanceInInstances==true end
 api.IsInstanceGuidanceActive = guidanceSuspended
@@ -520,7 +552,7 @@ api.IsSellPriceHidden = function() return character and character.hideSellPrices
 api.IsAuctionSellPriceHidden = function() return character and character.hideAuctionSellPrices == true end
 api.IsQuestLevelsHidden = function() return character and character.hideQuestLevels == true end
 api.IsQuestDifficultyHidden = function() return character and character.hideQuestDifficulty == true end
-api.IsQuestProgressHidden = function() return character and character.hideQuestProgressMessages == true end
+api.IsQuestProgressHidden = function() return character and character.hideQuestProgressMessages==true and not guidanceSuspended() end
 api.IsQuestNPCNamesHidden = function() return character and character.hideQuestNPCNames==true and not guidanceSuspended() end
 api.SetMapHidden = setMapHints
 api.SetTrackerHidden = setTrackerHidden
@@ -635,7 +667,8 @@ SlashCmdList.NOQUESTHINTSFOREVER = function(message)
         local statusOn, statusOff = L.STATUS_ON or "ON", L.STATUS_OFF or "OFF"
         printMessage((L.INSTANCE_GUIDANCE or "Restore instance quest guidance") .. ": " .. (api.IsInstanceGuidanceEnabled() and statusOn or statusOff))
         printMessage((L.INSTANCE_GUIDANCE_ACTIVE or "Instance quest guidance exception active") .. ": " .. (guidanceSuspended() and statusOn or statusOff))
-        printMessage((L.MAP_STATUS or "Hide map hints: ") .. (character.enabled == true and statusOn or statusOff))
+        printMessage((L.MAP_STATUS or "Hide quest objectives: ") .. (api.IsQuestObjectivesHidden() and statusOn or statusOff))
+        printMessage((L.TURN_INS or "Hide quest turn-in locations") .. ": " .. (api.IsQuestTurnInsHidden() and statusOn or statusOff))
         printMessage((L.EXPERIENCE_BAR or "Hide experience bar") .. ": " .. (api.IsExperienceBarHidden() and statusOn or statusOff))
         printMessage((L.MINIMAP or "Hide minimap") .. ": " .. (api.IsMinimapHidden() and statusOn or statusOff))
         printMessage((L.TIMERS_STATUS or "Hide quest timers: ") .. (character.hideQuestTimers == true and statusOn or statusOff))
@@ -705,7 +738,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
         if character and character.hideTracker == true then updateTracker() end
     elseif event == "PLAYER_LOGIN" then
         if not character then initialize() end
-        if character.enabled == true then
+        if mapRestricted() then
             enforceMapHints()
         else
             restoreMapValues(character.original)
@@ -728,7 +761,7 @@ frame:SetScript("OnEvent", function(_, event, changed)
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         queueGuidanceRefresh()
     elseif event == "CVAR_UPDATE" and character and type(changed) == "string" then
-        if character.enabled == true then
+        if mapRestricted() then
             for _, name in ipairs(cvars) do
                 if changed:lower() == name:lower() then
                     enforceMapHints()
@@ -742,6 +775,8 @@ frame:SetScript("OnEvent", function(_, event, changed)
         end
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_WATCH_LIST_CHANGED" then
         if character and character.hideTracker then queueTrackerUpdate() end
+        -- Completion can move the active quest between the two map policies.
+        if event == "QUEST_LOG_UPDATE" then enforceMapHints() end
     elseif event == "SUPER_TRACKING_CHANGED" then
         -- Never reveal navigation toward a non-permitted quest.
         enforceMapHints()

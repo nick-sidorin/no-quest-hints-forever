@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Version 1.8.0:** Separate objective and turn-in map hiding, preserving existing preferences. Keep hand-in locations without objective spoilers; native marker glow and level-aware tooltips avoid hover-triggered journal flicker.
+
 > **Version 1.7.0:** Restore optional experience-bar and minimap hiding with the owner-tested fix. Never force action-bar layout from addon code. Spacing catches up on Blizzard’s next native layout update; both controls remain OFF in every preset.
 
 > **Version 1.6.1 — emergency rollback:** Restores stable 1.5.0 runtime after combat cooldown and Edit Mode regressions in 1.6.0. XP-bar/minimap hiding is withdrawn; native quest timers and existing preferences are preserved. Fully exit and restart the game after updating.
@@ -26,7 +28,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 **Independent, per-character** options:
 
-- **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
+- **Hide quest objectives:** Suppress unfinished-quest objective areas, markers and navigation.
+- **Hide quest turn-in locations:** Independently suppress ready-to-turn-in world-map ? markers and navigation.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 - **Hide quest timers (optional):** Independently hide timed-quest countdowns. When the tracker is hidden and this option is OFF, Blizzard’s existing timer remains visible with its native countdown, title tooltip and quest-opening click. Drag the header to move it; the journal keeps its native presentation. OFF in every preset.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
@@ -50,13 +53,25 @@ Changes wait until combat ends; hiding is suspended in Edit Mode. Unchecking res
 
 The owner tested candidate df5959d in Forever and reported the combat/Edit Mode errors no longer reproduced, accepted the spacing limitation, and authorized release. This does not establish universal taint safety or physical-controller behavior.
 
+## Split map guidance (1.8.0)
+
+The old map-hiding checkbox is split into two equal-rank controls: **Hide quest objectives** (unfinished-quest objective areas, markers and navigation) and **Hide quest turn-in locations** (world-map ? markers and navigation for quests ready to turn in). To explore without objective hints while retaining hand-in locations, enable the first and disable the second.
+
+Both ON preserves the former hidden-map behavior; both OFF restores the native global layer and original personal CVars. Mixed modes keep that layer suppressed and reuse the existing private native-template markers/Blizzard blob renderer for the permitted class. The active native SuperTrack quest gets navigation only when its class or explicit **Show hint** permission allows it. No watch-list changes or automatic selection of another quest occur. **Show hint** remains an override for that individual quest; removing it returns to the two global rules.
+
+On first upgrade, the new turn-in flag copies the old map-hiding choice; explicit split choices survive reload. Presets hide both in Immersion/Full immersion and neither in As in Blizzard. Restore/native defaults turn both OFF. Other controls remain independent. Automatic turn-in markers need client-supplied coordinates and readiness data; no locations are invented. Native minimap hints cannot be restored per quest, so mixed modes leave the common minimap hint layer suppressed; built-in questgiver icons remain outside this feature's control.
+
+Owned marker hover uses a private tooltip with raw C quest titles and unfinished objectives, applying hidden level/difficulty before display. It does not dispatch native pin enter/leave, so hovering does not rebuild, highlight or auto-scroll the journal. The existing native HighlightTexture and LinkGlow regions provide inner/outer hover glow without the global highlight manager. Restore their prior visibility on leave/release and keep the selected Glow independent. Native click behavior remains. Blizzard-owned pins and the existing journal title filter are unchanged.
+
+The owner tested the final preview in Forever and approved release 1.8.0. The separate dungeon/raid exception PR is not included. Verification scenario: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
+
 ## Dungeon and raid guidance preview (unreleased)
 
-In **Dungeons and raids**, enable **Restore quest guidance** to temporarily stop hiding native quest tooltip lines and quest NPC names inside dungeon (`party`) and raid (`raid`) instances. It is OFF by default, saved per character and retained when selecting a playstyle. **Restore game settings** and the native setting default turn it OFF.
+In **Dungeons and raids**, enable **Restore quest guidance** to temporarily stop hiding native quest tooltip lines, quest NPC names and yellow quest-progress messages inside dungeon (`party`) and raid (`raid`) instances. It is OFF by default, saved per character and retained when selecting a playstyle. **Restore game settings** and the native setting default turn it OFF.
 
-Only these two restrictions are suspended. Map markers and navigation keep their normal hiding and manual **Show hint** behavior. Quest levels/colors, prices, tracker, progress popups, quest-item borders, timers, XP bar and full-minimap visibility stay as configured. Configured checkboxes remain checked while their effects are paused; leaving the instance reapplies them. Your own original Blizzard CVar choices are preserved, so settings you disabled yourself are not forcibly enabled. Saved per-quest permissions are unchanged.
+Only these three restrictions are suspended. Map markers and navigation keep their normal hiding and manual **Show hint** behavior. Quest levels/colors, prices, tracker, quest-item borders, timers, XP bar and full-minimap visibility stay as configured. Configured checkboxes remain checked while their effects are paused; leaving the instance reapplies them. Your own original Blizzard CVar choices are preserved, so settings you disabled yourself are not forcibly enabled. Saved per-quest permissions are unchanged.
 
-Native `IsInInstance()` classifies the location; outdoor groups, battlegrounds, arenas and scenarios are excluded. Login/reload and zone/loading transitions re-evaluate the policy. NPC-name CVar refreshes wait until loading/combat ends, while tooltip filtering reads the current effective policy. Existing NPC-name limitations still apply. This preview needs owner verification in Forever; automated tests do not prove rendered hints or taint safety.
+Native `IsInInstance()` classifies the location; outdoor groups, battlegrounds, arenas and scenarios are excluded. Login/reload and zone/loading transitions re-evaluate the policy. NPC-name CVar refreshes wait until loading/combat ends, while tooltip filtering reads the current effective policy. The same deferred refresh restores the native yellow quest-progress message categories, preserving their prior per-category visibility. Existing NPC-name limitations still apply. This preview needs owner verification in Forever; automated tests do not prove rendered hints or taint safety.
 
 ## Getting started
 
@@ -320,7 +335,7 @@ Please report the Forever build, version, `/nqh status` output, steps to reprodu
 
 **Publishing on request:** The permanent [`publish.yml`](.github/workflows/publish.yml) watches [`.github/release-request.txt`](.github/release-request.txt). To release a new version, first update the `.toc` version and `CHANGELOG.md`, then change the request file to e.g. `1.4.0-beta.1`. The workflow re-runs the **same full regression, syntax and manifest gates**, verifies the version, creates the annotated `v1.4.0-beta.1` tag, builds the ZIP and publishes a GitHub prerelease. For a verified stable version, request `1.4.0`, producing a normal Release. Duplicate tag names are rejected. The owner can ask the repository-maintaining assistant to perform these steps without manual tag creation.
 
-**CurseForge description:** [`CURSEFORGE_DESCRIPTION.md`](CURSEFORGE_DESCRIPTION.md) is the single copy-ready source for the CurseForge **short and full descriptions**. Update it when user-facing features change, include the updated text in each release handoff, and paste the two sections into the CurseForge project editor. The GitHub release pipeline does **not** update the CurseForge description automatically.
+**CurseForge description:** Copy all of [`CURSEFORGE_DESCRIPTION.md`](CURSEFORGE_DESCRIPTION.md) for the full description, and all of [`CURSEFORGE_SHORT_DESCRIPTION.txt`](CURSEFORGE_SHORT_DESCRIPTION.txt) for the short field. Both contain public text only. Maintainer instructions and editor links are in [the publishing guide](docs/CURSEFORGE_PUBLISHING.md). Update both texts for user-facing changes and include them in release handoffs; release automation does not update the listing.
 
 **CurseForge:** The project uses GitHub source-based Automatic Packaging and a GitHub webhook. The tag push requests packaging through the configured webhook; CurseForge handles its own file approval. Do not add a second upload through Actions, and **never commit CurseForge author tokens**. The [.pkgmeta](.pkgmeta) tells CurseForge which files to package.
 

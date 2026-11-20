@@ -1,8 +1,16 @@
 # Changelog
 
-## Unreleased
+## [1.8.0] — 2026-11-20
 
-- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only quest tooltip lines and quest/special NPC names in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer NPC-name CVar work during combat/loading. Map markers, navigation and manual Show hint behavior remain unchanged. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
+- Split map hiding into **Hide quest objectives** and **Hide quest turn-in locations**. Explore without objective areas/markers while keeping world-map ? markers for ready-to-turn-in quests. Navigation follows the active quest's permitted class; individual **Show hint** remains an override.
+- Preserve existing behavior on upgrade: initialize turn-in hiding from the previous map preference only when absent. Keep split choices across reload; presets/restoration set both together. Both OFF restores the native global layer and personal CVar baselines.
+- Remove journal title flicker caused by owned map-marker hover. Private tooltips apply numeric-level and difficulty-color settings before display, retain native click behavior and avoid rebuilding/highlighting/scrolling the journal from hover.
+- Restore inner and outer hover glow through the native marker template's existing textures. Preserve selected glow and previous visibility on leave/hide/release; no new artwork or global highlight dispatch.
+- Cover all official locales and mark both map controls as new/updated for upgrades. The owner tested the final preview and approved this release; 21 automated suites pass. This does not establish physical-controller compatibility or universal taint safety.
+
+**Minimap limitation:** Mixed modes keep the common native hint layer suppressed. Per-quest restoration of native minimap hints remains unavailable, and built-in questgiver icons are outside these controls. Native map coordinates/readiness data are required; no locations are invented.
+
+- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only quest tooltip lines, quest/special NPC names and native yellow quest-progress messages in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer NPC-name CVar/progress refresh work during combat/loading. Map markers, navigation and manual Show hint behavior remain unchanged. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
 
 ## [1.7.0] — 2026-11-12
 

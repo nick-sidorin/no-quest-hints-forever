@@ -22,7 +22,7 @@ function api.GetQuestPOIStyle(id)
     local styles = POIButtonUtil and POIButtonUtil.Style
     if not styles then return end
     local log = C_QuestLog or {}
-    if readBool(log.IsComplete or log.ReadyForTurnIn, id) then return styles.QuestComplete end
+    if readBool(log.ReadyForTurnIn or log.IsComplete, id) then return styles.QuestComplete end
     if readBool(log.IsQuestDisabledForSession, id) then return styles.QuestDisabled end
     return styles.QuestInProgress
 end
@@ -39,8 +39,42 @@ end
 
 local function permitted(questID)
     return type(questID) == "number"
-        and type(api.IsQuestRevealed) == "function"
-        and api.IsQuestRevealed(questID)
+        and ((type(api.IsQuestMapHintAllowed) == "function" and api.IsQuestMapHintAllowed(questID))
+            or (type(api.IsQuestMapHintAllowed) ~= "function"
+                and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)))
+end
+
+-- These regions already belong to Blizzard's QuestPinTemplate. Reuse their
+-- authored atlases/geometry without invoking the global highlight manager.
+local hoverState = setmetatable({}, {__mode="k"})
+function api.SetQuestMapPinHover(pin, shown)
+    if not pin then return end
+    if shown then
+        if hoverState[pin] then return end
+        local state = {}
+        for _, name in ipairs({"HighlightTexture", "LinkGlow"}) do
+            local region = pin[name]
+            if region and type(region.IsShown) == "function" and type(region.SetShown) == "function" then
+                state[#state + 1] = {region=region, shown=region:IsShown()}
+                region:SetShown(true)
+            end
+        end
+        hoverState[pin] = state
+    else
+        local state = hoverState[pin]
+        if not state then return end
+        for _, entry in ipairs(state) do entry.region:SetShown(entry.shown) end
+        hoverState[pin] = nil
+    end
+end
+
+local function enter(pin)
+    if api.ShowQuestMapTooltip then api.ShowQuestMapTooltip(pin) end
+    if not (api.IsNativeGamepadUI and api.IsNativeGamepadUI()) then api.SetQuestMapPinHover(pin, true) end
+end
+local function leave(pin)
+    api.SetQuestMapPinHover(pin, false)
+    if api.HideQuestMapTooltip then api.HideQuestMapTooltip(pin) end
 end
 
 local function validPosition(x, y)
@@ -70,7 +104,9 @@ local function installProvider()
         if enabled == true and permitted(id) then hasRevealedQuest = true; break end
     end
     -- Leave native map provider/pin pools alone while this layer is unused.
-    if not hasRevealedQuest then return end
+    local partial = (type(api.IsQuestObjectivesHidden) == "function" and not api.IsQuestObjectivesHidden())
+        or (type(api.IsQuestTurnInsHidden) == "function" and not api.IsQuestTurnInsHidden())
+    if not hasRevealedQuest and not partial then return end
 
     local candidate = CreateFromMixins(QuestDataProviderMixin)
     function candidate:GetPinTemplate() return TEMPLATE end
@@ -93,7 +129,8 @@ local function installProvider()
         pin.Display:ClearAllPoints()
         pin.Display:SetPoint("CENTER")
         pin:SetSelected(tracked)
-        pin:SetStyle(waypoint and POIButtonUtil.Style.Waypoint or api.GetQuestPOIStyle(id))
+        pin:SetStyle(waypoint and not readBool((C_QuestLog or {}).ReadyForTurnIn or (C_QuestLog or {}).IsComplete, id)
+            and POIButtonUtil.Style.Waypoint or api.GetQuestPOIStyle(id))
         pin:UpdateButtonStyle()
         pin:EvaluateManagedHighlight()
         if type(MapPinHighlight_CheckHighlightPin) == "function" then
@@ -115,6 +152,9 @@ local function installProvider()
 
     function candidate:RemoveAllData()
         self.snapshot = nil
+        -- Dismiss only a tooltip owned by one of this provider's pins.
+        for _, pin in ipairs(self.ownedPins or {}) do leave(pin) end
+        self.ownedPins = nil
         -- Unique template: never release Blizzard's own pins.
         QuestDataProviderMixin.RemoveAllData(self)
         if api.RefreshControllerQuestPins then api.RefreshControllerQuestPins() end
@@ -147,10 +187,10 @@ local function installProvider()
         end
         -- A small number of quests supply only the next waypoint.
         -- Do not guess a location for quests lacking map data.
-        if C_QuestLog and type(C_QuestLog.GetNextWaypointForMap) == "function"
-            and type(NoQuestHintsForeverChar) == "table"
-            and type(NoQuestHintsForeverChar.revealedQuests) == "table" then
-            for id, enabled in pairs(NoQuestHintsForeverChar.revealedQuests) do
+        if C_QuestLog and type(C_QuestLog.GetNextWaypointForMap) == "function" then
+            local ids = api.GetMapGuidanceQuestIDs and api.GetMapGuidanceQuestIDs()
+                or (NoQuestHintsForeverChar or {}).revealedQuests or {}
+            for id, enabled in pairs(ids) do
                 if enabled and permitted(id) and not seen[id] then
                     local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, id, mapID)
                     if ok and validPosition(x, y) then
@@ -176,15 +216,24 @@ local function installProvider()
         if unchanged then return end
         self:RemoveAllData()
         for index, entry in ipairs(entries) do
-            -- Keep the genuine native hover/click scripts and tooltip renderer.
             local pin = self:AddQuest(entry.id, entry.x, entry.y, index, entry.waypoint)
             if pin then
-                if api.GuardQuestMapPin then api.GuardQuestMapPin(pin, true) end
-                -- Forever assigns OnMouseEnter as the periodic tooltip callback.
-                -- That also emits MapCanvas.QuestPin.OnEnter, rebuilding/scrolling
-                -- the entire journal on every tooltip tick. Our unique pins show
-                -- fresh native tooltip content on real entry instead.
+                -- Scope overrides to our unique template. Native hover dispatch
+                -- rebuilds the whole journal on BOTH entry and leave; use a
+                -- private tooltip with formatted title, retaining click scripts.
+                pin.OnMouseEnter, pin.OnMouseLeave = enter, leave
+                if type(pin.SetScript) == "function" then
+                    pin:SetScript("OnEnter", enter)
+                    pin:SetScript("OnLeave", leave)
+                end
+                if not pin.nqhTooltipHideHook and type(pin.HookScript) == "function" then
+                    pin:HookScript("OnHide", leave)
+                    pin.nqhTooltipHideHook = true
+                end
                 pin.UpdateTooltip = nil
+                self.ownedPins = self.ownedPins or {}
+                self.ownedPins[#self.ownedPins + 1] = pin
+                if api.GuardQuestMapPin then api.GuardQuestMapPin(pin, true) end
             end
         end
         self.snapshot = {mapID=mapID, entries=entries}
