@@ -36,6 +36,7 @@ local function questID(pin, record)
 end
 
 local function leave()
+    if hovered and api.SetQuestMapPinHover then api.SetQuestMapPinHover(hovered, false) end
     hovered = nil
     if tooltip then tooltip:Hide() end
 end
@@ -94,11 +95,15 @@ local function showTooltip(pin, id)
     if not tooltip then
         tooltip = CreateFrame("GameTooltip", "NoQuestHintsForeverGamepadTooltip", UIParent, "GameTooltipTemplate")
     end
-    if renderTooltip(tooltip, pin, id, "ANCHOR_RIGHT") then hovered = pin end
+    if renderTooltip(tooltip, pin, id, "ANCHOR_RIGHT") then
+        hovered = pin
+        if api.SetQuestMapPinHover then api.SetQuestMapPinHover(pin, true) end
+    end
 end
 
 function api.HideQuestMapTooltip(pin)
     if pin and mouseHovered ~= pin then return end
+    if mouseHovered and api.SetQuestMapPinHover then api.SetQuestMapPinHover(mouseHovered, false) end
     mouseHovered = nil
     if mouseTooltip then mouseTooltip:Hide() end
 end

@@ -44,10 +44,36 @@ local function permitted(questID)
                 and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)))
 end
 
+-- These regions already belong to Blizzard's QuestPinTemplate. Reuse their
+-- authored atlases/geometry without invoking the global highlight manager.
+local hoverState = setmetatable({}, {__mode="k"})
+function api.SetQuestMapPinHover(pin, shown)
+    if not pin then return end
+    if shown then
+        if hoverState[pin] then return end
+        local state = {}
+        for _, name in ipairs({"HighlightTexture", "LinkGlow"}) do
+            local region = pin[name]
+            if region and type(region.IsShown) == "function" and type(region.SetShown) == "function" then
+                state[#state + 1] = {region=region, shown=region:IsShown()}
+                region:SetShown(true)
+            end
+        end
+        hoverState[pin] = state
+    else
+        local state = hoverState[pin]
+        if not state then return end
+        for _, entry in ipairs(state) do entry.region:SetShown(entry.shown) end
+        hoverState[pin] = nil
+    end
+end
+
 local function enter(pin)
     if api.ShowQuestMapTooltip then api.ShowQuestMapTooltip(pin) end
+    if not (api.IsNativeGamepadUI and api.IsNativeGamepadUI()) then api.SetQuestMapPinHover(pin, true) end
 end
 local function leave(pin)
+    api.SetQuestMapPinHover(pin, false)
     if api.HideQuestMapTooltip then api.HideQuestMapTooltip(pin) end
 end
 

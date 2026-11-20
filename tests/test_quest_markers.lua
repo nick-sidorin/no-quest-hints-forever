@@ -26,6 +26,14 @@ local function run(db, ready, initialHidden)
         local click=function() map.clicked=true end
         pin.scripts.OnClick=click
         function pin:SetScript(name,fn) self.scripts[name]=fn end
+        local function region()
+            local r={shown=false}
+            function r:IsShown() return self.shown end
+            function r:SetShown(value) self.shown=value end
+            return r
+        end
+        pin.HighlightTexture=region();pin.LinkGlow=region()
+        pin.Glow=region();pin.Glow.shown=true -- selected glow is independent
         function pin:SetQuestID(id) self.id=id end
         function pin:GetQuestID() return self.id end
         function pin:UseFrameLevelType(kind,offset) self.level=kind end
@@ -98,11 +106,23 @@ assert(s.map.pins[2].style=="turnin","turn-in style lost")
 assert(s.map.pins[3].waypoint==true)
 local hovered=s.map.pins[2]
 hovered.scripts.OnEnter(hovered)
+assert(hovered.HighlightTexture.shown and hovered.LinkGlow.shown, "native hover regions missing")
+hovered.scripts.OnEnter(hovered) -- repeated entry must not overwrite original visibility
+hovered.scripts.OnLeave(hovered)
+assert(not hovered.HighlightTexture.shown and not hovered.LinkGlow.shown and hovered.Glow.shown,
+    "native hover cleanup changed selected glow or leaked hover")
+-- A preexisting native highlight must survive the temporary hover.
+hovered.LinkGlow.shown=true
+hovered.scripts.OnEnter(hovered);hovered.scripts.OnLeave(hovered)
+assert(hovered.LinkGlow.shown and not hovered.HighlightTexture.shown)
+hovered.LinkGlow.shown=false
+local mapEnters,mapLeaves=s.map.enters,s.map.leaves
+hovered.scripts.OnEnter(hovered)
 assert(hovered.scripts.OnClick, "mouse click script was removed")
 for _=1,20 do if hovered.UpdateTooltip then hovered:UpdateTooltip() end end
-assert(s.map.enters==1, "stationary map tooltip repeatedly re-entered and rebuilt journal")
+assert(s.map.enters==mapEnters+1, "stationary map tooltip repeatedly re-entered and rebuilt journal")
 hovered.scripts.OnLeave(hovered);hovered.scripts.OnEnter(hovered)
-assert(s.map.enters==2 and s.map.leaves==1 and s.map.tooltipRenders==2,
+assert(s.map.enters==mapEnters+2 and s.map.leaves==mapLeaves+1 and s.map.tooltipRenders==mapEnters+2,
     "private hover transitions must preserve tooltip re-entry without native journal dispatch")
 local releases=s.map.releases
 for _=1,20 do s.event("QUEST_LOG_UPDATE");s.event("QUEST_POI_UPDATE") end
