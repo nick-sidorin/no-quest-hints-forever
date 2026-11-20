@@ -58,6 +58,8 @@ Both ON preserves the former hidden-map behavior; both OFF restores the native g
 
 On first upgrade, the new turn-in flag copies the old map-hiding choice; explicit split choices survive reload. Presets hide both in Immersion/Full immersion and neither in As in Blizzard. Restore/native defaults turn both OFF. Other controls remain independent. Automatic turn-in markers need client-supplied coordinates and readiness data; no locations are invented. Native minimap hints cannot be restored per quest, so mixed modes leave the common minimap hint layer suppressed; built-in questgiver icons remain outside this feature's control.
 
+Owned marker hover uses a private tooltip with raw C quest titles and unfinished objectives, applying hidden level/difficulty before display. It does not dispatch native pin enter/leave, so hovering does not rebuild, highlight or auto-scroll the journal. Native click behavior remains. Blizzard-owned pins and the existing journal title filter are unchanged.
+
 This preview is separate from the dungeon/raid exception PR and needs owner testing in Forever. Suggested check: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
 
 ## Getting started

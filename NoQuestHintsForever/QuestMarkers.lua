@@ -44,6 +44,13 @@ local function permitted(questID)
                 and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)))
 end
 
+local function enter(pin)
+    if api.ShowQuestMapTooltip then api.ShowQuestMapTooltip(pin) end
+end
+local function leave(pin)
+    if api.HideQuestMapTooltip then api.HideQuestMapTooltip(pin) end
+end
+
 local function validPosition(x, y)
     return type(x) == "number" and type(y) == "number"
         and x >= 0 and y >= 0 and x <= 1 and y <= 1
@@ -119,6 +126,9 @@ local function installProvider()
 
     function candidate:RemoveAllData()
         self.snapshot = nil
+        -- Dismiss only a tooltip owned by one of this provider's pins.
+        for _, pin in ipairs(self.ownedPins or {}) do leave(pin) end
+        self.ownedPins = nil
         -- Unique template: never release Blizzard's own pins.
         QuestDataProviderMixin.RemoveAllData(self)
         if api.RefreshControllerQuestPins then api.RefreshControllerQuestPins() end
@@ -180,15 +190,24 @@ local function installProvider()
         if unchanged then return end
         self:RemoveAllData()
         for index, entry in ipairs(entries) do
-            -- Keep the genuine native hover/click scripts and tooltip renderer.
             local pin = self:AddQuest(entry.id, entry.x, entry.y, index, entry.waypoint)
             if pin then
-                if api.GuardQuestMapPin then api.GuardQuestMapPin(pin, true) end
-                -- Forever assigns OnMouseEnter as the periodic tooltip callback.
-                -- That also emits MapCanvas.QuestPin.OnEnter, rebuilding/scrolling
-                -- the entire journal on every tooltip tick. Our unique pins show
-                -- fresh native tooltip content on real entry instead.
+                -- Scope overrides to our unique template. Native hover dispatch
+                -- rebuilds the whole journal on BOTH entry and leave; use a
+                -- private tooltip with formatted title, retaining click scripts.
+                pin.OnMouseEnter, pin.OnMouseLeave = enter, leave
+                if type(pin.SetScript) == "function" then
+                    pin:SetScript("OnEnter", enter)
+                    pin:SetScript("OnLeave", leave)
+                end
+                if not pin.nqhTooltipHideHook and type(pin.HookScript) == "function" then
+                    pin:HookScript("OnHide", leave)
+                    pin.nqhTooltipHideHook = true
+                end
                 pin.UpdateTooltip = nil
+                self.ownedPins = self.ownedPins or {}
+                self.ownedPins[#self.ownedPins + 1] = pin
+                if api.GuardQuestMapPin then api.GuardQuestMapPin(pin, true) end
             end
         end
         self.snapshot = {mapID=mapID, entries=entries}

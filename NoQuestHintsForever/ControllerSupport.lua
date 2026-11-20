@@ -1,10 +1,11 @@
--- Isolate NQH-owned pins from Forever's native gamepad cursor pin list.
+-- Private NQH map tooltips and isolation from the native gamepad pin list.
 -- Inspired by the scoped fix in Questie #7922; no Blizzard methods are replaced.
 local api = NoQuestHintsForeverAPI
 if not api then return end
 local pins = setmetatable({}, {__mode="k"})
 local hookedMaps = setmetatable({}, {__mode="k"})
 local poller, tooltip, hovered
+local mouseTooltip, mouseHovered
 local elapsed = 0
 local loggingOut = false
 local refresh
@@ -30,7 +31,8 @@ local function questID(pin, record)
     if not record.interactive or not visible(pin) then return end
     local ok, id = pcall(pin.GetQuestID, pin)
     if ok and type(id) == "number" and api.IsMapHidden and api.IsMapHidden()
-        and api.IsQuestRevealed and api.IsQuestRevealed(id) then return id end
+        and ((api.IsQuestMapHintAllowed and api.IsQuestMapHintAllowed(id))
+            or (not api.IsQuestMapHintAllowed and api.IsQuestRevealed and api.IsQuestRevealed(id))) then return id end
 end
 
 local function leave()
@@ -43,30 +45,73 @@ local function stop()
     leave()
 end
 
-local function showTooltip(pin, id)
-    local log = C_QuestLog
-    if not log or type(log.GetTitleForQuestID) ~= "function" then return end
+-- Build the title from raw C data before SetText. Never call the native
+-- title-prefix helper (shared cache) or dispatch native pin/journal hover.
+local function tooltipTitle(id)
+    local log = C_QuestLog or {}
+    if type(log.GetTitleForQuestID) ~= "function" then return end
     local ok, title = pcall(log.GetTitleForQuestID, id)
     if not ok or type(title) ~= "string" then return end
-    if not tooltip then
-        -- Never run the native pin's OnMouseEnter: it uses shared GameTooltip
-        -- and dispatches map/journal events outside the secure cursor boundary.
-        tooltip = CreateFrame("GameTooltip", "NoQuestHintsForeverGamepadTooltip", UIParent, "GameTooltipTemplate")
+    local level
+    if type(log.GetQuestDifficultyLevel) == "function" then
+        local read, value = pcall(log.GetQuestDifficultyLevel, id)
+        if read and type(value) == "number" then level = value end
     end
-    tooltip:SetOwner(pin, "ANCHOR_RIGHT")
-    tooltip:SetText(title)
+    local hideLevels = api.IsQuestLevelsHidden and api.IsQuestLevelsHidden()
+    if not hideLevels and level and level > 0 then
+        title = "[" .. math.floor(level) .. "] " .. title
+    end
+    local tint = NORMAL_FONT_COLOR or {r=1,g=0.82,b=0}
+    if not (api.IsQuestDifficultyHidden and api.IsQuestDifficultyHidden())
+        and level and type(GetQuestDifficultyColor) == "function" then
+        local read, value = pcall(GetQuestDifficultyColor, level)
+        if read and type(value) == "table" then tint = value end
+    end
+    return title, tint.r, tint.g, tint.b
+end
+
+local function renderTooltip(target, pin, id, anchor)
+    local title, r, g, b = tooltipTitle(id)
+    if not title then return false end
+    target:SetOwner(pin, anchor)
+    target:SetText(title, r, g, b)
+    local log = C_QuestLog or {}
     if type(log.GetQuestObjectives) == "function" then
         local read, objectives = pcall(log.GetQuestObjectives, id)
         if read and type(objectives) == "table" then
             for _, objective in ipairs(objectives) do
                 if type(objective) == "table" and type(objective.text) == "string" and not objective.finished then
-                    tooltip:AddLine(objective.text, 1, 1, 1, true)
+                    target:AddLine(objective.text, 1, 1, 1, true)
                 end
             end
         end
     end
-    tooltip:Show()
-    hovered = pin
+    target:Show()
+    return true
+end
+
+local function showTooltip(pin, id)
+    if not tooltip then
+        tooltip = CreateFrame("GameTooltip", "NoQuestHintsForeverGamepadTooltip", UIParent, "GameTooltipTemplate")
+    end
+    if renderTooltip(tooltip, pin, id, "ANCHOR_RIGHT") then hovered = pin end
+end
+
+function api.HideQuestMapTooltip(pin)
+    if pin and mouseHovered ~= pin then return end
+    mouseHovered = nil
+    if mouseTooltip then mouseTooltip:Hide() end
+end
+
+function api.ShowQuestMapTooltip(pin)
+    api.HideQuestMapTooltip()
+    if loggingOut or gamepadUI() or inCombat() or not pin or type(pin.GetQuestID) ~= "function" then return end
+    local ok, id = pcall(pin.GetQuestID, pin)
+    if not ok or type(id) ~= "number" then return end
+    if not mouseTooltip then
+        mouseTooltip = CreateFrame("GameTooltip", "NoQuestHintsForeverMapTooltip", UIParent, "GameTooltipTemplate")
+    end
+    if renderTooltip(mouseTooltip, pin, id, "ANCHOR_CURSOR_RIGHT") then mouseHovered = pin end
 end
 
 local function activeMap()
@@ -141,7 +186,10 @@ function api.GuardQuestMapPin(pin, interactive)
     if map and not hookedMaps[map] and type(map.HookScript) == "function" then
         hookedMaps[map] = true
         map:HookScript("OnShow", refresh)
-        map:HookScript("OnHide", stop)
+        map:HookScript("OnHide", function()
+            stop()
+            api.HideQuestMapTooltip()
+        end)
     end
     refresh()
 end
@@ -152,6 +200,10 @@ for _, name in ipairs({"GAME_PAD_ACTIVE_CHANGED", "CVAR_UPDATE", "PLAYER_REGEN_D
     events:RegisterEvent(name)
 end
 events:SetScript("OnEvent", function(_, event)
-    if event == "PLAYER_LOGOUT" then loggingOut = true; stop()
-    elseif event == "PLAYER_REGEN_DISABLED" then stop() else refresh() end
+    if event == "PLAYER_LOGOUT" then loggingOut = true; stop(); api.HideQuestMapTooltip()
+    elseif event == "PLAYER_REGEN_DISABLED" then stop(); api.HideQuestMapTooltip()
+    else
+        if gamepadUI() then api.HideQuestMapTooltip() end
+        refresh()
+    end
 end)

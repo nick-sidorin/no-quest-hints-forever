@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Avoid journal title flicker from owned map-marker hover: replace native enter/leave dispatch with scoped private tooltips. Apply level/difficulty preferences before tooltip display and preserve native clicks; hover no longer highlights/scrolls the journal.
+
 - Split map hiding into independent objective and turn-in-location controls. Preserve legacy preferences on migration, native art/data, per-quest Show hint, unrelated settings and personal CVar recovery. Mixed modes reveal only the permitted class on the world map and gate active-quest navigation accordingly. Native per-quest minimap restoration remains unavailable.
 
 ## Unreleased
