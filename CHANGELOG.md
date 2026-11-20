@@ -10,6 +10,8 @@
 
 **Minimap limitation:** Mixed modes keep the common native hint layer suppressed. Per-quest restoration of native minimap hints remains unavailable, and built-in questgiver icons are outside these controls. Native map coordinates/readiness data are required; no locations are invented.
 
+- Add an optional per-character dungeon/raid quest-guidance exception, OFF by default. Temporarily restore only quest tooltip lines, quest/special NPC names and native yellow quest-progress messages in native party/raid instances. Preserve configured checkboxes and all other effects; resume hiding on exit. Use native instance type rather than group membership; defer NPC-name CVar/progress refresh work during combat/loading. Map markers, navigation and manual Show hint behavior remain unchanged. Playstyles retain the exception policy; explicit restore/defaults turn it OFF.
+
 ## [1.7.0] — 2026-11-12
 
 - Restore independent, per-character Hide experience bar and Hide minimap controls after the 1.6.1 rollback. Both remain OFF by default and in every preset; saved manual choices are retained. Preserve reputation bars, world-map access and native quest timers.

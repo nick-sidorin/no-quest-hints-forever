@@ -65,6 +65,14 @@ Owned marker hover uses a private tooltip with raw C quest titles and unfinished
 
 The owner tested the final preview in Forever and approved release 1.8.0. The separate dungeon/raid exception PR is not included. Verification scenario: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
 
+## Dungeon and raid guidance preview (unreleased)
+
+In **Dungeons and raids**, enable **Restore quest guidance** to temporarily stop hiding native quest tooltip lines, quest NPC names and yellow quest-progress messages inside dungeon (`party`) and raid (`raid`) instances. It is OFF by default, saved per character and retained when selecting a playstyle. **Restore game settings** and the native setting default turn it OFF.
+
+Only these three restrictions are suspended. Map markers and navigation keep their normal hiding and manual **Show hint** behavior. Quest levels/colors, prices, tracker, quest-item borders, timers, XP bar and full-minimap visibility stay as configured. Configured checkboxes remain checked while their effects are paused; leaving the instance reapplies them. Your own original Blizzard CVar choices are preserved, so settings you disabled yourself are not forcibly enabled. Saved per-quest permissions are unchanged.
+
+Native `IsInInstance()` classifies the location; outdoor groups, battlegrounds, arenas and scenarios are excluded. Login/reload and zone/loading transitions re-evaluate the policy. NPC-name CVar refreshes wait until loading/combat ends, while tooltip filtering reads the current effective policy. The same deferred refresh restores the native yellow quest-progress message categories, preserving their prior per-category visibility. Existing NPC-name limitations still apply. This preview needs owner verification in Forever; automated tests do not prove rendered hints or taint safety.
+
 ## Getting started
 
 ### Installation

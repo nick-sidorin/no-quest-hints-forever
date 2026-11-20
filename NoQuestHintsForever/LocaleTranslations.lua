@@ -2,6 +2,10 @@
 -- Keep complete dictionaries; enUS remains the defensive fallback for unknown keys.
 NoQuestHintsForeverTranslations = {
     deDE = {
+        INSTANCE_GROUP = "Dungeons und Schlachtzüge",
+        INSTANCE_GUIDANCE = "Questhinweise wiederherstellen",
+        INSTANCE_GUIDANCE_DESC = "Blendet in Dungeon- und Schlachtzugsinstanzen Quest-Tooltips, Quest-NPC-Namen und gelbe Questfortschrittsmeldungen wieder ein. Kartenmarkierungen, Navigation und andere Addon-Einstellungen bleiben unverändert. Außerhalb gelten wieder deine gespeicherten Ausblendungen; eigene Blizzard-Einstellungen bleiben erhalten.",
+        INSTANCE_GUIDANCE_ACTIVE = "Questhinweis-Ausnahme für Instanzen aktiv",
         HUD_GROUP = "Benutzeroberfläche",
         EXPERIENCE_BAR = "Erfahrungsleiste ausblenden",
         EXPERIENCE_BAR_DESC = "Verbirgt die normale Erfahrungsleiste des Charakters. Rufleisten und Erfahrungsgewinn bleiben unverändert.",
@@ -94,6 +98,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "nicht verfügbar",
     },
     esES = {
+        INSTANCE_GROUP = "Mazmorras y bandas",
+        INSTANCE_GUIDANCE = "Restaurar indicaciones de misión",
+        INSTANCE_GUIDANCE_DESC = "En instancias de mazmorra y banda, deja de ocultar la información de misión en las descripciones, los nombres de PNJ de misión y los mensajes amarillos de progreso. Los marcadores del mapa, la navegación y los demás efectos no cambian. Al salir se reanuda la configuración guardada; se respetan tus ajustes de Blizzard.",
+        INSTANCE_GUIDANCE_ACTIVE = "Excepción de indicaciones de misión en instancia activa",
         HUD_GROUP = "Interfaz",
         EXPERIENCE_BAR = "Ocultar barra de experiencia",
         EXPERIENCE_BAR_DESC = "Oculta la barra de experiencia del personaje en pantalla. Las barras de reputación y la experiencia obtenida no cambian.",
@@ -186,6 +194,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "no disponible",
     },
     frFR = {
+        INSTANCE_GROUP = "Donjons et raids",
+        INSTANCE_GUIDANCE = "Rétablir les indications de quête",
+        INSTANCE_GUIDANCE_DESC = "Dans les instances de donjon et de raid, cesse de masquer les informations de quête des infobulles, les noms des PNJ de quête et les messages jaunes de progression. Les repères de carte, la navigation et les autres effets restent inchangés. Le masquage reprend à la sortie ; vos réglages Blizzard sont conservés.",
+        INSTANCE_GUIDANCE_ACTIVE = "Exception des indications de quête en instance active",
         HUD_GROUP = "Interface",
         EXPERIENCE_BAR = "Masquer la barre d’expérience",
         EXPERIENCE_BAR_DESC = "Masque la barre d’expérience du personnage à l’écran. Les barres de réputation et les gains d’expérience restent inchangés.",
@@ -278,6 +290,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "indisponible",
     },
     itIT = {
+        INSTANCE_GROUP = "Spedizioni e incursioni",
+        INSTANCE_GUIDANCE = "Ripristina indicazioni missione",
+        INSTANCE_GUIDANCE_DESC = "Nelle istanze di spedizioni e incursioni, mostra nuovamente informazioni nelle descrizioni, nomi dei PNG delle missioni e messaggi gialli di avanzamento. Gli indicatori sulla mappa, la navigazione e gli altri effetti restano invariati. All’uscita riprende la configurazione salvata; le tue impostazioni Blizzard sono rispettate.",
+        INSTANCE_GUIDANCE_ACTIVE = "Eccezione per le indicazioni missione in istanza attiva",
         HUD_GROUP = "Interfaccia",
         EXPERIENCE_BAR = "Nascondi barra esperienza",
         EXPERIENCE_BAR_DESC = "Nasconde la barra esperienza del personaggio sullo schermo. Le barre della reputazione e l’esperienza ottenuta restano invariate.",
@@ -370,6 +386,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "non disponibile",
     },
     koKR = {
+        INSTANCE_GROUP = "던전 및 공격대",
+        INSTANCE_GUIDANCE = "퀘스트 안내 복원",
+        INSTANCE_GUIDANCE_DESC = "던전 및 공격대 인스턴스에서는 툴팁의 퀘스트 정보, 퀘스트 NPC 이름과 노란색 퀘스트 진행 메시지를 숨기지 않습니다. 지도 표시, 길 안내 및 다른 애드온 기능은 설정대로 유지됩니다. 밖으로 나가면 저장된 숨기기 설정이 다시 적용되며, 직접 지정한 블리자드 설정은 보존됩니다.",
+        INSTANCE_GUIDANCE_ACTIVE = "인스턴스 퀘스트 안내 예외 활성화",
         HUD_GROUP = "인터페이스",
         EXPERIENCE_BAR = "경험치 바 숨기기",
         EXPERIENCE_BAR_DESC = "화면의 기본 플레이어 경험치 바를 숨깁니다. 평판 바와 경험치 획득에는 영향을 주지 않습니다.",
@@ -462,6 +482,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "사용 불가",
     },
     ptBR = {
+        INSTANCE_GROUP = "Masmorras e raides",
+        INSTANCE_GUIDANCE = "Restaurar dicas de missão",
+        INSTANCE_GUIDANCE_DESC = "Em instâncias de masmorra e raide, deixa de ocultar informações de missão nas dicas, nomes de PNJs de missão e mensagens amarelas de progresso. Os marcadores do mapa, a navegação e os outros efeitos não mudam. Ao sair, a configuração salva volta a valer; seus ajustes da Blizzard são preservados.",
+        INSTANCE_GUIDANCE_ACTIVE = "Exceção de dicas de missão em instâncias ativa",
         HUD_GROUP = "Interface",
         EXPERIENCE_BAR = "Ocultar barra de experiência",
         EXPERIENCE_BAR_DESC = "Oculta a barra de experiência do personagem na tela. As barras de reputação e o ganho de experiência não mudam.",
@@ -554,6 +578,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "indisponível",
     },
     zhCN = {
+        INSTANCE_GROUP = "地下城和团队副本",
+        INSTANCE_GUIDANCE = "恢复任务指引",
+        INSTANCE_GUIDANCE_DESC = "在地下城和团队副本中，暂停隐藏提示框中的任务信息、任务 NPC 姓名和黄色任务进度消息。地图标记、导航及其他插件功能保持原有设置。离开后恢复已保存的隐藏设置，并保留您自行设置的暴雪选项。",
+        INSTANCE_GUIDANCE_ACTIVE = "副本任务指引例外已启用",
         HUD_GROUP = "界面",
         EXPERIENCE_BAR = "隐藏经验条",
         EXPERIENCE_BAR_DESC = "隐藏屏幕上的默认角色经验条。不影响声望条或经验获取。",
@@ -646,6 +674,10 @@ NoQuestHintsForeverTranslations = {
         VALUE_UNAVAILABLE = "不可用",
     },
     zhTW = {
+        INSTANCE_GROUP = "地城與團隊副本",
+        INSTANCE_GUIDANCE = "恢復任務指引",
+        INSTANCE_GUIDANCE_DESC = "在地城與團隊副本中，暫停隱藏提示框中的任務資訊、任務 NPC 姓名和黃色任務進度訊息。地圖標記、導航及其他插件功能維持原有設定。離開後恢復已儲存的隱藏設定，並保留您自行設定的暴雪選項。",
+        INSTANCE_GUIDANCE_ACTIVE = "副本任務指引例外已啟用",
         HUD_GROUP = "介面",
         EXPERIENCE_BAR = "隱藏經驗條",
         EXPERIENCE_BAR_DESC = "隱藏畫面上的預設角色經驗條。不影響聲望條或經驗獲取。",

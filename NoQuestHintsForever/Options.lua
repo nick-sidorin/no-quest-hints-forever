@@ -15,13 +15,13 @@ local controls = {
     { "NQH_HIDE_TRACKER", "TRACKER", "TRACKER_DESC",
       "IsTrackerHidden", "SetTrackerHidden" },
     { "NQH_HIDE_QUEST_TOOLTIPS", "TOOLTIP_HINTS", "TOOLTIP_HINTS_DESC",
-      "IsTooltipHintsHidden", "SetTooltipHintsHidden" },
+      "IsTooltipHintsHidden", "SetTooltipHintsHidden", "IsTooltipHidingConfigured" },
     { "NQH_HIDE_QUEST_NPC_NAMES", "NPC_NAME_HINTS", "NPC_NAME_HINTS_DESC",
-      "IsQuestNPCNamesHidden", "SetQuestNPCNamesHidden" },
+      "IsQuestNPCNamesHidden", "SetQuestNPCNamesHidden", "IsNPCNameHidingConfigured" },
     { "NQH_HIDE_SELL_PRICES", "SELL_PRICES", "SELL_PRICES_DESC",
       "IsSellPriceHidden", "SetSellPriceHidden" },
     { "NQH_HIDE_QUEST_PROGRESS", "PROGRESS_HINTS", "PROGRESS_HINTS_DESC",
-      "IsQuestProgressHidden", "SetQuestProgressHidden" },
+      "IsQuestProgressHidden", "SetQuestProgressHidden", "IsProgressHidingConfigured" },
     { "NQH_HIDE_AUCTION_SELL_PRICES", "AUCTION_PRICES", "AUCTION_PRICES_DESC",
       "IsAuctionSellPriceHidden", "SetAuctionSellPriceHidden" },
     { "NQH_HIDE_QUEST_LEVELS", "QUEST_LEVELS", "QUEST_LEVELS_DESC",
@@ -38,6 +38,8 @@ local controls = {
       "IsMinimapHidden", "SetMinimapHidden" },
     { "NQH_HIDE_QUEST_TURN_INS", "TURN_INS", "TURN_INS_DESC",
       "IsQuestTurnInsHidden", "SetQuestTurnInsHidden" },
+    { "NQH_INSTANCE_GUIDANCE", "INSTANCE_GUIDANCE", "INSTANCE_GUIDANCE_DESC",
+      "IsInstanceGuidanceEnabled", "SetInstanceGuidanceEnabled" },
 }
 
 local PROJECT_URL = "https://github.com/nick-sidorin/no-quest-hints-forever"
@@ -135,16 +137,17 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 14, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10, 12, 13 }
+    local order = { 1, 14, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10, 12, 13, 15 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end
         if index == 10 then heading(L.BAGS_GROUP) end
         if index == 12 then heading(L.HUD_GROUP) end
+        if index == 15 then heading(L.INSTANCE_GROUP) end
         -- Do not store copied state in the Settings framework. Getters read the
         -- active character's SavedVariables on every access; setters delegate
         -- to the existing routines that update Blizzard UI immediately.
-        local isEnabled, setEnabled = api[item[4]], api[item[5]]
+        local isEnabled, setEnabled = api[item[6] or item[4]], api[item[5]]
         local setting = Settings.RegisterProxySetting(
             newCategory, item[1], Settings.VarType.Boolean,
             L[item[2]] or item[2], false,

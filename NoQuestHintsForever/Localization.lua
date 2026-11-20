@@ -1,6 +1,10 @@
 -- Display-language strings. English is the fallback for unsupported locales.
 -- Keep keys shared between the slash commands, native UI and quest menus.
 local en = {
+    INSTANCE_GROUP = "Dungeons and raids",
+    INSTANCE_GUIDANCE = "Restore quest guidance",
+    INSTANCE_GUIDANCE_DESC = "Inside dungeon and raid instances, stop hiding quest tooltip lines, quest NPC names and yellow quest-progress messages. Map markers, navigation and all other addon effects stay as configured. Your saved hiding choices resume outside; your own Blizzard settings are preserved.",
+    INSTANCE_GUIDANCE_ACTIVE = "Dungeon/raid quest guidance exception active",
     HUD_GROUP = "Interface",
     EXPERIENCE_BAR = "Hide experience bar",
     EXPERIENCE_BAR_DESC = "Hide the native player experience bar on the HUD. Reputation bars and experience gains remain unchanged.",
@@ -93,6 +97,10 @@ local en = {
     VALUE_UNAVAILABLE = "unavailable",
 }
 local ru = {
+    INSTANCE_GROUP = "Подземелья и рейды",
+    INSTANCE_GUIDANCE = "Возвращать квестовые подсказки",
+    INSTANCE_GUIDANCE_DESC = "В подземельях и рейдах временно возвращает подсказки в тултипах, имена квестовых NPC и жёлтые сообщения прогресса заданий. Маркеры на карте, навигация и остальные функции остаются как настроены. После выхода скрытие возобновится; ваши собственные настройки Blizzard сохраняются.",
+    INSTANCE_GUIDANCE_ACTIVE = "Исключение для подсказок в подземельях и рейдах активно",
     HUD_GROUP = "介面",
     EXPERIENCE_BAR = "隱藏經驗條",
     EXPERIENCE_BAR_DESC = "隱藏畫面上的預設角色經驗條。不影響聲望條或經驗獲取。",
