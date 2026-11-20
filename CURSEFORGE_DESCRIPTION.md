@@ -1,20 +1,3 @@
-# CurseForge — No Quest Hints
-
-> **Maintainer note:** Copy the Short description and Full description content into the corresponding CurseForge fields. Preserve the established feature-first structure and separate bug-report and source-code links when updating facts for a release. The release workflow does not update the project description automatically.
-
-Maintainer links (not part of the public description):
-
-- [Edit the CurseForge description](https://authors.curseforge.com/#/projects/1784092/description)
-- [Public addon page](https://www.curseforge.com/wow/addons/no-quest-hints)
-
-## Short description
-
-Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups and sell prices. Reveal Blizzard's original quest hints only when needed.
-
----
-
-## Full description
-
 # No Quest Hints
 
 **Explore Azeroth. Not your quest markers.**
@@ -23,19 +6,19 @@ Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups
 
 Fourteen independent, optional controls:
 
-- 🌄 **Hide Minimap** — Explore without the corner map; keep the world map available.
-- 📊 **Hide Experience Bar** — Clear the XP bar while keeping reputation bars.
 - 🗺️ **Hide Quest Objectives** — Remove objective areas, markers and navigation for unfinished quests.
 - ❔ **Hide Quest Turn-in Locations** — Independently hide or retain world-map ? markers for quests ready to turn in.
-- ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 📜 **Hide Objective Tracker** — Clear the on-screen quest list while keeping your journal and quest progress.
 - 💬 **Hide Quest Tooltip Hints** — Remove quest names and objective counters from NPC and object tooltips.
 - 🎯 **Hide Quest NPC Names** — Hide floating names that reveal quest targets.
-- 💰 **Hide Item Sell Prices** — Hide vendor values outside trading and at auction with two independent options.
 - 🔕 **Hide Quest Progress Popups** — Remove yellow objective updates while keeping other game messages.
+- ⏱️ **Hide Quest Timers** — Keep Blizzard’s timer visible with a hidden tracker, or hide it independently.
 - 🔢 **Hide Quest Levels** — Remove numeric level prefixes from journal/tracker titles and addon map-marker tooltips.
 - 🎨 **Hide Difficulty Colors** — Show quest titles in ordinary yellow instead of difficulty colors.
 - 🎒 **Hide Quest Item Borders** — Remove yellow quest-item borders from Blizzard's bags.
+- 💰 **Hide Item Sell Prices** — Hide vendor values outside trading and at auction with two independent options.
+- 📊 **Hide Experience Bar** — Clear the XP bar while keeping reputation bars.
+- 🌄 **Hide Minimap** — Explore without the corner map; keep the world map available.
 
 **All controls are optional and saved per character. Nothing changes until you choose a playstyle or enable an option. Existing users keep their choices.**
 
