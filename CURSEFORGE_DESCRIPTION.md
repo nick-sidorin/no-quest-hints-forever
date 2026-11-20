@@ -1,20 +1,3 @@
-# CurseForge — No Quest Hints
-
-> **Maintainer note:** Copy the Short description and Full description content into the corresponding CurseForge fields. Preserve the established feature-first structure and separate bug-report and source-code links when updating facts for a release. The release workflow does not update the project description automatically.
-
-Maintainer links (not part of the public description):
-
-- [Edit the CurseForge description](https://authors.curseforge.com/#/projects/1784092/description)
-- [Public addon page](https://www.curseforge.com/wow/addons/no-quest-hints)
-
-## Short description
-
-Explore Azeroth without quest spoilers. Hide markers, NPC hints, progress popups and sell prices. Reveal Blizzard's original quest hints only when needed.
-
----
-
-## Full description
-
 # No Quest Hints
 
 **Explore Azeroth. Not your quest markers.**

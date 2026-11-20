@@ -97,6 +97,8 @@ Repository-wide instructions for contributors and coding agents. Before substant
 
 ## CurseForge description style
 
+- Keep CURSEFORGE_DESCRIPTION.md as full public Markdown only, and CURSEFORGE_SHORT_DESCRIPTION.txt as the plain short-description value only. Each entire file must be safe to copy into its field. Maintainer instructions/editor links belong in docs/CURSEFORGE_PUBLISHING.md, never in either copyable file.
+
 - Order the opening feature bullets by product purpose: quest objectives, turn-ins and other quest guidance first, quest presentation next, then vendor prices and optional HUD features such as XP/minimap hiding. New secondary features must not displace the core quest benefits at the top.
 
 - Preserve the owner-approved feature-first structure: title/tagline, compact benefit-led feature bullets immediately at the top, then optional detailed sections for selective hints, playstyles, settings and compatibility. Update release facts without replacing the agreed marketing structure with a long introduction or leading playstyle section.
