@@ -205,3 +205,16 @@ local skippedHUD={lastSeenVersion='1.5.0'}
 session({},skippedHUD,'1.7.0')
 assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MINIMAP'))
 assert(not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TIMERS'))
+
+-- The split map controls are an explicit feature upgrade, preserving choices.
+local mapAccount={lastSeenVersion='1.7.0'}
+local mapChar={enabled=true,onboardingComplete=true,hideQuestLevels=true,revealedQuests={[123]=true}}
+local mapUpgrade=session(mapChar,mapAccount,'1.8.0')
+assert(#mapUpgrade.messages==1 and mapUpgrade.messages[1]:find('new features',1,true))
+assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_MAP_HINTS'))
+assert(NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TURN_INS'))
+assert(mapChar.enabled and mapChar.hideQuestTurnIns and mapChar.hideQuestLevels and mapChar.revealedQuests[123])
+NoQuestHintsForeverAPI.MarkSettingSeen('NQH_HIDE_QUEST_TURN_INS')
+mapChar.hideQuestTurnIns=false
+assert(#session(mapChar,mapAccount,'1.8.0').messages==0)
+assert(not mapChar.hideQuestTurnIns and not NoQuestHintsForeverAPI.IsSettingNew('NQH_HIDE_QUEST_TURN_INS'))

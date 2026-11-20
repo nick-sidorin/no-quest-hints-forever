@@ -12,6 +12,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 ## Features
 
+> **Version 1.8.0:** Separate objective and turn-in map hiding, preserving existing preferences. Keep hand-in locations without objective spoilers; native marker glow and level-aware tooltips avoid hover-triggered journal flicker.
+
 > **Version 1.7.0:** Restore optional experience-bar and minimap hiding with the owner-tested fix. Never force action-bar layout from addon code. Spacing catches up on Blizzard’s next native layout update; both controls remain OFF in every preset.
 
 > **Version 1.6.1 — emergency rollback:** Restores stable 1.5.0 runtime after combat cooldown and Edit Mode regressions in 1.6.0. XP-bar/minimap hiding is withdrawn; native quest timers and existing preferences are preserved. Fully exit and restart the game after updating.
@@ -26,7 +28,8 @@ Remember when finding a quest objective meant reading the description, looking a
 
 **Independent, per-character** options:
 
-- **Hide quest map hints:** Suppress native quest markers and highlighted areas on the world map/minimap, and Blizzard's navigation guidance where available.
+- **Hide quest objectives:** Suppress unfinished-quest objective areas, markers and navigation.
+- **Hide quest turn-in locations:** Independently suppress ready-to-turn-in world-map ? markers and navigation.
 - **Hide objective tracker:** Remove the right-side list of tracked objectives and progress counters from view. The underlying tracking data and quest journal are unaffected.
 - **Hide quest timers (optional):** Independently hide timed-quest countdowns. When the tracker is hidden and this option is OFF, Blizzard’s existing timer remains visible with its native countdown, title tooltip and quest-opening click. Drag the header to move it; the journal keeps its native presentation. OFF in every preset.
 - **Hide quest hints in tooltips:** Remove the quest title, objective progress and group quest lines from native unit and world-object mouseover tooltips. Normal creature names, levels and other tooltip lines remain.
@@ -50,7 +53,7 @@ Changes wait until combat ends; hiding is suspended in Edit Mode. Unchecking res
 
 The owner tested candidate df5959d in Forever and reported the combat/Edit Mode errors no longer reproduced, accepted the spacing limitation, and authorized release. This does not establish universal taint safety or physical-controller behavior.
 
-## Split map guidance preview (unreleased)
+## Split map guidance (1.8.0)
 
 The old map-hiding checkbox is split into two equal-rank controls: **Hide quest objectives** (unfinished-quest objective areas, markers and navigation) and **Hide quest turn-in locations** (world-map ? markers and navigation for quests ready to turn in). To explore without objective hints while retaining hand-in locations, enable the first and disable the second.
 
@@ -60,7 +63,7 @@ On first upgrade, the new turn-in flag copies the old map-hiding choice; explici
 
 Owned marker hover uses a private tooltip with raw C quest titles and unfinished objectives, applying hidden level/difficulty before display. It does not dispatch native pin enter/leave, so hovering does not rebuild, highlight or auto-scroll the journal. The existing native HighlightTexture and LinkGlow regions provide inner/outer hover glow without the global highlight manager. Restore their prior visibility on leave/release and keep the selected Glow independent. Native click behavior remains. Blizzard-owned pins and the existing journal title filter are unchanged.
 
-This preview is separate from the dungeon/raid exception PR and needs owner testing in Forever. Suggested check: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
+The owner tested the final preview in Forever and approved release 1.8.0. The separate dungeon/raid exception PR is not included. Verification scenario: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
 
 ## Getting started
 

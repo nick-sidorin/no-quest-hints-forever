@@ -112,6 +112,7 @@ end
 -- Add an entry only when features ship, never for a fixes-only release. Checking
 -- the whole interval handles players who skip one or more feature versions.
 local featureReleases = {
+    {version="1.8.0", settings={"NQH_HIDE_MAP_HINTS", "NQH_HIDE_QUEST_TURN_INS"}},
     -- Reintroduced after the 1.6.1 rollback; users on that release regain rows.
     {version="1.7.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
     {version="1.6.0", settings={"NQH_HIDE_EXPERIENCE_BAR", "NQH_HIDE_MINIMAP"}},
