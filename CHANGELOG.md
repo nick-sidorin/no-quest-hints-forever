@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Split map hiding into independent objective and turn-in-location controls. Preserve legacy preferences on migration, native art/data, per-quest Show hint, unrelated settings and personal CVar recovery. Mixed modes reveal only the permitted class on the world map and gate active-quest navigation accordingly. Native per-quest minimap restoration remains unavailable.
+
+## Unreleased
+
 ## [1.7.0] — 2026-11-12
 
 - Restore independent, per-character Hide experience bar and Hide minimap controls after the 1.6.1 rollback. Both remain OFF by default and in every preset; saved manual choices are retained. Preserve reputation bars, world-map access and native quest timers.

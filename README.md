@@ -50,6 +50,16 @@ Changes wait until combat ends; hiding is suspended in Edit Mode. Unchecking res
 
 The owner tested candidate df5959d in Forever and reported the combat/Edit Mode errors no longer reproduced, accepted the spacing limitation, and authorized release. This does not establish universal taint safety or physical-controller behavior.
 
+## Split map guidance preview (unreleased)
+
+The old map-hiding checkbox is split into two equal-rank controls: **Hide quest objectives** (unfinished-quest objective areas, markers and navigation) and **Hide quest turn-in locations** (world-map ? markers and navigation for quests ready to turn in). To explore without objective hints while retaining hand-in locations, enable the first and disable the second.
+
+Both ON preserves the former hidden-map behavior; both OFF restores the native global layer and original personal CVars. Mixed modes keep that layer suppressed and reuse the existing private native-template markers/Blizzard blob renderer for the permitted class. The active native SuperTrack quest gets navigation only when its class or explicit **Show hint** permission allows it. No watch-list changes or automatic selection of another quest occur. **Show hint** remains an override for that individual quest; removing it returns to the two global rules.
+
+On first upgrade, the new turn-in flag copies the old map-hiding choice; explicit split choices survive reload. Presets hide both in Immersion/Full immersion and neither in As in Blizzard. Restore/native defaults turn both OFF. Other controls remain independent. Automatic turn-in markers need client-supplied coordinates and readiness data; no locations are invented. Native minimap hints cannot be restored per quest, so mixed modes leave the common minimap hint layer suppressed; built-in questgiver icons remain outside this feature's control.
+
+This preview is separate from the dungeon/raid exception PR and needs owner testing in Forever. Suggested check: hide objectives, leave turn-in locations visible, then inspect an unfinished quest and a completed quest. Test individual Show hint/Hide hint, completion, both controls OFF and reload. Check waypoint Shift-click copying and Gamepad Beta map-close/movement for the previous regression scenarios. Automated tests do not establish taint safety or physical-controller compatibility.
+
 ## Getting started
 
 ### Installation

@@ -11,7 +11,7 @@ local category
 
 local controls = {
     { "NQH_HIDE_MAP_HINTS", "MAP_HINTS", "MAP_HINTS_DESC",
-      "IsMapHidden", "SetMapHidden" },
+      "IsQuestObjectivesHidden", "SetQuestObjectivesHidden" },
     { "NQH_HIDE_TRACKER", "TRACKER", "TRACKER_DESC",
       "IsTrackerHidden", "SetTrackerHidden" },
     { "NQH_HIDE_QUEST_TOOLTIPS", "TOOLTIP_HINTS", "TOOLTIP_HINTS_DESC",
@@ -36,6 +36,8 @@ local controls = {
       "IsExperienceBarHidden", "SetExperienceBarHidden" },
     { "NQH_HIDE_MINIMAP", "MINIMAP", "MINIMAP_DESC",
       "IsMinimapHidden", "SetMinimapHidden" },
+    { "NQH_HIDE_QUEST_TURN_INS", "TURN_INS", "TURN_INS_DESC",
+      "IsQuestTurnInsHidden", "SetQuestTurnInsHidden" },
 }
 
 local PROJECT_URL = "https://github.com/nick-sidorin/no-quest-hints-forever"
@@ -133,7 +135,7 @@ local function registerCategory()
     heading(L.QUEST_HINTS_GROUP)
 
     -- Keep quest options together; vendor prices are additional immersion.
-    local order = { 1, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10, 12, 13 }
+    local order = { 1, 14, 2, 3, 4, 6, 8, 9, 11, 5, 7, 10, 12, 13 }
     for _, index in ipairs(order) do
         local item = controls[index]
         if index == 5 then heading(L.ADDITIONAL_GROUP) end

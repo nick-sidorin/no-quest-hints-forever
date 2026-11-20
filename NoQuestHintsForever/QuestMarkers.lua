@@ -22,7 +22,7 @@ function api.GetQuestPOIStyle(id)
     local styles = POIButtonUtil and POIButtonUtil.Style
     if not styles then return end
     local log = C_QuestLog or {}
-    if readBool(log.IsComplete or log.ReadyForTurnIn, id) then return styles.QuestComplete end
+    if readBool(log.ReadyForTurnIn or log.IsComplete, id) then return styles.QuestComplete end
     if readBool(log.IsQuestDisabledForSession, id) then return styles.QuestDisabled end
     return styles.QuestInProgress
 end
@@ -39,8 +39,9 @@ end
 
 local function permitted(questID)
     return type(questID) == "number"
-        and type(api.IsQuestRevealed) == "function"
-        and api.IsQuestRevealed(questID)
+        and ((type(api.IsQuestMapHintAllowed) == "function" and api.IsQuestMapHintAllowed(questID))
+            or (type(api.IsQuestMapHintAllowed) ~= "function"
+                and type(api.IsQuestRevealed) == "function" and api.IsQuestRevealed(questID)))
 end
 
 local function validPosition(x, y)
@@ -70,7 +71,9 @@ local function installProvider()
         if enabled == true and permitted(id) then hasRevealedQuest = true; break end
     end
     -- Leave native map provider/pin pools alone while this layer is unused.
-    if not hasRevealedQuest then return end
+    local partial = (type(api.IsQuestObjectivesHidden) == "function" and not api.IsQuestObjectivesHidden())
+        or (type(api.IsQuestTurnInsHidden) == "function" and not api.IsQuestTurnInsHidden())
+    if not hasRevealedQuest and not partial then return end
 
     local candidate = CreateFromMixins(QuestDataProviderMixin)
     function candidate:GetPinTemplate() return TEMPLATE end
@@ -93,7 +96,8 @@ local function installProvider()
         pin.Display:ClearAllPoints()
         pin.Display:SetPoint("CENTER")
         pin:SetSelected(tracked)
-        pin:SetStyle(waypoint and POIButtonUtil.Style.Waypoint or api.GetQuestPOIStyle(id))
+        pin:SetStyle(waypoint and not readBool((C_QuestLog or {}).ReadyForTurnIn or (C_QuestLog or {}).IsComplete, id)
+            and POIButtonUtil.Style.Waypoint or api.GetQuestPOIStyle(id))
         pin:UpdateButtonStyle()
         pin:EvaluateManagedHighlight()
         if type(MapPinHighlight_CheckHighlightPin) == "function" then
@@ -147,10 +151,10 @@ local function installProvider()
         end
         -- A small number of quests supply only the next waypoint.
         -- Do not guess a location for quests lacking map data.
-        if C_QuestLog and type(C_QuestLog.GetNextWaypointForMap) == "function"
-            and type(NoQuestHintsForeverChar) == "table"
-            and type(NoQuestHintsForeverChar.revealedQuests) == "table" then
-            for id, enabled in pairs(NoQuestHintsForeverChar.revealedQuests) do
+        if C_QuestLog and type(C_QuestLog.GetNextWaypointForMap) == "function" then
+            local ids = api.GetMapGuidanceQuestIDs and api.GetMapGuidanceQuestIDs()
+                or (NoQuestHintsForeverChar or {}).revealedQuests or {}
+            for id, enabled in pairs(ids) do
                 if enabled and permitted(id) and not seen[id] then
                     local ok, x, y = pcall(C_QuestLog.GetNextWaypointForMap, id, mapID)
                     if ok and validPosition(x, y) then
